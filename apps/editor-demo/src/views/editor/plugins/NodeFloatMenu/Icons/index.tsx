@@ -395,6 +395,30 @@ export function AlignIcon() {
   );
 }
 
+export function DragDotsIcon() {
+  return (
+    <svg
+      width="0.9em"
+      height="0.9em"
+      viewBox="0 0 16 16"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <g fill="currentColor">
+        {/** two columns x four rows of small dots within viewbox */}
+        <circle cx="5" cy="3.5" r="0.8" />
+        <circle cx="10.5" cy="3.5" r="0.8" />
+        <circle cx="5" cy="7.5" r="0.8" />
+        <circle cx="10.5" cy="7.5" r="0.8" />
+        <circle cx="5" cy="11.5" r="0.8" />
+        <circle cx="10.5" cy="11.5" r="0.8" />
+        <circle cx="5" cy="15" r="0.8" />
+        <circle cx="10.5" cy="15" r="0.8" />
+      </g>
+    </svg>
+  );
+}
+
 export function ColorIcon() {
   return (
     <svg

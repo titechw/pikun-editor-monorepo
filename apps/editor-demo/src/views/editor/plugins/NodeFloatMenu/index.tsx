@@ -10,6 +10,7 @@ import { useEditorState } from '@tiptap/react';
 import { useEffect, useRef, useState } from 'react';
 import { selectNodeTypeInfo, nodeToNodeTypeInfo, type NodeTypeInfo } from './utils/nodeType';
 import { NodeTypeIcon } from './NodeTypeIcon';
+import { DragDotsIcon } from './Icons';
 import { MenuPanel } from './MenuPanel';
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
 import './index.less';
@@ -63,7 +64,11 @@ export const NodeFloatMenu = ({
           ...defaultComputePositionConfig,
           ...computePositionConfig,
         },
-        onNodeChange: (props) => {
+        onNodeChange: (props: {
+          editor: typeof editor;
+          node: ProseMirrorNode | null;
+          pos: number;
+        }) => {
           setHoveredInfo(nodeToNodeTypeInfo(props.node as ProseMirrorNode | null));
           setHoveredPos(props.pos);
           onNodeChange?.(props);
@@ -129,7 +134,7 @@ export const NodeFloatMenu = ({
         position: 'absolute',
         transition: 'top 160ms ease, left 160ms ease',
         willChange: 'top, left',
-        visibility: 'hidden',
+        // visibility: 'hidden',
       }}
       ref={setElement}
       onMouseEnter={() => setShowMenu(true)}
@@ -141,7 +146,12 @@ export const NodeFloatMenu = ({
           position: 'relative',
         }}
       >
-        <NodeTypeIcon info={nodeTypeInfo} />
+        <div className="node-float-menu-handle__type">
+          <NodeTypeIcon info={nodeTypeInfo} />
+        </div>
+        <div className="node-float-menu-handle__drag" aria-label="Drag">
+          <DragDotsIcon />
+        </div>
       </div>
       {showMenu && element && (
         <div

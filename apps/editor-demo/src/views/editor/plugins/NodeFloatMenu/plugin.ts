@@ -7,11 +7,12 @@ import { getOuterNode, getOuterNodePos } from './utils/getOuterNode';
 import type { Node } from '@tiptap/pm/model';
 import { removeNode } from './utils/removeNode';
 import { findElementNextToCoords } from './utils/findNextElementFromCursor';
+import { dragHandler } from '../DragHandle/helpers/dragHandler';
 export interface NodeFloatMenuPluginProps {
   pluginKey?: PluginKey | string;
   editor: Editor;
   element: HTMLElement;
-  onNodeChange?: (data: { editor: Editor; node: Node | null; pos: number }) => void;
+  onNodeChange?: (payload: { editor: Editor; node: Node | null; pos: number }) => void;
   computePositionConfig?: ComputePositionConfig;
   getReferencedVirtualElement?: () => VirtualElement | null;
 }
@@ -33,12 +34,10 @@ export const NodeFloatMenuPlugin = ({
   let locked = false;
   let currentNode: Node | null = null;
   let currentNodePos = -1;
-  // biome-ignore lint/suspicious/noExplicitAny: See above - relative positions in y-prosemirror are not typed
-  let currentNodeRelPos: any;
+  // biome-ignore lint/suspicious/noExplicitAny: y-prosemirror relative positions are untyped
+  let currentNodeRelPos: unknown;
   let rafId: number | null = null;
   let pendingMouseCoords: { x: number; y: number } | null = null;
-
-  console.log('onNodeChange element', element);
 
   function hideHandle() {
     if (!element) {
@@ -77,6 +76,24 @@ export const NodeFloatMenuPlugin = ({
     element.style.pointerEvents = 'auto';
   }
 
+  function onDragStart(e: DragEvent) {
+    // trigger node drag via helper
+    // @ts-ignore
+    dragHandler(e, editor);
+    setTimeout(() => {
+      if (element) {
+        element.style.pointerEvents = 'none';
+      }
+    }, 0);
+  }
+
+  function onDragEnd() {
+    hideHandle();
+    if (element) {
+      element.style.pointerEvents = 'auto';
+    }
+  }
+
   wrapper.appendChild(element);
   return {
     plugin: new Plugin({
@@ -111,6 +128,7 @@ export const NodeFloatMenuPlugin = ({
             // If change comes from another user …
             if (isChangeOrigin(tr)) {
               // https://discuss.yjs.dev/t/y-prosemirror-mapping-a-single-relative-position-when-doc-changes/851/3
+              // currentNodeRelPos is unknown (y-prosemirror relative pos)
               const newPos = getAbsolutePos(state, currentNodeRelPos);
 
               if (newPos !== currentNodePos) {
@@ -145,6 +163,9 @@ export const NodeFloatMenuPlugin = ({
       view: (view) => {
         element.draggable = true;
         element.style.pointerEvents = 'auto';
+
+        element.addEventListener('dragstart', onDragStart);
+        element.addEventListener('dragend', onDragEnd);
 
         editor.view.dom.parentElement?.appendChild(wrapper);
 
@@ -210,6 +231,8 @@ export const NodeFloatMenuPlugin = ({
 
           // TODO: Kills even on hot reload
           destroy() {
+            element.removeEventListener('dragstart', onDragStart);
+            element.removeEventListener('dragend', onDragEnd);
             if (rafId) {
               cancelAnimationFrame(rafId);
               rafId = null;

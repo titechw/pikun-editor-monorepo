@@ -16,7 +16,7 @@ export const getRelativePos = (state: EditorState, absolutePos: number) => {
 };
 
 // biome-ignore lint/suspicious/noExplicitAny: y-prosemirror (and y-tiptap by extension) does not have types for relative positions
-export const getAbsolutePos = (state: EditorState, relativePos: any) => {
+export const getAbsolutePos = (state: EditorState, relativePos: unknown) => {
   const ystate = ySyncPluginKey.getState(state);
 
   if (!ystate) {

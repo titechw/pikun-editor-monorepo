@@ -18,6 +18,7 @@ module.exports = [
     plugins: { '@typescript-eslint': tseslint },
     rules: {
       'no-undef': 'off',
+      'no-unused-vars': 'off',
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     },
