@@ -12,7 +12,7 @@ import { selectNodeTypeInfo, nodeToNodeTypeInfo, type NodeTypeInfo } from './uti
 import { NodeTypeIcon } from './NodeTypeIcon';
 import { MenuPanel } from './MenuPanel';
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
-
+import './index.less';
 type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
 
 export type NodeFloatMenuProps = Omit<
@@ -84,6 +84,41 @@ export const NodeFloatMenu = ({
 
   const nodeTypeInfo = hoveredInfo.activeNodeType ? hoveredInfo : fallbackInfo;
   const menuRef = useRef<HTMLDivElement | null>(null);
+  // const wrapperRef = useRef<HTMLDivElement | null>(null);
+
+  // 监听全局点击事件，点击其他地方时关闭菜单
+  useEffect(() => {
+    if (!showMenu) {
+      return;
+    }
+
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) {
+        setShowMenu(false);
+        return;
+      }
+
+      // 如果点击在 wrapper 或菜单内，不关闭
+      if (element && element.contains(target)) {
+        return;
+      }
+
+      if (menuRef.current && menuRef.current.contains(target)) {
+        return;
+      }
+
+      // 点击在其他地方，关闭菜单
+      setShowMenu(false);
+    };
+
+    // 使用捕获阶段确保能捕获到所有点击
+    document.addEventListener('mousedown', handleClickOutside, true);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside, true);
+    };
+  }, [showMenu]);
 
   const handleMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
     const relatedTarget = e.relatedTarget as HTMLElement | null;
@@ -91,6 +126,11 @@ export const NodeFloatMenu = ({
       setShowMenu(false);
       return;
     }
+
+    // if (!element) {
+    //   setShowMenu(false);
+    //   return;
+    // }
 
     // 如果鼠标移动到菜单面板上，不隐藏菜单
     if (menuRef.current && menuRef.current.contains(relatedTarget)) {
@@ -112,25 +152,25 @@ export const NodeFloatMenu = ({
         position: 'absolute',
         transition: 'top 160ms ease, left 160ms ease',
         willChange: 'top, left',
+        visibility: 'hidden',
       }}
+      ref={setElement}
       onMouseEnter={() => setShowMenu(true)}
       onMouseLeave={handleMouseLeave}
     >
       <div
         className={`${className} node-float-menu-handle-container`}
         style={{
-          visibility: 'hidden',
           position: 'relative',
         }}
-        ref={setElement}
       >
         <NodeTypeIcon info={nodeTypeInfo} />
       </div>
-
       {showMenu && element && (
         <div
           ref={menuRef}
           onMouseEnter={() => setShowMenu(true)}
+          className="node-float-menu-panel-container"
           onMouseLeave={(e) => {
             const relatedTarget = e.relatedTarget as HTMLElement | null;
             // 如果鼠标移动到 wrapper 内部，不隐藏
