@@ -23,6 +23,7 @@ export interface BlockTypeIconsProps {
   isCodeBlock: boolean;
   isBlockquote: boolean;
   isTaskList: boolean;
+  targetPos: number;
 }
 
 export function BlockTypeIcons({
@@ -34,69 +35,97 @@ export function BlockTypeIcons({
   isCodeBlock,
   isBlockquote,
   isTaskList,
+  targetPos,
 }: BlockTypeIconsProps) {
   const blockTypes = [
     {
       name: 'text',
       label: 'Text',
       icon: <TextIcon />,
-      onClick: () => editor.chain().focus().setParagraph().run(),
+      onClick: () =>
+        targetPos >= 0
+          ? editor.chain().setNodeSelection(targetPos).focus().setParagraph().run()
+          : editor.chain().focus().setParagraph().run(),
       isActive: activeNodeType === 'paragraph',
     },
     {
       name: 'heading1',
       label: 'H1',
       icon: <H1Icon />,
-      onClick: () => editor.chain().focus().toggleHeading({ level: 1 }).run(),
+      onClick: () =>
+        targetPos >= 0
+          ? editor.chain().setNodeSelection(targetPos).focus().toggleHeading({ level: 1 }).run()
+          : editor.chain().focus().toggleHeading({ level: 1 }).run(),
       isActive: headingLevel === 1,
     },
     {
       name: 'heading2',
       label: 'H2',
       icon: <H2Icon />,
-      onClick: () => editor.chain().focus().toggleHeading({ level: 2 }).run(),
+      onClick: () =>
+        targetPos >= 0
+          ? editor.chain().setNodeSelection(targetPos).focus().toggleHeading({ level: 2 }).run()
+          : editor.chain().focus().toggleHeading({ level: 2 }).run(),
       isActive: headingLevel === 2,
     },
     {
       name: 'heading3',
       label: 'H3',
       icon: <H3Icon />,
-      onClick: () => editor.chain().focus().toggleHeading({ level: 3 }).run(),
+      onClick: () =>
+        targetPos >= 0
+          ? editor.chain().setNodeSelection(targetPos).focus().toggleHeading({ level: 3 }).run()
+          : editor.chain().focus().toggleHeading({ level: 3 }).run(),
       isActive: headingLevel === 3,
     },
     {
       name: 'ordered',
       label: 'Ordered List',
       icon: <OrderedListIcon />,
-      onClick: () => editor.chain().focus().toggleOrderedList().run(),
+      onClick: () =>
+        targetPos >= 0
+          ? editor.chain().setNodeSelection(targetPos).focus().toggleOrderedList().run()
+          : editor.chain().focus().toggleOrderedList().run(),
       isActive: isOrderedList,
     },
     {
       name: 'bullet',
       label: 'Bullet List',
       icon: <BulletListIcon />,
-      onClick: () => editor.chain().focus().toggleBulletList().run(),
+      onClick: () =>
+        targetPos >= 0
+          ? editor.chain().setNodeSelection(targetPos).focus().toggleBulletList().run()
+          : editor.chain().focus().toggleBulletList().run(),
       isActive: isBulletList,
     },
     {
       name: 'todo',
       label: 'Todo List',
       icon: <TodoIcon />,
-      onClick: () => (editor as any).chain().focus().toggleTaskList?.().run?.(),
+      onClick: () =>
+        targetPos >= 0
+          ? editor.chain().setNodeSelection(targetPos).focus().toggleTaskList?.().run?.()
+          : editor.chain().focus().toggleTaskList?.().run?.(),
       isActive: isTaskList,
     },
     {
       name: 'code',
       label: 'Code Block',
       icon: <CodeIcon />,
-      onClick: () => editor.chain().focus().toggleCodeBlock().run(),
+      onClick: () =>
+        targetPos >= 0
+          ? editor.chain().setNodeSelection(targetPos).focus().toggleCodeBlock().run()
+          : editor.chain().focus().toggleCodeBlock().run(),
       isActive: isCodeBlock,
     },
     {
       name: 'quote',
       label: 'Quote',
       icon: <QuoteIcon />,
-      onClick: () => editor.chain().focus().toggleBlockquote().run(),
+      onClick: () =>
+        targetPos >= 0
+          ? editor.chain().setNodeSelection(targetPos).focus().toggleBlockquote().run()
+          : editor.chain().focus().toggleBlockquote().run(),
       isActive: isBlockquote,
     },
     {

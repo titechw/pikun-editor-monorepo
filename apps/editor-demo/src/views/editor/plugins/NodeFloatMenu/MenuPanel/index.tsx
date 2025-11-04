@@ -25,6 +25,7 @@ export interface MenuPanelProps {
   isCodeBlock: boolean;
   isBlockquote: boolean;
   isTaskList: boolean;
+  targetPos: number;
 }
 
 export function MenuPanel({
@@ -36,6 +37,7 @@ export function MenuPanel({
   isCodeBlock,
   isBlockquote,
   isTaskList,
+  targetPos,
 }: MenuPanelProps) {
   return (
     <div className="node-float-menu-panel">
@@ -50,6 +52,7 @@ export function MenuPanel({
           isCodeBlock={isCodeBlock}
           isBlockquote={isBlockquote}
           isTaskList={isTaskList}
+          targetPos={targetPos}
         />
       </div>
 
@@ -113,7 +116,11 @@ export function MenuPanel({
         <button
           className="node-float-menu-panel__action-item node-float-menu-panel__action-item--delete"
           onClick={() => {
-            editor.chain().focus().deleteSelection().run();
+            if (targetPos >= 0) {
+              editor.chain().setNodeSelection(targetPos).focus().deleteSelection().run();
+            } else {
+              editor.chain().focus().deleteSelection().run();
+            }
           }}
         >
           <span className="node-float-menu-panel__icon color-r-500">

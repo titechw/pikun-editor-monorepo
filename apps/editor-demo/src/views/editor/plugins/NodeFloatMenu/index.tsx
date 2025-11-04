@@ -32,6 +32,7 @@ export const NodeFloatMenu = ({
   const [element, setElement] = useState<HTMLDivElement | null>(null);
   const plugin = useRef<Plugin | null>(null);
   const [hoveredInfo, setHoveredInfo] = useState<NodeTypeInfo>(() => nodeToNodeTypeInfo(null));
+  const [hoveredPos, setHoveredPos] = useState<number>(-1);
   const fallbackInfo = useEditorState({ editor, selector: selectNodeTypeInfo });
   const [showMenu, setShowMenu] = useState(false);
 
@@ -64,6 +65,7 @@ export const NodeFloatMenu = ({
         },
         onNodeChange: (props) => {
           setHoveredInfo(nodeToNodeTypeInfo(props.node as ProseMirrorNode | null));
+          setHoveredPos(props.pos);
           onNodeChange?.(props);
         },
       });
@@ -120,32 +122,6 @@ export const NodeFloatMenu = ({
     };
   }, [showMenu]);
 
-  const handleMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
-    const relatedTarget = e.relatedTarget as HTMLElement | null;
-    if (!relatedTarget) {
-      setShowMenu(false);
-      return;
-    }
-
-    console.log('handleMouseLeave', element, relatedTarget);
-    if (!element) {
-      setShowMenu(false);
-      return;
-    }
-
-    // 如果鼠标移动到菜单面板上，不隐藏菜单
-    if (menuRef.current && menuRef.current.contains(relatedTarget)) {
-      return;
-    }
-
-    // 如果鼠标移动到 wrapper 内部的其他元素，不隐藏
-    if (e.currentTarget.contains(relatedTarget)) {
-      return;
-    }
-
-    setShowMenu(false);
-  };
-
   return (
     <div
       className="node-float-menu__wrapper"
@@ -193,6 +169,7 @@ export const NodeFloatMenu = ({
             isCodeBlock={nodeTypeInfo.isCodeBlock}
             isBlockquote={nodeTypeInfo.isBlockquote}
             isTaskList={nodeTypeInfo.isTaskList}
+            targetPos={hoveredPos}
           />
         </div>
       )}
