@@ -127,10 +127,11 @@ export const NodeFloatMenu = ({
       return;
     }
 
-    // if (!element) {
-    //   setShowMenu(false);
-    //   return;
-    // }
+    console.log('handleMouseLeave', element, relatedTarget);
+    if (!element) {
+      setShowMenu(false);
+      return;
+    }
 
     // 如果鼠标移动到菜单面板上，不隐藏菜单
     if (menuRef.current && menuRef.current.contains(relatedTarget)) {
@@ -156,7 +157,7 @@ export const NodeFloatMenu = ({
       }}
       ref={setElement}
       onMouseEnter={() => setShowMenu(true)}
-      onMouseLeave={handleMouseLeave}
+      // onMouseLeave={handleMouseLeave}
     >
       <div
         className={`${className} node-float-menu-handle-container`}
