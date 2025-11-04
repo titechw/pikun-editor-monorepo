@@ -4,6 +4,9 @@ const tsparser = require('@typescript-eslint/parser');
 const js = require('@eslint/js');
 
 module.exports = [
+  {
+    ignores: ['**/node_modules/**'],
+  },
   js.configs.recommended,
   {
     files: ['src/**/*.{ts,tsx}'],
@@ -14,6 +17,7 @@ module.exports = [
     },
     plugins: { '@typescript-eslint': tseslint },
     rules: {
+      'no-undef': 'off',
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     },

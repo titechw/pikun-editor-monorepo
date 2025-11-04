@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { App } from './views/app';
 import 'antd/dist/reset.css';
 import './styles/index.css';
+import './styles/common.less';
 import './styles/theme.less';
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>

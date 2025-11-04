@@ -1,0 +1,160 @@
+import { defaultComputePositionConfig } from './extension';
+import {
+  NodeFloatMenuPlugin,
+  nodeFloatMenuPluginDefaultKey,
+  NodeFloatMenuPluginProps,
+} from './plugin';
+import type { Plugin } from '@tiptap/pm/state';
+// import type { Editor } from '@tiptap/core';
+import { useEditorState } from '@tiptap/react';
+import { useEffect, useRef, useState } from 'react';
+import { selectNodeTypeInfo, nodeToNodeTypeInfo, type NodeTypeInfo } from './utils/nodeType';
+import { NodeTypeIcon } from './NodeTypeIcon';
+import { MenuPanel } from './MenuPanel';
+import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
+
+type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
+
+export type NodeFloatMenuProps = Omit<
+  Optional<NodeFloatMenuPluginProps, 'pluginKey'>,
+  'element'
+> & {
+  className?: string;
+};
+
+export const NodeFloatMenu = ({
+  className = 'node-float-menu-handle',
+  editor,
+  pluginKey = nodeFloatMenuPluginDefaultKey,
+  onNodeChange,
+  computePositionConfig = defaultComputePositionConfig,
+}: NodeFloatMenuProps) => {
+  const [element, setElement] = useState<HTMLDivElement | null>(null);
+  const plugin = useRef<Plugin | null>(null);
+  const [hoveredInfo, setHoveredInfo] = useState<NodeTypeInfo>(() => nodeToNodeTypeInfo(null));
+  const fallbackInfo = useEditorState({ editor, selector: selectNodeTypeInfo });
+  const [showMenu, setShowMenu] = useState(false);
+
+  useEffect(() => {
+    let initPlugin: {
+      plugin: Plugin;
+      unbind: () => void;
+    } | null = null;
+
+    if (!element) {
+      return () => {
+        plugin.current = null;
+      };
+    }
+
+    if (editor.isDestroyed) {
+      return () => {
+        plugin.current = null;
+      };
+    }
+
+    if (!plugin.current) {
+      initPlugin = NodeFloatMenuPlugin({
+        editor,
+        element,
+        pluginKey,
+        computePositionConfig: {
+          ...defaultComputePositionConfig,
+          ...computePositionConfig,
+        },
+        onNodeChange: (props) => {
+          setHoveredInfo(nodeToNodeTypeInfo(props.node as ProseMirrorNode | null));
+          onNodeChange?.(props);
+        },
+      });
+      plugin.current = initPlugin?.plugin!;
+
+      editor.registerPlugin(plugin.current as Plugin);
+    }
+
+    return () => {
+      editor.unregisterPlugin(pluginKey);
+      plugin.current = null;
+      if (initPlugin) {
+        initPlugin.unbind();
+        initPlugin = null;
+      }
+    };
+  }, [element, editor, onNodeChange, pluginKey, computePositionConfig]);
+
+  const nodeTypeInfo = hoveredInfo.activeNodeType ? hoveredInfo : fallbackInfo;
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  const handleMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
+    const relatedTarget = e.relatedTarget as HTMLElement | null;
+    if (!relatedTarget) {
+      setShowMenu(false);
+      return;
+    }
+
+    // 如果鼠标移动到菜单面板上，不隐藏菜单
+    if (menuRef.current && menuRef.current.contains(relatedTarget)) {
+      return;
+    }
+
+    // 如果鼠标移动到 wrapper 内部的其他元素，不隐藏
+    if (e.currentTarget.contains(relatedTarget)) {
+      return;
+    }
+
+    setShowMenu(false);
+  };
+
+  return (
+    <div
+      className="node-float-menu__wrapper"
+      style={{
+        position: 'absolute',
+        transition: 'top 160ms ease, left 160ms ease',
+        willChange: 'top, left',
+      }}
+      onMouseEnter={() => setShowMenu(true)}
+      onMouseLeave={handleMouseLeave}
+    >
+      <div
+        className={`${className} node-float-menu-handle-container`}
+        style={{
+          visibility: 'hidden',
+          position: 'relative',
+        }}
+        ref={setElement}
+      >
+        <NodeTypeIcon info={nodeTypeInfo} />
+      </div>
+
+      {showMenu && element && (
+        <div
+          ref={menuRef}
+          onMouseEnter={() => setShowMenu(true)}
+          onMouseLeave={(e) => {
+            const relatedTarget = e.relatedTarget as HTMLElement | null;
+            // 如果鼠标移动到 wrapper 内部，不隐藏
+            if (
+              relatedTarget &&
+              e.currentTarget.closest('.node-float-menu__wrapper')?.contains(relatedTarget)
+            ) {
+              return;
+            }
+            setShowMenu(false);
+          }}
+        >
+          <MenuPanel
+            editor={editor}
+            activeNodeType={nodeTypeInfo.activeNodeType}
+            headingLevel={nodeTypeInfo.headingLevel}
+            isBulletList={nodeTypeInfo.isBulletList}
+            isOrderedList={nodeTypeInfo.isOrderedList}
+            isCodeBlock={nodeTypeInfo.isCodeBlock}
+            isBlockquote={nodeTypeInfo.isBlockquote}
+            isTaskList={nodeTypeInfo.isTaskList}
+          />
+        </div>
+      )}
+    </div>
+  );
+};

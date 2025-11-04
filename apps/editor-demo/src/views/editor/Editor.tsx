@@ -1,45 +1,100 @@
-import { TiptapCollabProvider } from '@hocuspocus/provider'
-import { useState } from 'react';
-import * as Y from 'yjs'
-import { getInitialUser } from './utils/getRandamUsers';
-import { EditorContent, useEditor } from '@tiptap/react'
+import Collaboration from '@tiptap/extension-collaboration';
+import CollaborationCaret from '@tiptap/extension-collaboration-caret';
+import Highlight from '@tiptap/extension-highlight';
+import { TaskItem, TaskList } from '@tiptap/extension-list';
+import { CharacterCount } from '@tiptap/extensions';
+import { EditorContent, useEditor } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import { TiptapCollabProvider } from '@hocuspocus/provider';
+import * as Y from 'yjs';
+import React, { useEffect, useState } from 'react';
 
-export const Editor = ({ provider, ydoc, room }: {
-    provider: TiptapCollabProvider
-    ydoc: Y.Doc
-    room: string
-}) => {
-    const [status, setStatus] = useState('connecting')
-    const [currentUser, setCurrentUser] = useState(getInitialUser)
-    const editor = useEditor({
-        enableContentCheck: true,
-        onContentError: ({ disableCollaboration }) => {
-          disableCollaboration()
-        },
-        onCreate: ({ editor: currentEditor }) => {
-          provider.on('synced', () => {
-            if (currentEditor.isEmpty) {
-              currentEditor.commands.setContent(defaultContent)
-            }
-          })
-        },
-        extensions: [
-          StarterKit.configure({
-            undoRedo: false,
-          }),
-          Highlight,
-          TaskList,
-          TaskItem,
-          CharacterCount.extend().configure({
-            limit: 10000,
-          }),
-          Collaboration.extend().configure({
-            document: ydoc,
-          }),
-          CollaborationCaret.extend().configure({
-            provider,
-          }),
-        ],
-      })
-    return <div>Editor</div>;     
+import { getInitialUser } from './utils/getRandamUsers';
+import { MenuBar } from './MenuBar';
+import { TextMenu } from './TextMenu';
+import { NodeFloatMenu } from './plugins/NodeFloatMenu';
+import { DragHandle, DragHandleReact } from './plugins/DragHandle';
+
+const defaultContent = `
+  <p>Hi 👋, this is a collaborative document.</p>
+  <p>Feel free to edit and collaborate in real-time!</p>
+`;
+
+export const Editor = ({ provider, ydoc }: { provider: TiptapCollabProvider; ydoc: Y.Doc }) => {
+  const [currentUser] = useState(getInitialUser);
+  const editor = useEditor({
+    enableContentCheck: true,
+    onContentError: ({ disableCollaboration }) => {
+      disableCollaboration();
+    },
+    onCreate: ({ editor: currentEditor }) => {
+      provider.on('synced', () => {
+        console.log('defaultContent:', defaultContent);
+        if (currentEditor.isEmpty) {
+          currentEditor.commands.setContent(defaultContent);
+        }
+      });
+    },
+    extensions: [
+      StarterKit.configure({
+        undoRedo: false,
+      }),
+      Highlight,
+      TaskList,
+      TaskItem,
+      CharacterCount.extend().configure({
+        limit: 10000,
+      }),
+      Collaboration.extend().configure({
+        document: ydoc,
+      }),
+      CollaborationCaret.extend().configure({
+        provider,
+      }),
+    ],
+  });
+  // (optional) listen provider status if needed
+
+  // Save current user to localStorage and emit to editor
+  useEffect(() => {
+    if (editor && currentUser) {
+      localStorage.setItem('currentUser', JSON.stringify(currentUser));
+      editor.chain().focus().updateUser(currentUser).run();
+    }
+  }, [editor, currentUser]);
+
+  // Optionally set user name via UI when needed
+
+  if (!editor) {
+    return null;
+  }
+
+  return (
+    <div className="column-half">
+      <MenuBar editor={editor} />
+
+      {/* <DragHandleReact
+        editor={editor}
+        children={
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth="1.5"
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 9h16.5m-16.5 6.75h16.5" />
+          </svg>
+        }
+      /> */}
+
+      <EditorContent editor={editor} className="main-group" />
+
+      {/* Handles marks: bold, italic, etc. using a bubble menu */}
+      {/* <TextMenu editor={editor} /> */}
+      {/* Handles nodes: headings, lists, etc. using a floating menu */}
+      {/* <InsertMenu editor={editor} /> */}
+      <NodeFloatMenu editor={editor} onNodeChange={() => {}}></NodeFloatMenu>
+    </div>
+  );
 };
