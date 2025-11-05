@@ -93,6 +93,31 @@ export const NodeFloatMenu = ({
   const menuRef = useRef<HTMLDivElement | null>(null);
   // const wrapperRef = useRef<HTMLDivElement | null>(null);
 
+  // 监听拖拽事件，拖拽时隐藏菜单
+  useEffect(() => {
+    if (!element) {
+      return;
+    }
+
+    const handleDragStart = () => {
+      setShowMenu(false);
+    };
+
+    const handleDragEnd = () => {
+      // 拖拽结束后保持菜单隐藏
+      setShowMenu(false);
+    };
+
+    // 在捕获阶段监听，确保能捕获到拖拽事件
+    element.addEventListener('dragstart', handleDragStart, true);
+    element.addEventListener('dragend', handleDragEnd, true);
+
+    return () => {
+      element.removeEventListener('dragstart', handleDragStart, true);
+      element.removeEventListener('dragend', handleDragEnd, true);
+    };
+  }, [element]);
+
   // 监听全局点击事件，点击其他地方时关闭菜单
   useEffect(() => {
     if (!showMenu) {
@@ -125,7 +150,7 @@ export const NodeFloatMenu = ({
     return () => {
       document.removeEventListener('mousedown', handleClickOutside, true);
     };
-  }, [showMenu]);
+  }, [showMenu, element]);
 
   return (
     <div
