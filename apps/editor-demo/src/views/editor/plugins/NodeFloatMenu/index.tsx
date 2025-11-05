@@ -11,9 +11,11 @@ import { useEffect, useRef, useState } from 'react';
 import { selectNodeTypeInfo, nodeToNodeTypeInfo, type NodeTypeInfo } from './utils/nodeType';
 import { NodeTypeIcon } from './NodeTypeIcon';
 import { DragDotsIcon } from './Icons';
-import { MenuPanel } from './MenuPanel';
+// import { MenuPanel } from './MenuPanel';
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
 import './index.less';
+import { MenuPanel } from './MenuPanel';
+import { computePosition, flip, shift, offset as offsetMiddleware } from '@floating-ui/dom';
 type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
 
 export type NodeFloatMenuProps = Omit<
@@ -92,6 +94,7 @@ export const NodeFloatMenu = ({
   const nodeTypeInfo = hoveredInfo.activeNodeType ? hoveredInfo : fallbackInfo;
   const menuRef = useRef<HTMLDivElement | null>(null);
   const [isHoveringIcon, setIsHoveringIcon] = useState(false);
+  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
   // const wrapperRef = useRef<HTMLDivElement | null>(null);
 
   // 监听拖拽事件，拖拽时隐藏菜单
@@ -141,6 +144,73 @@ export const NodeFloatMenu = ({
     // 不触发历史记录，只是更新装饰
     dispatch(tr);
   }, [editor, hoveredPos, isHoveringIcon]);
+
+  // 计算菜单面板位置（自适应定位）
+  useEffect(() => {
+    if (!showMenu || !element || !menuRef.current) {
+      setMenuPosition(null);
+      return;
+    }
+
+    const updateMenuPosition = () => {
+      if (!element || !menuRef.current) {
+        return;
+      }
+
+      computePosition(element, menuRef.current, {
+        placement: 'left-start',
+        strategy: 'fixed',
+        middleware: [
+          offsetMiddleware(8),
+          flip({
+            fallbackPlacements: ['left-start', 'left-end', 'right-start'],
+          }),
+          shift({
+            padding: 8,
+          }),
+        ],
+      }).then(({ x, y }) => {
+        setMenuPosition({ top: y, left: x });
+      });
+    };
+
+    updateMenuPosition();
+
+    // 使用 ResizeObserver 监听元素位置变化
+    let resizeObserver: ResizeObserver | null = null;
+    if (element) {
+      resizeObserver = new ResizeObserver(() => {
+        updateMenuPosition();
+      });
+      resizeObserver.observe(element);
+    }
+
+    // 监听滚动和窗口大小变化，重新计算位置
+    let rafId: number | null = null;
+    const handleScroll = () => {
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+      }
+      rafId = requestAnimationFrame(() => {
+        updateMenuPosition();
+        rafId = null;
+      });
+    };
+
+    window.addEventListener('scroll', handleScroll, true);
+    window.addEventListener('resize', updateMenuPosition);
+
+    return () => {
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+      }
+      window.removeEventListener('scroll', handleScroll, true);
+      window.removeEventListener('resize', updateMenuPosition);
+    };
+  }, [showMenu, element]);
 
   // 监听全局点击事件，点击其他地方时关闭菜单
   useEffect(() => {
@@ -203,11 +273,16 @@ export const NodeFloatMenu = ({
           <DragDotsIcon />
         </div>
       </div>
-      {/* {showMenu && element && (
+      {showMenu && element && (
         <div
           ref={menuRef}
           onMouseEnter={() => setShowMenu(true)}
           className="node-float-menu-panel-container"
+          style={{
+            position: 'fixed',
+            ...(menuPosition || { top: 0, left: 0 }),
+            zIndex: 1000,
+          }}
           onMouseLeave={(e) => {
             const relatedTarget = e.relatedTarget as HTMLElement | null;
             // 如果鼠标移动到 wrapper 内部，不隐藏
@@ -232,7 +307,7 @@ export const NodeFloatMenu = ({
             targetPos={hoveredPos}
           />
         </div>
-      )} */}
+      )}
     </div>
   );
 };

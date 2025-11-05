@@ -54,10 +54,10 @@
   height: 10px;
 }
 
+// 菜单面板位置通过 floating-ui 动态计算，使用 fixed 定位
+// 位置在 JS 中通过 style 设置
 .node-float-menu-panel-container {
-  position: absolute;
-  left: 0;
-  top: 30px;
+  position: fixed;
 }
 
 // 当鼠标悬停在悬浮菜单图标时，给对应的节点行添加背景色和边框
