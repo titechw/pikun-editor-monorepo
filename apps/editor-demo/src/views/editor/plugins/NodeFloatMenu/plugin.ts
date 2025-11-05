@@ -199,29 +199,112 @@ export const NodeFloatMenuPlugin = ({
               return DecorationSet.empty;
             }
 
-            // 获取节点位置范围
+            // 解析位置
             const $pos = doc.resolve(pos);
-            const node = $pos.nodeAfter || $pos.nodeBefore;
 
-            if (!node) {
-              console.log('【decoration】no decoration3');
+            // hoveredNodePos 是外部节点的位置，我们需要找到这个块级节点（paragraph, heading 等）
+            let targetNode: Node | null = null;
+            let start = -1;
+            let end = -1;
+
+            // 如果 depth 为 0，说明位置在文档根节点，需要特殊处理
+            if ($pos.depth === 0) {
+              // 尝试从位置获取节点
+              const nodeAtPos = doc.nodeAt(pos);
+              if (nodeAtPos && nodeAtPos.type.isBlock) {
+                targetNode = nodeAtPos;
+                // 对于文档根节点下的第一个子节点，位置从 1 开始（跳过文档标记）
+                start = pos;
+                end = pos + nodeAtPos.nodeSize;
+              } else {
+                // 如果 pos 是 0，尝试获取第一个子节点
+                if (pos === 0 && doc.content.childCount > 0) {
+                  const firstChild = doc.content.firstChild;
+                  if (firstChild && firstChild.type.isBlock) {
+                    targetNode = firstChild;
+                    start = 1; // 文档标记后第一个位置
+                    end = 1 + firstChild.nodeSize;
+                  }
+                }
+              }
+            } else {
+              // 从最大深度向下查找，找到第一个块级节点
+              for (let depth = $pos.depth; depth >= 1; depth--) {
+                const nodeAtDepth = $pos.node(depth);
+                // 找到块级节点
+                if (nodeAtDepth.type.isBlock) {
+                  targetNode = nodeAtDepth;
+                  // $pos.before(depth) 返回节点开始标记之前的位置
+                  // $pos.after(depth) 返回节点结束标记之后的位置
+                  // 对于 Decoration.node，需要节点的完整位置范围（包括节点标记）
+                  // 所以使用 before + 1 到 after - 1
+                  start = $pos.before(depth) + 1;
+                  end = $pos.after(depth) - 1;
+                  console.log('【decoration】found block node', {
+                    depth,
+                    nodeType: nodeAtDepth.type.name,
+                    before: $pos.before(depth),
+                    after: $pos.after(depth),
+                    start,
+                    end,
+                    nodeSize: nodeAtDepth.nodeSize,
+                    calculatedSize: end - start,
+                  });
+                  break;
+                }
+              }
+            }
+
+            // 如果还没找到块级节点，尝试使用 getOuterNode
+            if (!targetNode || start < 0) {
+              const outerNode = getOuterNode(doc, pos);
+              if (outerNode && outerNode.type.isBlock) {
+                // 需要遍历文档找到这个节点的位置
+                doc.descendants((node, nodePos) => {
+                  if (node === outerNode && targetNode !== outerNode) {
+                    targetNode = outerNode;
+                    start = nodePos;
+                    end = nodePos + node.nodeSize;
+                    return false; // 停止遍历
+                  }
+                  return true;
+                });
+              }
+            }
+
+            if (!targetNode || start < 0 || end <= start) {
+              console.log('【decoration】no decoration3 - no block node found', {
+                pos,
+                targetNode: targetNode?.type.name,
+                start,
+                end,
+                depth: $pos.depth,
+              });
               return DecorationSet.empty;
             }
 
-            // 获取节点的起始和结束位置
-            const start = $pos.start($pos.depth);
-            const end = start + node.nodeSize;
-
-            console.log('【decoration】decoration', start, end);
+            console.log('【decoration】decoration', {
+              pos,
+              start,
+              end,
+              nodeType: targetNode.type.name,
+              nodeSize: targetNode.nodeSize,
+            });
 
             // 创建装饰，添加类名
+            // 确保 start 和 end 是有效的
+            if (start < 0 || end > doc.content.size || start >= end) {
+              console.log('【decoration】invalid range', { start, end, docSize: doc.content.size });
+              return DecorationSet.empty;
+            }
+
             const decoration = Decoration.node(start, end, {
               class: 'node-float-menu-row-hovered',
             });
             console.log('【decoration】decoration2', decoration);
             return DecorationSet.create(doc, [decoration]);
-          } catch {
-            console.log('【decoration】no decoration4');
+          } catch (error) {
+            console.log('【decoration】no decoration4 - error:', error);
             return DecorationSet.empty;
           }
         },
