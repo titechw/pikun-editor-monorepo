@@ -95,7 +95,25 @@ export const NodeFloatMenu = ({
   const menuRef = useRef<HTMLDivElement | null>(null);
   const [isHoveringIcon, setIsHoveringIcon] = useState(false);
   const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
+  const closeTimerRef = useRef<number | null>(null);
   // const wrapperRef = useRef<HTMLDivElement | null>(null);
+
+  // 清除关闭定时器
+  const clearCloseTimer = () => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+  };
+
+  // 延迟关闭菜单
+  const scheduleCloseMenu = () => {
+    clearCloseTimer();
+    closeTimerRef.current = window.setTimeout(() => {
+      setShowMenu(false);
+      closeTimerRef.current = null;
+    }, 150); // 150ms 延迟，避免快速移动时菜单闪烁
+  };
 
   // 监听拖拽事件，拖拽时隐藏菜单
   useEffect(() => {
@@ -221,6 +239,7 @@ export const NodeFloatMenu = ({
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement | null;
       if (!target) {
+        clearCloseTimer();
         setShowMenu(false);
         return;
       }
@@ -234,7 +253,8 @@ export const NodeFloatMenu = ({
         return;
       }
 
-      // 点击在其他地方，关闭菜单
+      // 点击在其他地方，立即关闭菜单
+      clearCloseTimer();
       setShowMenu(false);
     };
 
@@ -246,6 +266,13 @@ export const NodeFloatMenu = ({
     };
   }, [showMenu, element]);
 
+  // 清理定时器
+  useEffect(() => {
+    return () => {
+      clearCloseTimer();
+    };
+  }, []);
+
   return (
     <div
       className="node-float-menu__wrapper"
@@ -253,18 +280,43 @@ export const NodeFloatMenu = ({
         position: 'absolute',
         transition: 'top 160ms ease, left 160ms ease',
         willChange: 'top, left',
-        // visibility: 'hidden',
+        visibility: 'hidden',
       }}
       ref={setElement}
-      onMouseEnter={() => setShowMenu(true)}
+      onMouseEnter={() => {
+        clearCloseTimer();
+        setShowMenu(true);
+      }}
+      onMouseLeave={(e) => {
+        const relatedTarget = e.relatedTarget as HTMLElement | null;
+        // 如果鼠标移动到菜单面板，不关闭
+        if (menuRef.current && relatedTarget && menuRef.current.contains(relatedTarget)) {
+          return;
+        }
+        // 延迟关闭菜单
+        scheduleCloseMenu();
+      }}
     >
       <div
         className={`${className} node-float-menu-handle-container`}
         style={{
           position: 'relative',
         }}
-        onMouseEnter={() => setIsHoveringIcon(true)}
-        onMouseLeave={() => setIsHoveringIcon(false)}
+        onMouseEnter={() => {
+          clearCloseTimer();
+          setIsHoveringIcon(true);
+          setShowMenu(true);
+        }}
+        onMouseLeave={(e) => {
+          setIsHoveringIcon(false);
+          const relatedTarget = e.relatedTarget as HTMLElement | null;
+          // 如果鼠标移动到菜单面板，不关闭
+          if (menuRef.current && relatedTarget && menuRef.current.contains(relatedTarget)) {
+            return;
+          }
+          // 延迟关闭菜单
+          scheduleCloseMenu();
+        }}
       >
         <div className="node-float-menu-handle__type">
           <NodeTypeIcon info={nodeTypeInfo} />
@@ -276,7 +328,10 @@ export const NodeFloatMenu = ({
       {showMenu && element && (
         <div
           ref={menuRef}
-          onMouseEnter={() => setShowMenu(true)}
+          onMouseEnter={() => {
+            clearCloseTimer();
+            setShowMenu(true);
+          }}
           className="node-float-menu-panel-container"
           style={{
             position: 'fixed',
@@ -288,11 +343,13 @@ export const NodeFloatMenu = ({
             // 如果鼠标移动到 wrapper 内部，不隐藏
             if (
               relatedTarget &&
-              e.currentTarget.closest('.node-float-menu__wrapper')?.contains(relatedTarget)
+              (element?.contains(relatedTarget) ||
+                relatedTarget.closest('.node-float-menu__wrapper'))
             ) {
               return;
             }
-            setShowMenu(false);
+            // 延迟关闭菜单
+            scheduleCloseMenu();
           }}
         >
           <MenuPanel
