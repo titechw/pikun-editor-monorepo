@@ -59,3 +59,16 @@
   left: 0;
   top: 30px;
 }
+
+// 当鼠标悬停在悬浮菜单图标时，给对应的节点行添加背景色和边框
+.node-float-menu-row-hovered {
+  background-color: #e0f2fe !important; /* 浅蓝色背景 */
+  // 使用 box-shadow 代替 border，避免影响布局和文字位置
+  // box-shadow 不占用布局空间，不会导致文字位移
+  box-shadow: inset 0 0 0 1px #7dd3fc !important;
+  border-radius: 4px !important;
+  transition:
+    background-color 150ms ease,
+    box-shadow 150ms ease;
+  box-sizing: border-box !important;
+}

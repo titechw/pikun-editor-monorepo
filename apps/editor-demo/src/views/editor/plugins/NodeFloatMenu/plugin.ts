@@ -1,5 +1,6 @@
 import { type ComputePositionConfig, type VirtualElement, computePosition } from '@floating-ui/dom';
 import { type EditorState, type Transaction, Plugin, PluginKey } from '@tiptap/pm/state';
+import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import type { Editor } from '@tiptap/core';
 import { isChangeOrigin } from '@tiptap/extension-collaboration';
 import { getAbsolutePos, getOuterDomNode, getRelativePos } from './utils/util';
@@ -15,10 +16,13 @@ export interface NodeFloatMenuPluginProps {
   onNodeChange?: (payload: { editor: Editor; node: Node | null; pos: number }) => void;
   computePositionConfig?: ComputePositionConfig;
   getReferencedVirtualElement?: () => VirtualElement | null;
+  isHoveringIcon?: boolean;
 }
 
 type PluginState = {
   locked: boolean;
+  hoveredNodePos: number | null;
+  isHoveringIcon: boolean;
 };
 export const nodeFloatMenuPluginDefaultKey = new PluginKey('nodeFloatMenu');
 
@@ -29,6 +33,7 @@ export const NodeFloatMenuPlugin = ({
   computePositionConfig,
   getReferencedVirtualElement,
   onNodeChange,
+  isHoveringIcon: _isHoveringIcon = false,
 }: NodeFloatMenuPluginProps) => {
   const wrapper = document.createElement('div');
   let locked = false;
@@ -100,9 +105,19 @@ export const NodeFloatMenuPlugin = ({
       key: typeof pluginKey === 'string' ? new PluginKey(pluginKey) : pluginKey,
       state: {
         init() {
-          return { locked: false };
+          return { locked: false, hoveredNodePos: null, isHoveringIcon: false };
         },
         apply(tr: Transaction, value: PluginState, _oldState: EditorState, state: EditorState) {
+          // 获取外部传入的 isHoveringIcon 状态
+          const metaIsHoveringIcon = tr.getMeta('setHoveringIcon');
+          const metaHoveredPos = tr.getMeta('setHoveredPos');
+
+          const newValue = {
+            ...value,
+            isHoveringIcon:
+              metaIsHoveringIcon !== undefined ? metaIsHoveringIcon : value.isHoveringIcon,
+            hoveredNodePos: metaHoveredPos !== undefined ? metaHoveredPos : value.hoveredNodePos,
+          };
           const isLocked = tr.getMeta('lockDragHandle');
           const hideDragHandle = tr.getMeta('hideDragHandle');
 
@@ -156,97 +171,60 @@ export const NodeFloatMenuPlugin = ({
             }
           }
 
-          return value;
+          return newValue;
         },
       },
 
-      view: (view) => {
-        element.draggable = true;
-        element.style.pointerEvents = 'auto';
-
-        element.addEventListener('dragstart', onDragStart);
-        element.addEventListener('dragend', onDragEnd);
-
-        editor.view.dom.parentElement?.appendChild(wrapper);
-
-        wrapper.style.pointerEvents = 'none';
-        wrapper.style.position = 'absolute';
-        wrapper.style.top = '0';
-        wrapper.style.left = '0';
-
-        return {
-          update(_, oldState) {
-            if (!element) {
-              return;
-            }
-
-            if (!editor.isEditable) {
-              hideHandle();
-              return;
-            }
-
-            // Prevent element being draggend while being open.
-            if (locked) {
-              element.draggable = false;
-            } else {
-              element.draggable = true;
-            }
-
-            // Recalculate popup position if doc has changend and drag handler is visible.
-            if (view.state.doc.eq(oldState.doc) || currentNodePos === -1) {
-              return;
-            }
-
-            // Get domNode from (new) position.
-            let domNode = view.nodeDOM(currentNodePos) as HTMLElement;
-
-            // Since old element could have been wrapped, we need to find
-            // the outer node and take its position and node data.
-            domNode = getOuterDomNode(view, domNode);
-
-            // Skip if domNode is editor dom.
-            if (domNode === view.dom) {
-              return;
-            }
-
-            // We only want `Element`.
-            if (domNode?.nodeType !== 1) {
-              return;
-            }
-
-            const domNodePos = view.posAtDOM(domNode, 0);
-            const outerNode = getOuterNode(editor.state.doc, domNodePos);
-            const outerNodePos = getOuterNodePos(editor.state.doc, domNodePos); // TODO: needed?
-
-            currentNode = outerNode;
-            currentNodePos = outerNodePos;
-
-            // Memorize relative position to retrieve absolute position in case of collaboration
-            currentNodeRelPos = getRelativePos(view.state, currentNodePos);
-
-            onNodeChange?.({ editor, node: currentNode, pos: currentNodePos });
-
-            repositionDragHandle(domNode as Element);
-          },
-
-          // TODO: Kills even on hot reload
-          destroy() {
-            element.removeEventListener('dragstart', onDragStart);
-            element.removeEventListener('dragend', onDragEnd);
-            if (rafId) {
-              cancelAnimationFrame(rafId);
-              rafId = null;
-              pendingMouseCoords = null;
-            }
-
-            if (element) {
-              removeNode(wrapper);
-            }
-          },
-        };
-      },
-
       props: {
+        decorations(state: EditorState) {
+          const pluginState = (
+            typeof pluginKey === 'string' ? new PluginKey(pluginKey) : pluginKey
+          ).getState(state) as PluginState;
+          if (
+            !pluginState.isHoveringIcon ||
+            pluginState.hoveredNodePos === null ||
+            pluginState.hoveredNodePos < 0
+          ) {
+            console.log('【decoration】no decoration');
+            return DecorationSet.empty;
+          }
+
+          try {
+            const { doc } = state;
+            const pos = pluginState.hoveredNodePos;
+
+            // 确保位置有效
+            if (pos >= doc.content.size) {
+              console.log('【decoration】no decoration2');
+              return DecorationSet.empty;
+            }
+
+            // 获取节点位置范围
+            const $pos = doc.resolve(pos);
+            const node = $pos.nodeAfter || $pos.nodeBefore;
+
+            if (!node) {
+              console.log('【decoration】no decoration3');
+              return DecorationSet.empty;
+            }
+
+            // 获取节点的起始和结束位置
+            const start = $pos.start($pos.depth);
+            const end = start + node.nodeSize;
+
+            console.log('【decoration】decoration', start, end);
+
+            // 创建装饰，添加类名
+            const decoration = Decoration.node(start, end, {
+              class: 'node-float-menu-row-hovered',
+            });
+            console.log('【decoration】decoration2', decoration);
+            return DecorationSet.create(doc, [decoration]);
+          } catch {
+            console.log('【decoration】no decoration4');
+            return DecorationSet.empty;
+          }
+        },
         handleDOMEvents: {
           keydown(view) {
             if (!element || locked) {
@@ -357,6 +335,92 @@ export const NodeFloatMenuPlugin = ({
             return false;
           },
         },
+      },
+
+      view: (view) => {
+        element.draggable = true;
+        element.style.pointerEvents = 'auto';
+
+        element.addEventListener('dragstart', onDragStart);
+        element.addEventListener('dragend', onDragEnd);
+
+        editor.view.dom.parentElement?.appendChild(wrapper);
+
+        wrapper.style.pointerEvents = 'none';
+        wrapper.style.position = 'absolute';
+        wrapper.style.top = '0';
+        wrapper.style.left = '0';
+
+        return {
+          update(_, oldState) {
+            if (!element) {
+              return;
+            }
+
+            if (!editor.isEditable) {
+              hideHandle();
+              return;
+            }
+
+            // Prevent element being draggend while being open.
+            if (locked) {
+              element.draggable = false;
+            } else {
+              element.draggable = true;
+            }
+
+            // Recalculate popup position if doc has changend and drag handler is visible.
+            if (view.state.doc.eq(oldState.doc) || currentNodePos === -1) {
+              return;
+            }
+
+            // Get domNode from (new) position.
+            let domNode = view.nodeDOM(currentNodePos) as HTMLElement;
+
+            // Since old element could have been wrapped, we need to find
+            // the outer node and take its position and node data.
+            domNode = getOuterDomNode(view, domNode);
+
+            // Skip if domNode is editor dom.
+            if (domNode === view.dom) {
+              return;
+            }
+
+            // We only want `Element`.
+            if (domNode?.nodeType !== 1) {
+              return;
+            }
+
+            const domNodePos = view.posAtDOM(domNode, 0);
+            const outerNode = getOuterNode(editor.state.doc, domNodePos);
+            const outerNodePos = getOuterNodePos(editor.state.doc, domNodePos); // TODO: needed?
+
+            currentNode = outerNode;
+            currentNodePos = outerNodePos;
+
+            // Memorize relative position to retrieve absolute position in case of collaboration
+            currentNodeRelPos = getRelativePos(view.state, currentNodePos);
+
+            onNodeChange?.({ editor, node: currentNode, pos: currentNodePos });
+
+            repositionDragHandle(domNode as Element);
+          },
+
+          // TODO: Kills even on hot reload
+          destroy() {
+            element.removeEventListener('dragstart', onDragStart);
+            element.removeEventListener('dragend', onDragEnd);
+            if (rafId) {
+              cancelAnimationFrame(rafId);
+              rafId = null;
+              pendingMouseCoords = null;
+            }
+
+            if (element) {
+              removeNode(wrapper);
+            }
+          },
+        };
       },
     }),
     unbind: () => {

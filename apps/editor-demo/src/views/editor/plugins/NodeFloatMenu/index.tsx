@@ -91,6 +91,7 @@ export const NodeFloatMenu = ({
 
   const nodeTypeInfo = hoveredInfo.activeNodeType ? hoveredInfo : fallbackInfo;
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const [isHoveringIcon, setIsHoveringIcon] = useState(false);
   // const wrapperRef = useRef<HTMLDivElement | null>(null);
 
   // 监听拖拽事件，拖拽时隐藏菜单
@@ -117,6 +118,29 @@ export const NodeFloatMenu = ({
       element.removeEventListener('dragend', handleDragEnd, true);
     };
   }, [element]);
+
+  // 使用 ProseMirror Decorations 方式添加悬停样式
+  useEffect(() => {
+    if (!editor) {
+      return;
+    }
+
+    // 通过 Transaction 更新插件状态，触发 decorations 更新
+    const { view } = editor;
+    const { state, dispatch } = view;
+    const tr = state.tr;
+
+    if (isHoveringIcon && hoveredPos >= 0) {
+      tr.setMeta('setHoveringIcon', true);
+      tr.setMeta('setHoveredPos', hoveredPos);
+    } else {
+      tr.setMeta('setHoveringIcon', false);
+      tr.setMeta('setHoveredPos', -1);
+    }
+
+    // 不触发历史记录，只是更新装饰
+    dispatch(tr);
+  }, [editor, hoveredPos, isHoveringIcon]);
 
   // 监听全局点击事件，点击其他地方时关闭菜单
   useEffect(() => {
@@ -163,13 +187,14 @@ export const NodeFloatMenu = ({
       }}
       ref={setElement}
       onMouseEnter={() => setShowMenu(true)}
-      // onMouseLeave={handleMouseLeave}
     >
       <div
         className={`${className} node-float-menu-handle-container`}
         style={{
           position: 'relative',
         }}
+        onMouseEnter={() => setIsHoveringIcon(true)}
+        onMouseLeave={() => setIsHoveringIcon(false)}
       >
         <div className="node-float-menu-handle__type">
           <NodeTypeIcon info={nodeTypeInfo} />
@@ -178,7 +203,7 @@ export const NodeFloatMenu = ({
           <DragDotsIcon />
         </div>
       </div>
-      {showMenu && element && (
+      {/* {showMenu && element && (
         <div
           ref={menuRef}
           onMouseEnter={() => setShowMenu(true)}
@@ -207,7 +232,7 @@ export const NodeFloatMenu = ({
             targetPos={hoveredPos}
           />
         </div>
-      )}
+      )} */}
     </div>
   );
 };
