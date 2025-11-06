@@ -1,7 +1,7 @@
-import { Selection } from '@tiptap/pm/state';
-import type { Editor } from '@tiptap/react';
-import { useEditorState } from '@tiptap/react';
-import { BubbleMenu } from '@tiptap/react/menus';
+import { Selection } from '@pikun/pm/state';
+import type { Editor } from '@pikun/react';
+import { useEditorState } from '@pikun/react';
+import { BubbleMenu } from '@pikun/react/menus';
 import React, { useRef } from 'react';
 
 import { useMenubarNav } from './useMenubarNav';

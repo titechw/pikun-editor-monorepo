@@ -1,0 +1,360 @@
+---
+description: 项目开发规范和架构指南
+globs:
+alwaysApply: true
+---
+
+# 项目开发规范
+
+## 技术栈架构
+
+本项目采用以下技术栈进行开发：
+
+- **构建工具**: Vite + React + TypeScript
+- **样式方案**: TailwindCSS + Less
+- **状态管理**: MobX (待集成)
+- **路由管理**: React Router DOM
+- **HTTP 客户端**: Axios
+- **组件库**: Antd
+- **桌面应用**: Electron
+
+## 目录结构规范
+
+### 1. 通用逻辑目录 (`shared/`)
+
+存放前后端共享的通用逻辑和类型定义：
+
+```
+shared/
+├── apis/           # API 请求相关
+│   ├── axios.ts     # Axios 配置和封装
+│   └── index.ts     # API 接口导出
+├── constant.ts      # 常量定义
+└── interface.ts     # 共享类型定义
+```
+
+### 2. 辅助工具函数目录 (`src/common/utils/`)
+
+存放前端专用的工具函数：
+
+```
+src/common/utils/
+├── axios.ts         # 前端 Axios 封装
+├── env.ts          # 环境变量处理
+├── formatDate.ts   # 日期格式化工具
+├── json.ts         # JSON 处理工具
+├── number.ts       # 数字处理工具
+└── url.ts          # URL 处理工具
+```
+
+## 开发规范
+
+### 1. 文件组织规范
+
+#### 组件文件组织
+
+- **必须使用文件夹形式**: `组件名/index.tsx`
+- **禁止直接文件**: 不允许 `组件名.tsx` 形式
+- **示例**:
+  ```
+  components/
+  ├── Button/
+  │   ├── index.tsx
+  │   └── Button.module.less
+  └── Header/
+      ├── index.tsx
+      └── Header.module.less
+  ```
+
+#### 文件大小限制
+
+- **单个文件最大行数**: 400 行
+- **超过限制**: 必须拆分为多个文件
+- **拆分原则**: 按功能模块或逻辑职责拆分
+
+### 2. TypeScript 规范
+
+#### 类型定义规范
+
+- **禁止使用 `any`**: 必须明确类型定义
+- **枚举使用**: 枚举变量必须使用 `enum` 定义
+- **类型明确**: 能够明确类型的必须明确，不能明确的需询问用户
+
+#### 示例
+
+```typescript
+// ✅ 正确：使用枚举
+export enum FormatStyle {
+	YYYYMMDDHHmmss = 'YYYY-MM-DD HH:mm:ss',
+	YYYYMMDD = 'YYYY-MM-DD',
+	HHmmss = 'HH:mm:ss',
+}
+
+// ✅ 正确：明确类型定义
+export type RequestResult<T = any> = {
+	data?: T;
+	message?: string;
+	success: boolean;
+	code?: number;
+	traceid?: string;
+};
+
+// ❌ 错误：使用 any
+const data: any = response.data;
+```
+
+### 3. API 请求规范
+
+#### 请求定义流程
+
+参考 `shared/apis` 目录的规范：
+
+1. **基础配置** (`shared/apis/axios.ts`):
+
+   ```typescript
+   // 统一的 Axios 配置
+   const baseConfig = {
+   	timeout: 300000,
+   	withCredentials: true,
+   	headers: {
+   		'x-requested-with': 'XMLHttpRequest',
+   	},
+   };
+   ```
+
+2. **请求封装**:
+
+   ```typescript
+   // 统一的请求处理
+   export const postReq = (
+   	url: string,
+   	data: any,
+   	config: RequestConfig = {}
+   ) => {
+   	return request({
+   		url,
+   		data,
+   		method: 'POST',
+   		...config,
+   	});
+   };
+   ```
+
+3. **类型定义**:
+   ```typescript
+   export type RequestHandler<T, V> = (params: T) => Promise<RequestResult<V>>;
+   ```
+
+#### 前端请求封装
+
+在 `src/common/utils/axios.ts` 中封装前端专用请求逻辑。
+
+### 4. 样式规范
+
+#### TailwindCSS 使用
+
+- **优先使用**: TailwindCSS 工具类
+- **自定义样式**: 使用 Less 文件
+- **主题配置**: 在 `tailwind.config.js` 中统一管理
+
+#### Less 文件组织
+
+```less
+// 组件样式文件
+.Button {
+	@apply flex items-center justify-center;
+
+	&--primary {
+		@apply bg-blue-500 text-white;
+	}
+
+	&--secondary {
+		@apply bg-gray-200 text-gray-800;
+	}
+}
+```
+
+### 5. 状态管理规范 (MobX)
+
+#### Store 组织
+
+```typescript
+// stores/
+├── UserStore.ts
+├── AppStore.ts
+└── index.ts
+```
+
+#### Store 定义规范
+
+```typescript
+import { makeAutoObservable } from 'mobx';
+
+export class UserStore {
+	user: User | null = null;
+	loading = false;
+
+	constructor() {
+		makeAutoObservable(this);
+	}
+
+	setUser(user: User) {
+		this.user = user;
+	}
+
+	setLoading(loading: boolean) {
+		this.loading = loading;
+	}
+}
+```
+
+### 6. 组件开发规范
+
+#### 组件结构
+
+```typescript
+// components/Button/index.tsx
+import React from 'react';
+import { ButtonProps } from './types';
+import './Button.module.less';
+
+export const Button: React.FC<ButtonProps> = ({
+	children,
+	variant = 'primary',
+	...props
+}) => {
+	return (
+		<button className={`button button--${variant}`} {...props}>
+			{children}
+		</button>
+	);
+};
+```
+
+#### Props 类型定义
+
+```typescript
+// components/Button/types.ts
+export interface ButtonProps
+	extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+	variant?: 'primary' | 'secondary' | 'danger';
+	size?: 'small' | 'medium' | 'large';
+	loading?: boolean;
+}
+```
+
+### 7. 路由规范
+
+#### 路由配置
+
+```typescript
+// Router.tsx
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+
+export const Routers = () => {
+	return (
+		<BrowserRouter>
+			<Routes>
+				<Route path="/" element={<HomePage />} />
+				<Route path="/about" element={<AboutPage />} />
+			</Routes>
+		</BrowserRouter>
+	);
+};
+```
+
+### 8. 环境配置规范
+
+#### 环境变量处理
+
+```typescript
+// src/common/utils/env.ts
+export const getEnv = () => {
+	return {
+		NODE_ENV: process.env.NODE_ENV,
+		VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
+	};
+};
+```
+
+### 9. 工具函数规范
+
+#### 工具函数组织
+
+```typescript
+// src/common/utils/formatDate.ts
+export enum FormatStyle {
+	YYYYMMDDHHmmss = 'YYYY-MM-DD HH:mm:ss',
+	YYYYMMDD = 'YYYY-MM-DD',
+	HHmmss = 'HH:mm:ss',
+}
+
+export const formateDate = (
+	date: string | number | Date | dayjs.Dayjs | null | undefined,
+	format: FormatStyle
+) => {
+	if (!date) return '-';
+	const curDate = typeof date === 'number' ? date * 1000 : date;
+	return dayjs(curDate).format(format);
+};
+```
+
+### 10. 代码质量规范
+
+#### 命名规范
+
+- **组件名**: PascalCase (如: `UserProfile`)
+- **文件名**: kebab-case (如: `user-profile.ts`)
+- **变量名**: camelCase (如: `userName`)
+- **常量名**: UPPER_SNAKE_CASE (如: `API_BASE_URL`)
+
+#### 注释规范
+
+```typescript
+/**
+ * 格式化日期
+ * @param date 日期值
+ * @param format 格式化样式
+ * @returns 格式化后的日期字符串
+ */
+export const formateDate = (date: any, format: FormatStyle) => {
+	// 实现逻辑
+};
+```
+
+## 开发流程
+
+### 1. 新功能开发流程
+
+1. 在 `shared/interface.ts` 中定义类型
+2. 在 `shared/apis/` 中定义 API 接口
+3. 在 `src/common/utils/` 中创建工具函数
+4. 在 `src/components/` 中创建组件
+5. 在 `src/views/` 中创建页面
+
+### 2. 组件开发流程
+
+1. 创建组件文件夹
+2. 定义 Props 类型
+3. 实现组件逻辑
+4. 添加样式文件
+5. 编写测试用例
+
+### 3. API 集成流程
+
+1. 在 `shared/apis/axios.ts` 中配置基础请求
+2. 在 `shared/apis/index.ts` 中定义接口
+3. 在组件中调用 API
+4. 处理错误和加载状态
+
+## 注意事项
+
+1. **严格遵循文件大小限制**: 超过 400 行必须拆分
+2. **类型安全**: 禁止使用 `any`，必须明确类型
+3. **组件组织**: 必须使用文件夹形式组织组件
+4. **枚举使用**: 枚举变量必须使用 `enum` 定义
+5. **代码复用**: 通用逻辑放在 `shared/` 目录
+6. **工具函数**: 辅助工具放在 `src/common/utils/`
+7. **样式管理**: 优先使用 TailwindCSS，自定义样式用 Less
+8. **状态管理**: 使用 MobX 进行状态管理
+9. **API 规范**: 参考 `shared/apis` 目录的请求定义流程

@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Editor } from '@tiptap/core';
+import type { Editor } from '@pikun/core';
 import { AlignIcon, ColorIcon, ArrowRightIcon } from '../Icons';
 
 export interface ActionMenuItemsProps {

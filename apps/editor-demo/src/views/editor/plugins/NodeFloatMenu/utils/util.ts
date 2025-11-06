@@ -3,8 +3,8 @@ import {
   relativePositionToAbsolutePosition,
   ySyncPluginKey,
 } from '@tiptap/y-tiptap';
-import type { EditorView } from '@tiptap/pm/view';
-import { type EditorState } from '@tiptap/pm/state';
+import type { EditorView } from '@pikun/pm/view';
+import { type EditorState } from '@pikun/pm/state';
 export const getRelativePos = (state: EditorState, absolutePos: number) => {
   const ystate = ySyncPluginKey.getState(state);
 

@@ -1,5 +1,5 @@
-import type { Editor } from '@tiptap/core';
-import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
+import type { Editor } from '@pikun/core';
+import type { Node as ProseMirrorNode } from '@pikun/pm/model';
 
 export type NodeTypeInfo = {
   activeNodeType: string;

@@ -1,11 +1,11 @@
 import { type ComputePositionConfig, type VirtualElement, computePosition } from '@floating-ui/dom';
-import { type EditorState, type Transaction, Plugin, PluginKey } from '@tiptap/pm/state';
-import { Decoration, DecorationSet } from '@tiptap/pm/view';
-import type { Editor } from '@tiptap/core';
-import { isChangeOrigin } from '@tiptap/extension-collaboration';
+import { type EditorState, type Transaction, Plugin, PluginKey } from '@pikun/pm/state';
+import { Decoration, DecorationSet } from '@pikun/pm/view';
+import type { Editor } from '@pikun/core';
+import { isChangeOrigin } from '@pikun/extension-collaboration';
 import { getAbsolutePos, getOuterDomNode, getRelativePos } from './utils/util';
 import { getOuterNode, getOuterNodePos } from './utils/getOuterNode';
-import type { Node } from '@tiptap/pm/model';
+import type { Node } from '@pikun/pm/model';
 import { removeNode } from './utils/removeNode';
 import { findElementNextToCoords } from './utils/findNextElementFromCursor';
 import { dragHandler } from '../DragHandle/helpers/dragHandler';

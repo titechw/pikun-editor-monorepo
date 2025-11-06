@@ -1,10 +1,10 @@
-import Collaboration from '@tiptap/extension-collaboration';
-import CollaborationCaret from '@tiptap/extension-collaboration-caret';
-import Highlight from '@tiptap/extension-highlight';
-import { TaskItem, TaskList } from '@tiptap/extension-list';
-import { CharacterCount } from '@tiptap/extensions';
-import { EditorContent, useEditor } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
+import Collaboration from '@pikun/extension-collaboration';
+import CollaborationCaret from '@pikun/extension-collaboration-caret';
+import Highlight from '@pikun/extension-highlight';
+import { TaskItem, TaskList } from '@pikun/extension-list';
+import { CharacterCount } from '@pikun/extensions';
+import { EditorContent, useEditor } from '@pikun/react';
+import StarterKit from '@pikun/starter-kit';
 import { TiptapCollabProvider } from '@hocuspocus/provider';
 import * as Y from 'yjs';
 import React, { useEffect, useState } from 'react';

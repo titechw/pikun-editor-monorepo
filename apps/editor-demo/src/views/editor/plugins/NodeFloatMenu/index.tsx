@@ -4,15 +4,15 @@ import {
   nodeFloatMenuPluginDefaultKey,
   NodeFloatMenuPluginProps,
 } from './plugin';
-import type { Plugin } from '@tiptap/pm/state';
-// import type { Editor } from '@tiptap/core';
-import { useEditorState } from '@tiptap/react';
+import type { Plugin } from '@pikun/pm/state';
+// import type { Editor } from '@pikun/core';
+import { useEditorState } from '@pikun/react';
 import { useEffect, useRef, useState } from 'react';
 import { selectNodeTypeInfo, nodeToNodeTypeInfo, type NodeTypeInfo } from './utils/nodeType';
 import { NodeTypeIcon } from './NodeTypeIcon';
 import { DragDotsIcon } from './Icons';
 // import { MenuPanel } from './MenuPanel';
-import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
+import type { Node as ProseMirrorNode } from '@pikun/pm/model';
 import './index.less';
 import { MenuPanel } from './MenuPanel';
 import { computePosition, flip, shift, offset as offsetMiddleware } from '@floating-ui/dom';

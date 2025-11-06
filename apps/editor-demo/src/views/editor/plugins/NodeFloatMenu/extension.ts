@@ -1,7 +1,7 @@
 import type { ComputePositionConfig, VirtualElement } from '@floating-ui/dom';
 import { offset } from '@floating-ui/dom';
-import { type Editor, Extension } from '@tiptap/core';
-import type { Node } from '@tiptap/pm/model';
+import { type Editor, Extension } from '@pikun/core';
+import type { Node } from '@pikun/pm/model';
 import { NodeFloatMenuPlugin } from './plugin';
 
 export const defaultComputePositionConfig: ComputePositionConfig = {
@@ -34,7 +34,7 @@ export interface NodeFloatMenuExtensionOptions {
   onNodeChange?: (options: { node: Node | null; editor: Editor }) => void;
 }
 
-declare module '@tiptap/core' {
+declare module '@pikun/core' {
   interface Commands<ReturnType> {
     nodeFloatMenu: {
       /**

@@ -4,9 +4,9 @@ export * from './drag-handle.js';
 export * from './drag-handle-plugin.js';
 
 export { DragHandle };
-import type { Node } from '@tiptap/pm/model';
-import type { Plugin } from '@tiptap/pm/state';
-import type { Editor } from '@tiptap/react';
+import type { Node } from '@pikun/pm/model';
+import type { Plugin } from '@pikun/pm/state';
+import type { Editor } from '@pikun/react';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import {
   DragHandlePlugin,

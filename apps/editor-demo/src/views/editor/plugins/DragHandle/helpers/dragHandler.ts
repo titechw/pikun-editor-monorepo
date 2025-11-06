@@ -1,6 +1,6 @@
-import type { Editor } from '@tiptap/core';
-import { getSelectionRanges, NodeRangeSelection } from '@tiptap/extension-node-range';
-import type { SelectionRange } from '@tiptap/pm/state';
+import type { Editor } from '@pikun/core';
+import { getSelectionRanges, NodeRangeSelection } from '@pikun/extension-node-range';
+import type { SelectionRange } from '@pikun/pm/state';
 
 import { cloneElement } from './cloneElement.js';
 import { findElementNextToCoords } from './findNextElementFromCursor.js';

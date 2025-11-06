@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Editor } from '@tiptap/core';
+import type { Editor } from '@pikun/core';
 import { BlockTypeIcons } from './BlockTypeIcons';
 import { ActionMenuItems } from './ActionMenuItems';
 import {
