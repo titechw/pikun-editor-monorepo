@@ -3,3 +3,6 @@ export function getComputedStyle(node: Element, property: keyof CSSStyleDeclarat
 
   return style[property]
 }
+
+
+

@@ -11,9 +11,7 @@ import React, { useEffect, useState } from 'react';
 
 import { getInitialUser } from './utils/getRandamUsers';
 import { MenuBar } from './MenuBar';
-import { TextMenu } from './TextMenu';
 import { NodeFloatMenu } from './plugins/NodeFloatMenu';
-import { DragHandle, DragHandleReact } from './plugins/DragHandle';
 
 const defaultContent = `
   <p>Hi 👋, this is a collaborative document.</p>
@@ -72,21 +70,6 @@ export const Editor = ({ provider, ydoc }: { provider: TiptapCollabProvider; ydo
   return (
     <div className="column-half">
       <MenuBar editor={editor} />
-
-      {/* <DragHandleReact
-        editor={editor}
-        children={
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth="1.5"
-            stroke="currentColor"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 9h16.5m-16.5 6.75h16.5" />
-          </svg>
-        }
-      /> */}
 
       <EditorContent editor={editor} className="main-group" />
 

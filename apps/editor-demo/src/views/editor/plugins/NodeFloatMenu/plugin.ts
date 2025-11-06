@@ -8,7 +8,7 @@ import { getOuterNode, getOuterNodePos } from './utils/getOuterNode';
 import type { Node } from '@pikun/pm/model';
 import { removeNode } from './utils/removeNode';
 import { findElementNextToCoords } from './utils/findNextElementFromCursor';
-import { dragHandler } from '../DragHandle/helpers/dragHandler';
+import { dragHandler } from './utils/dragHandler';
 export interface NodeFloatMenuPluginProps {
   pluginKey?: PluginKey | string;
   editor: Editor;
