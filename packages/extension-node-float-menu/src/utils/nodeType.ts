@@ -37,7 +37,7 @@ export const selectNodeTypeInfo = (ctx: { editor: Editor }): NodeTypeInfo => {
 export const nodeToNodeTypeInfo = (node: ProseMirrorNode | null | undefined): NodeTypeInfo => {
   const name = node?.type?.name ?? 'paragraph';
   const headingLevel =
-    name === 'heading' ? ((node?.attrs?.level as 1 | 2 | 3 | 4 | 5 | 6 | undefined) ?? null) : null;
+    name === 'heading' ? (node?.attrs?.level as 1 | 2 | 3 | 4 | 5 | 6 | undefined) ?? null : null;
 
   return {
     activeNodeType: name,

@@ -6,7 +6,7 @@ import { minMax } from './minMax.js';
 export function getInnerCoords(
   view: EditorView,
   x: number,
-  y: number,
+  y: number
 ): { left: number; top: number } {
   const paddingLeft = parseInt(getComputedStyle(view.dom, 'paddingLeft'), 10);
   const paddingRight = parseInt(getComputedStyle(view.dom, 'paddingRight'), 10);
@@ -17,13 +17,10 @@ export function getInnerCoords(
     left: minMax(
       x,
       bounds.left + paddingLeft + borderLeft,
-      bounds.right - paddingRight - borderRight,
+      bounds.right - paddingRight - borderRight
     ),
     top: y,
   };
 
   return coords;
 }
-
-
-

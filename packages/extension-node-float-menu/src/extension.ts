@@ -53,7 +53,7 @@ declare module '@pikun/core' {
   }
 }
 
-export const NodeFloatMenu = Extension.create<NodeFloatMenuExtensionOptions>({
+export const NodeFloatMenuExtension = Extension.create<NodeFloatMenuExtensionOptions>({
   name: 'nodeFloatMenu',
 
   addOptions() {

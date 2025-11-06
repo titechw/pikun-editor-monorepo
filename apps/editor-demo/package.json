@@ -18,6 +18,7 @@
     "@pikun/extension-highlight": "workspace:^",
     "@pikun/extension-list": "workspace:^",
     "@pikun/extension-node-range": "workspace:^",
+    "@pikun/extension-node-float-menu": "workspace:^",
     "@pikun/extensions": "workspace:^",
     "@pikun/core": "workspace:^",
     "@pikun/pm": "workspace:^",

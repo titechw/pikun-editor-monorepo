@@ -14,7 +14,7 @@ export type FindElementNextToCoords = {
  */
 export function findClosestTopLevelBlock(
   element: Element,
-  view: EditorView,
+  view: EditorView
 ): HTMLElement | undefined {
   let current: Element | null = element;
 
@@ -32,7 +32,7 @@ function clampToContent(
   view: EditorView,
   x: number,
   y: number,
-  inset = 5,
+  inset = 5
 ): { x: number; y: number } {
   const container = view.dom;
   const firstBlock = container.firstElementChild;
@@ -70,7 +70,7 @@ function clampToContent(
 }
 
 export const findElementNextToCoords = (
-  options: FindElementNextToCoords,
+  options: FindElementNextToCoords
 ): {
   resultElement: HTMLElement | null;
   resultNode: Node | null;

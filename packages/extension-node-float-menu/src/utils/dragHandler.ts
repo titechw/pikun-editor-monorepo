@@ -106,6 +106,3 @@ export function dragHandler(event: DragEvent, editor: Editor) {
   // clean up
   document.addEventListener('drop', () => removeNode(wrapper), { once: true });
 }
-
-
-

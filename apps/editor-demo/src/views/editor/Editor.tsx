@@ -8,10 +8,9 @@ import StarterKit from '@pikun/starter-kit';
 import { TiptapCollabProvider } from '@hocuspocus/provider';
 import * as Y from 'yjs';
 import React, { useEffect, useState } from 'react';
-
+import { NodeFloatMenu } from '@pikun/extension-node-float-menu';
 import { getInitialUser } from './utils/getRandamUsers';
 import { MenuBar } from './MenuBar';
-import { NodeFloatMenu } from './plugins/NodeFloatMenu';
 
 const defaultContent = `
   <p>Hi 👋, this is a collaborative document.</p>

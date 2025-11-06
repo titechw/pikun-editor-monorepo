@@ -1,0 +1,64 @@
+{
+  "name": "@pikun/extension-node-float-menu",
+  "description": "node-float-menu extension and React component for tiptap",
+  "version": "3.10.1",
+  "homepage": "https://tiptap.dev",
+  "keywords": [
+    "tiptap",
+    "tiptap extension"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": {
+        "import": "./dist/index.d.ts",
+        "require": "./dist/index.d.cts"
+      },
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "src",
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ueberdosis/tiptap",
+    "directory": "packages/extension-node-float-menu"
+  },
+  "sideEffects": [
+    "./dist/index.css",
+    "./src/index.less",
+    "./src/MenuPanel/MenuPanel.less"
+  ],
+  "peerDependencies": {
+    "@pikun/core": "workspace:^",
+    "@pikun/pm": "workspace:^",
+    "@pikun/react": "workspace:^",
+    "@pikun/extension-node-range": "workspace:^",
+    "react": "^16.8 || ^17 || ^18 || ^19",
+    "react-dom": "^16.8 || ^17 || ^18 || ^19"
+  },
+  "devDependencies": {
+    "@pikun/core": "workspace:^",
+    "@pikun/pm": "workspace:^",
+    "@pikun/react": "workspace:^",
+    "@pikun/extension-node-range": "workspace:^",
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  },
+  "dependencies": {
+    "@floating-ui/dom": "^1.0.0"
+  },
+  "scripts": {
+    "build": "tsup",
+    "lint": "prettier ./src/ --check && eslint --cache --quiet --no-error-on-unmatched-pattern ./src/"
+  }
+}
