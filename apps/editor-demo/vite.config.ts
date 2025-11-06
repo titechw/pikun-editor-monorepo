@@ -1,8 +1,15 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { createBaseViteConfig } from '../../tooling/vite-react.config';
+import fs from 'fs';
+const dedupeDeps = fs
+  .readFileSync('./dedupeDeps.txt')
+  .toString()
+  .replace(/\r\n/g, '\n')
+  .split('\n')
+  .filter((value) => value);
 
 export default defineConfig(() => ({
   plugins: [react()],
-  ...createBaseViteConfig({ appDir: __dirname }),
+  ...createBaseViteConfig({ appDir: __dirname, dedupeDeps }),
 }));
