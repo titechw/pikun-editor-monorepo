@@ -9,7 +9,19 @@ const dedupeDeps = fs
   .split('\n')
   .filter((value) => value);
 
+const baseConfig = createBaseViteConfig({ appDir: __dirname, dedupeDeps });
+
 export default defineConfig(() => ({
   plugins: [react()],
-  ...createBaseViteConfig({ appDir: __dirname, dedupeDeps }),
+  ...baseConfig,
+  server: {
+    ...baseConfig.server,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
 }));

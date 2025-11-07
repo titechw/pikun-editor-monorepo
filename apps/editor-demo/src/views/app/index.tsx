@@ -1,35 +1,6 @@
 import React from 'react';
-import { observer } from 'mobx-react-lite';
-import { TiptapCollabProvider } from '@hocuspocus/provider';
-import * as Y from 'yjs';
-import '../editor/index.less';
-import { Editor } from '../editor/Editor';
-const appId = '7j9y6m10';
-const room = `room.${new Date()
-  .getFullYear()
-  .toString()
-  .slice(-2)}${new Date().getMonth() + 1}${new Date().getDate()}-ok`;
+import { AppRouter } from './Router';
 
-// ydoc and provider for Editor A
-const ydocA = new Y.Doc();
-const providerA = new TiptapCollabProvider({
-  appId,
-  name: room,
-  document: ydocA,
-});
-
-// ydoc and provider for Editor B
-const ydocB = new Y.Doc();
-const providerB = new TiptapCollabProvider({
-  appId,
-  name: room,
-  document: ydocB,
-});
-
-export const App = observer(function App(): JSX.Element {
-  return (
-    <div className="col-group">
-      <Editor provider={providerA} ydoc={ydocA} room={room} />
-    </div>
-  );
-});
+export const App = () => {
+  return <AppRouter />;
+};
