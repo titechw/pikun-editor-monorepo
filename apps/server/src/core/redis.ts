@@ -66,6 +66,31 @@ export class Redis {
   }
 
   /**
+   * 删除匹配模式的所有键（使用 SCAN 避免阻塞）
+   * @param pattern 匹配模式，例如 "documents:workspace:*"
+   */
+  public async delByPattern(pattern: string): Promise<number> {
+    await this.connect();
+    let deletedCount = 0;
+    let cursor = 0;
+
+    do {
+      const result = await this.client.scan(cursor, {
+        MATCH: pattern,
+        COUNT: 100,
+      });
+      cursor = result.cursor;
+
+      if (result.keys.length > 0) {
+        await this.client.del(result.keys);
+        deletedCount += result.keys.length;
+      }
+    } while (cursor !== 0);
+
+    return deletedCount;
+  }
+
+  /**
    * 设置 JSON 缓存
    */
   public async setJSON<T>(key: string, value: T, ttl?: number): Promise<void> {

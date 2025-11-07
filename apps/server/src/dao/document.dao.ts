@@ -1,6 +1,7 @@
 import { Database } from '@/core/database';
 import { Injectable } from '@/decorators/injectable.decorator';
 import type { Document, DocumentSnapshot } from '@/entities';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
  * 文档 DAO
@@ -196,11 +197,14 @@ export class DocumentDAO {
     const limit = options.limit || 20;
     const offset = options.offset || 0;
 
+    console.log(`[DocumentDAO] getSnapshots for object_id: ${object_id}, limit: ${limit}, offset: ${offset}`);
+
     const countResult = await this.db.query<{ count: string }>(
       'SELECT COUNT(*) as count FROM pikun_db.document_snapshots WHERE object_id = $1',
       [object_id]
     );
     const total = parseInt(countResult.rows[0].count, 10);
+    console.log(`[DocumentDAO] Total snapshots count: ${total}`);
 
     // 只返回必要的字段，不返回 snapshot_data 和 doc_state（这些是大字段）
     // 注意：返回的数据结构需要匹配 DocumentSnapshot，但 snapshot_data 和 doc_state 可以为空
@@ -212,6 +216,8 @@ export class DocumentDAO {
        LIMIT $2 OFFSET $3`,
       [object_id, limit, offset]
     );
+
+    console.log(`[DocumentDAO] Query returned ${result.rows.length} snapshots`);
 
     // 转换为 DocumentSnapshot 格式，将缺失的字段设为空 Buffer
     const snapshots: DocumentSnapshot[] = result.rows.map(row => ({

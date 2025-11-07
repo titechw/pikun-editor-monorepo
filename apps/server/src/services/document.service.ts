@@ -38,26 +38,46 @@ export class DocumentService {
       metadata: data.metadata,
     });
 
-    // 创建初始快照（如果文档有内容）
-    if (data.content && data.content.length > 0 && this.snapshotScheduler) {
+    // 创建初始快照（无论是否有内容，都应该创建初始快照）
+    // 这样即使文档创建时为空，也能有一个基准快照用于时间间隔计算
+    if (this.snapshotScheduler) {
       try {
-        // 创建初始快照（大版本）
-        await this.snapshotScheduler.createSnapshotManually(
+        console.log(
+          `[DocumentService] Creating initial snapshot for document ${
+            document.object_id
+          }, contentLength: ${data.content?.length || 0}`
+        );
+        // 创建初始快照（强制创建大版本）
+        // 即使 content 为空，也创建一个空内容的快照
+        const contentToSnapshot =
+          data.content && data.content.length > 0 ? data.content : Buffer.alloc(0); // 空内容也创建快照
+
+        const snapshotResult = await this.snapshotScheduler.createSnapshotManually(
           document.object_id,
           document.workspace_id,
-          data.content,
+          contentToSnapshot,
           undefined, // 初始快照可能没有 snapshot
-          'major' // 初始快照作为大版本
+          true // 强制创建大版本
         );
+        console.log(`[DocumentService] Initial snapshot created:`, {
+          snapshot_id: snapshotResult.snapshot_id,
+          version_type: snapshotResult.version_type,
+          created_at: snapshotResult.created_at,
+        });
       } catch (error) {
         // 快照创建失败不应该影响文档创建，只记录错误
-        console.error('Failed to create initial snapshot:', error);
+        console.error('[DocumentService] Failed to create initial snapshot:', error);
       }
+    } else {
+      console.warn(
+        `[DocumentService] SnapshotScheduler not available, cannot create initial snapshot`
+      );
     }
 
     // 清除缓存
     await this.redis.del(`document:${document.object_id}`);
-    await this.redis.del(`documents:workspace:${data.workspace_id}`);
+    // 清除该工作空间的所有文档列表缓存（因为缓存键包含 options 参数）
+    await this.redis.delByPattern(`documents:workspace:${data.workspace_id}:*`);
 
     return document;
   }
@@ -134,14 +154,18 @@ export class DocumentService {
         // 2. 记录变更日志（每次保存都记录）
         let snapshotId: string | null = null;
         if (this.changeDAO) {
-          // 如果是手动保存，先创建小版本快照
+          // 检查是否已有快照
+          const hasSnapshot = await this.documentDAO.getLatestSnapshot(document.object_id);
+
+          // 如果是手动保存，使用策略判断创建大版本还是小版本快照
+          // 如果没有快照，强制创建大版本（初始快照）
           if (updates.forceSnapshot && this.snapshotScheduler) {
             const snapshot = await this.snapshotScheduler.createSnapshotManually(
               document.object_id,
               document.workspace_id,
               updates.content,
               updates.snapshot,
-              'minor' // 小版本快照
+              !hasSnapshot // 如果没有快照，强制创建大版本
             );
             snapshotId = snapshot.snapshot_id;
           }
@@ -162,21 +186,24 @@ export class DocumentService {
           });
         }
 
-        // 3. 处理快照（大版本）
-        if (this.snapshotScheduler) {
-          if (updates.forceSnapshot) {
-            // 手动保存时，如果还没创建快照，创建小版本快照
-            if (!snapshotId) {
-              await this.snapshotScheduler.createSnapshotManually(
-                document.object_id,
-                document.workspace_id,
-                updates.content,
-                updates.snapshot,
-                'minor' // 小版本快照
-              );
-            }
+        // 3. 处理快照（自动保存时，由调度器决定是否创建快照及版本类型）
+        if (this.snapshotScheduler && !updates.forceSnapshot) {
+          // 检查是否已有快照，如果没有，创建初始快照
+          const hasSnapshot = await this.documentDAO.getLatestSnapshot(document.object_id);
+          if (!hasSnapshot) {
+            // 没有快照，创建初始快照（强制大版本）
+            console.log(
+              `[DocumentService] No snapshot found, creating initial snapshot for ${document.object_id}`
+            );
+            await this.snapshotScheduler.createSnapshotManually(
+              document.object_id,
+              document.workspace_id,
+              updates.content,
+              updates.snapshot,
+              true // 强制创建大版本
+            );
           } else {
-            // 自动保存，由调度器决定是否创建大版本快照
+            // 自动保存，由调度器决定是否创建快照
             await this.snapshotScheduler.recordEdit(
               document.object_id,
               document.workspace_id,
@@ -195,7 +222,8 @@ export class DocumentService {
     await this.redis.del(`document:${object_id}`);
     const doc = await this.documentDAO.findById(object_id);
     if (doc) {
-      await this.redis.del(`documents:workspace:${doc.workspace_id}`);
+      // 清除该工作空间的所有文档列表缓存（因为缓存键包含 options 参数）
+      await this.redis.delByPattern(`documents:workspace:${doc.workspace_id}:*`);
     }
 
     return document;
@@ -243,13 +271,16 @@ export class DocumentService {
    * 删除文档
    */
   async deleteDocument(object_id: string): Promise<void> {
+    // 先获取文档信息以便清除缓存
+    const doc = await this.documentDAO.findById(object_id);
+
     await this.documentDAO.delete(object_id);
 
     // 清除缓存
     await this.redis.del(`document:${object_id}`);
-    const doc = await this.documentDAO.findById(object_id);
     if (doc) {
-      await this.redis.del(`documents:workspace:${doc.workspace_id}`);
+      // 清除该工作空间的所有文档列表缓存（因为缓存键包含 options 参数）
+      await this.redis.delByPattern(`documents:workspace:${doc.workspace_id}:*`);
     }
   }
 
