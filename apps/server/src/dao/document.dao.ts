@@ -159,20 +159,26 @@ export class DocumentDAO {
     snapshot_version: number;
     doc_state?: Buffer;
     doc_state_version?: number;
+    version_type?: 'major' | 'minor'; // 版本类型
     metadata?: Record<string, any>;
   }): Promise<DocumentSnapshot> {
     const created_at = Date.now();
     const result = await this.db.query<DocumentSnapshot>(
-      `INSERT INTO pikun_db.document_snapshots (object_id, workspace_id, snapshot_data, snapshot_version, doc_state, doc_state_version, metadata, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       RETURNING *`,
+      `INSERT INTO pikun_db.document_snapshots (
+        snapshot_id, object_id, workspace_id, snapshot_data, snapshot_version, 
+        doc_state, doc_state_version, version_type, metadata, created_at
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      RETURNING *`,
       [
+        uuidv4(),
         snapshot.object_id,
         snapshot.workspace_id,
         snapshot.snapshot_data,
         snapshot.snapshot_version,
         snapshot.doc_state || null,
         snapshot.doc_state_version || 1,
+        snapshot.version_type || 'major',
         JSON.stringify(snapshot.metadata || {}),
         created_at,
       ]
@@ -196,16 +202,26 @@ export class DocumentDAO {
     );
     const total = parseInt(countResult.rows[0].count, 10);
 
-    const result = await this.db.query<DocumentSnapshot>(
-      `SELECT * FROM pikun_db.document_snapshots
+    // 只返回必要的字段，不返回 snapshot_data 和 doc_state（这些是大字段）
+    // 注意：返回的数据结构需要匹配 DocumentSnapshot，但 snapshot_data 和 doc_state 可以为空
+    const result = await this.db.query<Omit<DocumentSnapshot, 'snapshot_data' | 'doc_state'> & { snapshot_data?: Buffer; doc_state?: Buffer | null }>(
+      `SELECT snapshot_id, object_id, workspace_id, snapshot_version, doc_state_version, version_type, metadata, created_at
+       FROM pikun_db.document_snapshots
        WHERE object_id = $1
        ORDER BY created_at DESC
        LIMIT $2 OFFSET $3`,
       [object_id, limit, offset]
     );
 
+    // 转换为 DocumentSnapshot 格式，将缺失的字段设为空 Buffer
+    const snapshots: DocumentSnapshot[] = result.rows.map(row => ({
+      ...row,
+      snapshot_data: Buffer.alloc(0), // 列表查询不需要实际数据
+      doc_state: null,
+    }));
+
     return {
-      snapshots: result.rows,
+      snapshots,
       total,
     };
   }
@@ -220,6 +236,18 @@ export class DocumentDAO {
        ORDER BY created_at DESC
        LIMIT 1`,
       [object_id]
+    );
+    return result.rows[0] || null;
+  }
+
+  /**
+   * 根据 snapshot_id 获取快照
+   */
+  async getSnapshotById(snapshot_id: string): Promise<DocumentSnapshot | null> {
+    const result = await this.db.query<DocumentSnapshot>(
+      `SELECT * FROM pikun_db.document_snapshots
+       WHERE snapshot_id = $1`,
+      [snapshot_id]
     );
     return result.rows[0] || null;
   }

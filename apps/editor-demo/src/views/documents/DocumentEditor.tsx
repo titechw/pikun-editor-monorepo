@@ -1,37 +1,24 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { useParams, useNavigate } from 'react-router-dom';
-import { EditorContent, useEditor } from '@pikun/react';
-import Collaboration from '@pikun/extension-collaboration';
-import CollaborationCaret from '@pikun/extension-collaboration-caret';
-import Highlight from '@pikun/extension-highlight';
-import { TaskItem, TaskList } from '@pikun/extension-list';
-import { CharacterCount } from '@pikun/extensions';
-import StarterKit from '@pikun/starter-kit';
 import { TiptapCollabProvider } from '@hocuspocus/provider';
-import { NodeFloatMenu } from '@pikun/extension-node-float-menu';
 import * as Y from 'yjs';
 import { Button, Input, message, Space, Tag } from 'antd';
 import { SaveOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import { documentStore } from '../../stores/document.store';
 import { authStore } from '../../stores/auth.store';
-import { getInitialUser } from '../editor/utils/getRandamUsers';
-import { MenuBar } from '../editor/MenuBar';
+import { Editor } from '../editor/Editor';
 import type { Document } from '../../api/document.api';
 import './DocumentEditor.less';
-
-const defaultContent = `
-  <p>开始编辑你的文档...</p>
-`;
 
 export const DocumentEditorPage = observer(() => {
   const { objectId } = useParams<{ objectId: string }>();
   const navigate = useNavigate();
-  const [currentUser] = useState(getInitialUser);
   const [ydoc, setYdoc] = useState<Y.Doc | null>(null);
   const [provider, setProvider] = useState<TiptapCollabProvider | null>(null);
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [workspaceId, setWorkspaceId] = useState<string | null>(null);
+  const [titleValue, setTitleValue] = useState<string>(''); // 本地标题状态
 
   // 初始化 Yjs 文档和 Provider
   useEffect(() => {
@@ -95,6 +82,10 @@ export const DocumentEditorPage = observer(() => {
       try {
         await documentStore.loadDocument(workspaceId, objectId, true);
         const doc = documentStore.currentDocument as Document & { content?: string };
+        // 更新本地标题状态
+        if (doc?.title) {
+          setTitleValue(doc.title);
+        }
         if (doc && doc.content && ydoc) {
           // 如果有内容，需要解码并加载到 Yjs
           try {
@@ -118,65 +109,39 @@ export const DocumentEditorPage = observer(() => {
     loadDocument();
   }, [objectId, ydoc, provider, workspaceId]);
 
-  // 创建编辑器，参考 Editor.tsx 的实现
-  // 只在 ydoc 和 provider 准备好时创建编辑器
-  const editor = useEditor({
-    enableContentCheck: true,
-    onContentError: ({ disableCollaboration }: { disableCollaboration: () => void }) => {
-      disableCollaboration();
-    },
-    onCreate: ({ editor: currentEditor }) => {
-      if (provider && ydoc) {
-        provider.on('synced', () => {
-          // 同步完成后，如果编辑器为空且没有服务器内容，设置默认内容
-          const doc = documentStore.currentDocument as Document & { content?: string };
-          if (currentEditor.isEmpty && (!doc || !doc.content)) {
-            currentEditor.commands.setContent(defaultContent);
-          }
-        });
-      }
-    },
-    extensions: [
-      StarterKit.configure({
-        undoRedo: false,
-      }),
-      Highlight,
-      TaskList,
-      TaskItem,
-      CharacterCount.extend().configure({
-        limit: 100000,
-      }),
-      Collaboration.extend().configure({
-        document: ydoc,
-      }),
-      CollaborationCaret.extend().configure({
-        provider: provider,
-      }),
-    ],
-  });
-
-  // 设置用户信息
+  // 同步文档标题变化到本地状态
   useEffect(() => {
-    if (editor && currentUser) {
-      localStorage.setItem('currentUser', JSON.stringify(currentUser));
-      editor.chain().focus().updateUser(currentUser).run();
+    if (documentStore.currentDocument?.title) {
+      setTitleValue(documentStore.currentDocument.title);
     }
-  }, [editor, currentUser]);
+  }, [documentStore.currentDocument?.title]);
 
-  // 监听编辑器更新，实现自动保存
+  // 监听 Yjs 文档更新，实现自动保存
   useEffect(() => {
-    if (!editor || !objectId || !ydoc) return;
+    if (!ydoc || !objectId || !workspaceId) return;
 
-    const handleUpdate = () => {
+    const handleUpdate = (update: Uint8Array, origin: unknown) => {
+      // 忽略来自 provider 的同步更新（避免循环）
+      if (
+        origin &&
+        typeof origin === 'object' &&
+        'constructor' in origin &&
+        origin.constructor &&
+        'name' in origin.constructor &&
+        origin.constructor.name === 'TiptapCollabProvider'
+      ) {
+        return;
+      }
+
       // 防抖保存：2秒后保存
       if (saveTimerRef.current) {
         clearTimeout(saveTimerRef.current);
       }
 
       saveTimerRef.current = setTimeout(async () => {
-        if (!workspaceId) return;
         try {
-          await documentStore.saveDocument(workspaceId, objectId, ydoc, false);
+          // 使用增量更新（update）而不是完整状态
+          await documentStore.saveDocument(workspaceId, objectId, ydoc, false, update);
           message.success('已自动保存', 1);
         } catch (error: unknown) {
           const errorMessage = error instanceof Error ? error.message : '保存失败';
@@ -185,16 +150,16 @@ export const DocumentEditorPage = observer(() => {
       }, 2000);
     };
 
-    editor.on('update', handleUpdate);
+    ydoc.on('update', handleUpdate);
 
     return () => {
-      editor.off('update', handleUpdate);
+      ydoc.off('update', handleUpdate);
       if (saveTimerRef.current) {
         clearTimeout(saveTimerRef.current);
         saveTimerRef.current = null;
       }
     };
-  }, [editor, objectId, ydoc, workspaceId]);
+  }, [ydoc, objectId, workspaceId]);
 
   // 手动保存
   const handleSave = async () => {
@@ -209,23 +174,36 @@ export const DocumentEditorPage = observer(() => {
     }
   };
 
-  // 更新标题
-  const handleTitleChange = async (title: string) => {
+  // 更新标题（仅更新本地状态）
+  const handleTitleInputChange = (value: string) => {
+    setTitleValue(value);
+  };
+
+  // 保存标题（onBlur 或 onPressEnter）
+  const handleTitleSave = async () => {
     if (!objectId || !workspaceId) return;
+    const titleToSave = titleValue.trim();
+    // 如果标题没有变化，不保存
+    if (titleToSave === documentStore.currentDocument?.title) {
+      return;
+    }
     try {
-      await documentStore.updateDocumentTitle(workspaceId, objectId, title);
+      await documentStore.updateDocumentTitle(workspaceId, objectId, titleToSave);
+      message.success('标题已更新', 1);
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : '更新标题失败';
       message.error(errorMessage);
+      // 保存失败时恢复原值
+      if (documentStore.currentDocument?.title) {
+        setTitleValue(documentStore.currentDocument.title);
+      }
     }
   };
 
-  // 如果编辑器未准备好，显示加载状态
-  if (!editor || !ydoc || !provider) {
+  // 如果 ydoc 和 provider 未准备好，显示加载状态
+  if (!ydoc || !provider) {
     return <div>加载中...</div>;
   }
-
-  const currentDoc = documentStore.currentDocument;
 
   return (
     <div className="document-editor-page">
@@ -235,8 +213,10 @@ export const DocumentEditorPage = observer(() => {
             返回
           </Button>
           <Input
-            value={currentDoc?.title || ''}
-            onChange={(e) => handleTitleChange(e.target.value)}
+            value={titleValue}
+            onChange={(e) => handleTitleInputChange(e.target.value)}
+            onBlur={handleTitleSave}
+            onPressEnter={handleTitleSave}
             placeholder="文档标题"
             style={{ width: 300 }}
           />
@@ -258,9 +238,7 @@ export const DocumentEditorPage = observer(() => {
       </div>
 
       <div className="editor-content">
-        <MenuBar editor={editor} />
-        <EditorContent editor={editor} className="main-group" />
-        <NodeFloatMenu editor={editor} onNodeChange={() => {}} />
+        <Editor provider={provider} ydoc={ydoc} />
       </div>
     </div>
   );

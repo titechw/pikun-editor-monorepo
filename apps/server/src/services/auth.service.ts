@@ -2,6 +2,7 @@ import { injectable, inject } from 'tsyringe';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import type { SignOptions } from 'jsonwebtoken';
+import type { NextRequest } from 'next/server';
 import { UserDAO } from '@/dao/user.dao';
 import { WorkspaceDAO } from '@/dao/workspace.dao';
 import type { User } from '@/entities';
@@ -155,6 +156,19 @@ export class AuthService {
     } catch {
       throw new Error('Invalid token');
     }
+  }
+
+  /**
+   * 从请求中获取当前用户（验证 token）
+   */
+  async getCurrentUser(req: NextRequest): Promise<{ uid: number; uuid: string }> {
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      throw new Error('Unauthorized');
+    }
+
+    const token = authHeader.substring(7);
+    return await this.verifyToken(token);
   }
 
   /**

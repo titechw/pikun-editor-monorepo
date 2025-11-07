@@ -1,1 +1,6 @@
-{}
+{
+  "/api/workspace/[workspace_id]/documents/[object_id]/route": "app/api/workspace/[workspace_id]/documents/[object_id]/route.js",
+  "/api/workspace/[workspace_id]/documents/[object_id]/changes/route": "app/api/workspace/[workspace_id]/documents/[object_id]/changes/route.js",
+  "/api/workspace/[workspace_id]/documents/route": "app/api/workspace/[workspace_id]/documents/route.js",
+  "/api/workspace/[workspace_id]/documents/[object_id]/snapshots/route": "app/api/workspace/[workspace_id]/documents/[object_id]/snapshots/route.js"
+}

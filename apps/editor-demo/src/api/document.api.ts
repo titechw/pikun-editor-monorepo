@@ -20,14 +20,30 @@ export interface CreateDocumentRequest {
 
 export interface UpdateDocumentRequest {
   title?: string;
-  content?: string; // Base64 编码的内容
+  content?: string; // Base64 编码的内容（Doc State）
+  change_data?: string; // Base64 编码的增量更新（Yjs Update）
+  snapshot?: string; // Base64 编码的 Snapshot（状态向量）
   metadata?: Record<string, any>;
+  forceSnapshot?: boolean; // 是否强制创建快照
+}
+
+export interface DocumentChange {
+  change_id: string;
+  object_id: string;
+  workspace_id: string;
+  snapshot_id: string | null;
+  change_type: 'auto_save' | 'manual_save';
+  change_data: string; // Base64 编码的变更数据
+  change_size: number;
+  metadata?: Record<string, any>;
+  created_at: number;
 }
 
 export interface DocumentSnapshot {
   snapshot_id: string;
   object_id: string;
   workspace_id: string;
+  version_type: 'major' | 'minor'; // 版本类型
   created_at: number;
   metadata?: Record<string, any>;
 }
@@ -60,7 +76,7 @@ export const documentApi = {
     if (data.metadata !== undefined && data.metadata !== null) {
       requestData.metadata = data.metadata;
     }
-    
+
     const response = await apiClient.post<{
       object_id: string;
       workspace_id: string;
@@ -137,7 +153,7 @@ export const documentApi = {
     if (data.metadata !== undefined && data.metadata !== null) {
       requestData.metadata = data.metadata;
     }
-    
+
     const response = await apiClient.put<{ object_id: string; updated_at: string }>(
       `/workspace/${workspaceId}/documents/${objectId}`,
       requestData,
@@ -150,18 +166,56 @@ export const documentApi = {
 
   /**
    * 保存文档（将 Yjs 文档编码为 Base64）
+   * @param forceSnapshot 是否强制创建快照（手动保存时使用）
+   * @param changeData 增量更新（Yjs Update），如果提供则使用增量更新，否则使用完整状态
    */
   async saveDocument(
     workspaceId: string,
     objectId: string,
     ydoc: Y.Doc,
+    forceSnapshot: boolean = false,
+    changeData?: Uint8Array,
   ): Promise<{ object_id: string; updated_at: string }> {
-    // 将 Yjs 文档编码为 Uint8Array，然后转为 Base64
-    const update = Y.encodeStateAsUpdate(ydoc);
-    const base64Content = btoa(String.fromCharCode(...update));
+    // 获取完整文档状态（Doc State）
+    const docState = Y.encodeStateAsUpdate(ydoc);
+    const base64Content = btoa(String.fromCharCode(...docState));
+
+    // 创建 Snapshot（状态向量）
+    let base64Snapshot: string | undefined;
+    let base64ChangeData: string | undefined;
+
+    try {
+      // Y.snapshot 返回一个 Snapshot 对象
+      // 注意：某些版本的 Yjs 可能不支持 snapshot，如果失败就跳过
+      const snapshot = Y.snapshot(ydoc);
+      if (snapshot) {
+        // 尝试编码 snapshot（如果 Yjs 版本支持）
+        try {
+          // @ts-ignore - Y.encodeSnapshot 可能不存在于某些版本
+          const snapshotBytes = Y.encodeSnapshot ? Y.encodeSnapshot(snapshot) : null;
+          if (snapshotBytes && snapshotBytes.length > 0) {
+            base64Snapshot = btoa(String.fromCharCode(...snapshotBytes));
+          }
+        } catch {
+          // 如果编码失败，跳过 snapshot
+          console.warn('Y.encodeSnapshot not available or failed');
+        }
+      }
+    } catch (error) {
+      // Snapshot 创建失败不影响保存
+      console.warn('Failed to create snapshot:', error);
+    }
+
+    // 如果有增量更新，使用增量更新；否则使用完整状态
+    if (changeData) {
+      base64ChangeData = btoa(String.fromCharCode(...changeData));
+    }
 
     return this.updateDocument(workspaceId, objectId, {
       content: base64Content,
+      change_data: base64ChangeData,
+      snapshot: base64Snapshot,
+      forceSnapshot,
     });
   },
 
@@ -216,6 +270,31 @@ export const documentApi = {
   },
 
   /**
+   * 根据 snapshot_id 获取快照内容
+   */
+  async getSnapshotById(
+    workspaceId: string,
+    objectId: string,
+    snapshotId: string,
+  ): Promise<{
+    snapshot_id: string;
+    doc_state: string | null;
+    snapshot: string | null;
+    created_at: number;
+  }> {
+    const response = await apiClient.get<{
+      snapshot_id: string;
+      doc_state: string | null;
+      snapshot: string | null;
+      created_at: number;
+    }>(`/workspace/${workspaceId}/documents/${objectId}/snapshots/${snapshotId}`);
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(response.message || 'Failed to get snapshot');
+  },
+
+  /**
    * 搜索文档
    */
   async searchDocuments(
@@ -249,5 +328,49 @@ export const documentApi = {
       return response.data;
     }
     throw new Error(response.message || 'Failed to search documents');
+  },
+
+  /**
+   * 获取文档变更列表
+   */
+  async getChanges(
+    workspaceId: string,
+    objectId: string,
+    options: {
+      limit?: number;
+      offset?: number;
+      after_snapshot_id?: string | null;
+    } = {},
+  ): Promise<{ changes: DocumentChange[]; total: number }> {
+    const params = new URLSearchParams();
+    if (options.limit) params.append('limit', options.limit.toString());
+    if (options.offset) params.append('offset', options.offset.toString());
+    if (options.after_snapshot_id) params.append('after_snapshot_id', options.after_snapshot_id);
+
+    const response = await apiClient.get<{ changes: DocumentChange[]; total: number }>(
+      `/workspace/${workspaceId}/documents/${objectId}/changes?${params.toString()}`,
+    );
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(response.message || 'Failed to get changes');
+  },
+
+  /**
+   * 获取两个快照之间的变更
+   */
+  async getChangesBetweenSnapshots(
+    workspaceId: string,
+    objectId: string,
+    fromSnapshotId: string,
+    toSnapshotId: string,
+  ): Promise<DocumentChange[]> {
+    const response = await apiClient.get<DocumentChange[]>(
+      `/workspace/${workspaceId}/documents/${objectId}/changes/between/${fromSnapshotId}/${toSnapshotId}`,
+    );
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(response.message || 'Failed to get changes between snapshots');
   },
 };

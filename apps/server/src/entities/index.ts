@@ -54,6 +54,24 @@ export interface DocumentSnapshot {
   snapshot_version: number;
   doc_state: Buffer | null;
   doc_state_version: number;
+  version_type: 'major' | 'minor'; // 版本类型：major（大版本）或 minor（小版本）
+  metadata: Record<string, any>;
+  created_at: number;
+}
+
+/**
+ * 文档变更日志实体
+ */
+export interface DocumentChange {
+  change_id: string;
+  object_id: string;
+  workspace_id: string;
+  snapshot_id: string | null;
+  change_type: 'auto_save' | 'manual_save';
+  change_data: Buffer;
+  before_state_vector: Buffer | null;
+  after_state_vector: Buffer | null;
+  change_size: number;
   metadata: Record<string, any>;
   created_at: number;
 }

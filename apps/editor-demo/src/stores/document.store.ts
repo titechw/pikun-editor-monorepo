@@ -16,6 +16,9 @@ export class DocumentStore {
   snapshots: DocumentSnapshot[] = [];
   snapshotsTotal = 0;
   isLoadingSnapshots = false;
+  changes: DocumentChange[] = [];
+  changesTotal = 0;
+  isLoadingChanges = false;
 
   // 保存状态
   isSaving = false;
@@ -110,12 +113,15 @@ export class DocumentStore {
   /**
    * 更新文档（防抖保存）
    * 参考 AppFlowy：使用防抖机制，避免频繁保存
+   * @param immediate 是否立即保存（手动保存时使用，会强制创建快照）
+   * @param changeData 增量更新（Yjs Update），如果提供则使用增量更新
    */
   async saveDocument(
     workspaceId: string,
     objectId: string,
     ydoc: any, // Y.Doc
     immediate: boolean = false,
+    changeData?: Uint8Array
   ): Promise<void> {
     // 清除之前的定时器
     if (this.saveTimer) {
@@ -123,39 +129,51 @@ export class DocumentStore {
       this.saveTimer = null;
     }
 
-    // 创建保存函数
-    const saveFn = async () => {
-      this.isSaving = true;
-      this.saveError = null;
-      try {
-        await documentApi.saveDocument(workspaceId, objectId, ydoc);
-        runInAction(() => {
-          this.isSaving = false;
-          this.lastSavedAt = new Date();
-          this.saveError = null;
-        });
-      } catch (error: any) {
-        runInAction(() => {
-          this.isSaving = false;
-          this.saveError = error.message || 'Failed to save document';
-        });
-        throw error;
-      }
-    };
-
-    if (immediate) {
-      // 立即保存
-      await saveFn();
-    } else {
-      // 防抖保存：2秒后保存
-      this.pendingSave = saveFn;
-      this.saveTimer = setTimeout(async () => {
-        if (this.pendingSave) {
-          await this.pendingSave();
-          this.pendingSave = null;
-        }
-      }, 2000);
-    }
+          if (immediate) {
+            // 立即保存，强制创建快照
+            this.isSaving = true;
+            this.saveError = null;
+            try {
+              await documentApi.saveDocument(workspaceId, objectId, ydoc, true, changeData);
+              runInAction(() => {
+                this.isSaving = false;
+                this.lastSavedAt = new Date();
+                this.saveError = null;
+              });
+            } catch (error: any) {
+              runInAction(() => {
+                this.isSaving = false;
+                this.saveError = error.message || 'Failed to save document';
+              });
+              throw error;
+            }
+          } else {
+            // 防抖保存：2秒后保存，不强制创建快照
+            this.pendingSave = async () => {
+              this.isSaving = true;
+              this.saveError = null;
+              try {
+                await documentApi.saveDocument(workspaceId, objectId, ydoc, false, changeData);
+                runInAction(() => {
+                  this.isSaving = false;
+                  this.lastSavedAt = new Date();
+                  this.saveError = null;
+                });
+              } catch (error: any) {
+                runInAction(() => {
+                  this.isSaving = false;
+                  this.saveError = error.message || 'Failed to save document';
+                });
+                throw error;
+              }
+            };
+            this.saveTimer = setTimeout(async () => {
+              if (this.pendingSave) {
+                await this.pendingSave();
+                this.pendingSave = null;
+              }
+            }, 2000);
+          }
   }
 
   /**
@@ -238,6 +256,80 @@ export class DocumentStore {
   }
 
   /**
+   * 加载文档变更列表
+   */
+  async loadChanges(
+    workspaceId: string,
+    objectId: string,
+    options: {
+      limit?: number;
+      offset?: number;
+      after_snapshot_id?: string | null;
+    } = {},
+  ): Promise<void> {
+    this.isLoadingChanges = true;
+    try {
+      const response = await documentApi.getChanges(workspaceId, objectId, options);
+      runInAction(() => {
+        // 如果 after_snapshot_id 为空，说明是加载所有变更，替换；否则追加
+        if (!options.after_snapshot_id) {
+          this.changes = response.changes;
+        } else {
+          // 追加变更，避免重复
+          const existingIds = new Set(this.changes.map(c => c.change_id));
+          response.changes.forEach(change => {
+            if (!existingIds.has(change.change_id)) {
+              this.changes.push(change);
+            }
+          });
+        }
+        this.changesTotal = response.total;
+        this.isLoadingChanges = false;
+      });
+    } catch (error: any) {
+      runInAction(() => {
+        this.error = error.message || 'Failed to load changes';
+        this.isLoadingChanges = false;
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * 获取两个快照之间的变更
+   */
+  async getChangesBetweenSnapshots(
+    workspaceId: string,
+    objectId: string,
+    fromSnapshotId: string,
+    toSnapshotId: string,
+  ): Promise<DocumentChange[]> {
+    try {
+      const changes = await documentApi.getChangesBetweenSnapshots(
+        workspaceId,
+        objectId,
+        fromSnapshotId,
+        toSnapshotId,
+      );
+      // 将变更添加到 store（避免重复）
+      runInAction(() => {
+        const existingIds = new Set(this.changes.map(c => c.change_id));
+        changes.forEach(change => {
+          if (!existingIds.has(change.change_id)) {
+            this.changes.push(change);
+          }
+        });
+      });
+      return changes;
+    } catch (error: any) {
+      runInAction(() => {
+        this.error = error.message || 'Failed to get changes between snapshots';
+      });
+      throw error;
+    }
+  }
+
+  /**
    * 搜索文档
    */
   async searchDocuments(
@@ -259,6 +351,16 @@ export class DocumentStore {
       });
       throw error;
     }
+  }
+
+  /**
+   * 清空历史记录（切换文档时使用）
+   */
+  clearHistory(): void {
+    this.snapshots = [];
+    this.snapshotsTotal = 0;
+    this.changes = [];
+    this.changesTotal = 0;
   }
 
   /**

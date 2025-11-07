@@ -152,8 +152,11 @@ export class DocumentController {
 
       const updateSchema = z.object({
         title: z.string().optional().nullable(),
-        content: z.string().optional().nullable(), // Base64 编码的内容
+        content: z.string().optional().nullable(), // Base64 编码的内容（Doc State）
+        change_data: z.string().optional().nullable(), // Base64 编码的增量更新（Yjs Update）
+        snapshot: z.string().optional().nullable(), // Base64 编码的 Snapshot（状态向量）
         metadata: z.record(z.any()).optional().nullable(),
+        forceSnapshot: z.boolean().optional().default(false), // 是否强制创建快照
       });
 
       const validatedData = updateSchema.parse(body);
@@ -163,7 +166,16 @@ export class DocumentController {
       if (validatedData.content) {
         updates.content = Buffer.from(validatedData.content, 'base64');
       }
+      if (validatedData.change_data) {
+        updates.change_data = Buffer.from(validatedData.change_data, 'base64');
+      }
+      if (validatedData.snapshot) {
+        updates.snapshot = Buffer.from(validatedData.snapshot, 'base64');
+      }
       if (validatedData.metadata) updates.metadata = validatedData.metadata;
+      if (validatedData.forceSnapshot !== undefined) {
+        updates.forceSnapshot = validatedData.forceSnapshot;
+      }
 
       const document = await this.documentService.updateDocument(context.params.object_id, updates);
 
@@ -331,6 +343,54 @@ export class DocumentController {
         {
           success: false,
           message: error.message || 'Failed to get latest snapshot',
+        },
+        { status: error.message === 'Unauthorized' ? 401 : 500 }
+      );
+    }
+  }
+
+  /**
+   * 根据 snapshot_id 获取快照内容
+   */
+  async getSnapshotById(
+    req: NextRequest,
+    context: { params: { workspace_id: string; object_id: string; snapshot_id: string } }
+  ): Promise<NextResponse> {
+    try {
+      await this.getCurrentUser(req);
+
+      const snapshot = await this.documentService.getSnapshotById(context.params.snapshot_id);
+
+      if (!snapshot) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: 'Snapshot not found',
+          },
+          { status: 404 }
+        );
+      }
+
+      // 从数据库获取快照内容
+      let docStateBase64: string | null = null;
+      if (snapshot.doc_state) {
+        docStateBase64 = snapshot.doc_state.toString('base64');
+      }
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          snapshot_id: snapshot.snapshot_id,
+          doc_state: docStateBase64,
+          snapshot: snapshot.snapshot_data?.toString('base64') || null,
+          created_at: snapshot.created_at,
+        },
+      });
+    } catch (error: any) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: error.message || 'Failed to get snapshot',
         },
         { status: error.message === 'Unauthorized' ? 401 : 500 }
       );
