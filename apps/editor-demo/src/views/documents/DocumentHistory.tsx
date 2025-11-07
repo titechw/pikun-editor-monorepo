@@ -4,9 +4,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Card, Button, Tag, message, Space, Typography, Empty, Tree, Spin } from 'antd';
 import {
   ArrowLeftOutlined,
-  HistoryOutlined,
   SaveOutlined,
   FileTextOutlined,
+  FolderOutlined,
 } from '@ant-design/icons';
 import { documentStore } from '../../stores/document.store';
 import { authStore } from '../../stores/auth.store';
@@ -30,6 +30,17 @@ interface SelectedItem {
   id: string;
   snapshot?: DocumentSnapshot;
   change?: DocumentChange;
+}
+
+interface TreeNode {
+  title: React.ReactNode;
+  key: string;
+  icon?: React.ReactNode;
+  isLeaf: boolean;
+  selectable?: boolean;
+  snapshot?: DocumentSnapshot;
+  change?: DocumentChange;
+  children?: TreeNode[];
 }
 
 export const DocumentHistoryPage = observer(() => {
@@ -147,7 +158,7 @@ export const DocumentHistoryPage = observer(() => {
     return versions;
   }, [documentStore.snapshots, documentStore.changes]);
 
-  // 格式化日期
+  // 格式化日期（完整日期时间）
   const formatDate = (timestamp: number | string) => {
     // 处理字符串类型的时间戳
     let ts: number;
@@ -180,12 +191,77 @@ export const DocumentHistoryPage = observer(() => {
     }
   };
 
+  // 格式化日期（仅日期，如 "7月30日"）
+  const formatDateOnly = (timestamp: number | string): string => {
+    let ts: number;
+    if (typeof timestamp === 'string') {
+      ts = parseInt(timestamp, 10);
+    } else {
+      ts = timestamp;
+    }
+
+    if (!ts || ts <= 0 || isNaN(ts)) {
+      return '无效日期';
+    }
+    try {
+      const date = ts > 10000000000 ? new Date(ts) : new Date(ts * 1000);
+      if (isNaN(date.getTime())) {
+        return '无效日期';
+      }
+      const month = date.getMonth() + 1;
+      const day = date.getDate();
+      return `${month}月${day}日`;
+    } catch (error) {
+      console.error('Date formatting error:', error, 'timestamp:', timestamp);
+      return '无效日期';
+    }
+  };
+
+  // 格式化时间（仅时间，如 "10:12"）
+  const formatTimeOnly = (timestamp: number | string): string => {
+    let ts: number;
+    if (typeof timestamp === 'string') {
+      ts = parseInt(timestamp, 10);
+    } else {
+      ts = timestamp;
+    }
+
+    if (!ts || ts <= 0 || isNaN(ts)) {
+      return '无效时间';
+    }
+    try {
+      const date = ts > 10000000000 ? new Date(ts) : new Date(ts * 1000);
+      if (isNaN(date.getTime())) {
+        return '无效时间';
+      }
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+      return `${hours}:${minutes}`;
+    } catch (error) {
+      console.error('Time formatting error:', error, 'timestamp:', timestamp);
+      return '无效时间';
+    }
+  };
+
   const getVersionTypeLabel = (type: 'major' | 'minor') => {
     return type === 'major' ? '大版本' : '小版本';
   };
 
   const getChangeTypeLabel = (type: 'auto_save' | 'manual_save') => {
     return type === 'manual_save' ? '手动保存' : '自动保存';
+  };
+
+  // 获取保存人信息
+  const getCreatorName = (metadata?: Record<string, unknown>): string => {
+    // 优先从 metadata 中获取保存人信息
+    if (metadata?.created_by_name && typeof metadata.created_by_name === 'string') {
+      return metadata.created_by_name;
+    }
+    if (metadata?.creator_name && typeof metadata.creator_name === 'string') {
+      return metadata.creator_name;
+    }
+    // 如果没有，使用当前登录用户的名称
+    return authStore.user?.name || '未知用户';
   };
 
   // 从 Yjs 文档中提取 Tiptap 内容
@@ -287,48 +363,153 @@ export const DocumentHistoryPage = observer(() => {
     }
   };
 
-  // 构建树形结构数据
+  // 构建树形结构数据（按日期分组）
   const treeData = useMemo(() => {
-    return historyVersions.map((version) => {
-      const snapshotNode = {
+    // 按日期分组，同时记录时间戳用于排序
+    const dateGroups = new Map<string, { versions: HistoryVersion[]; maxTimestamp: number }>();
+
+    historyVersions.forEach((version) => {
+      const dateKey = formatDateOnly(version.snapshot.created_at);
+      const timestamp =
+        typeof version.snapshot.created_at === 'string'
+          ? parseInt(version.snapshot.created_at, 10)
+          : version.snapshot.created_at;
+
+      if (!dateGroups.has(dateKey)) {
+        dateGroups.set(dateKey, { versions: [], maxTimestamp: 0 });
+      }
+      const group = dateGroups.get(dateKey)!;
+      group.versions.push(version);
+      // 记录该日期组中最大的时间戳（用于排序）
+      if (timestamp > group.maxTimestamp) {
+        group.maxTimestamp = timestamp;
+      }
+    });
+
+    // 构建树形结构
+    const result: TreeNode[] = [];
+
+    // 按时间戳倒序排列（最新的在前）
+    const sortedDates = Array.from(dateGroups.entries()).sort((a, b) => {
+      return b[1].maxTimestamp - a[1].maxTimestamp;
+    });
+
+    sortedDates.forEach(([dateKey, group]) => {
+      const versions = group.versions;
+
+      // 日期标题节点
+      const dateNode = {
         title: (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <HistoryOutlined />
-            <span>
-              {version.snapshot.metadata?.is_virtual
-                ? version.snapshot.metadata.label || '初始版本'
-                : `${getVersionTypeLabel(version.snapshot.version_type)} - ${formatDate(version.snapshot.created_at)}`}
-            </span>
-            <Tag color={version.snapshot.version_type === 'major' ? 'blue' : 'green'}>
-              {getVersionTypeLabel(version.snapshot.version_type)}
-            </Tag>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              fontWeight: 500,
+              color: '#1890ff',
+              fontSize: 14,
+              padding: '4px 0',
+            }}
+          >
+            <FolderOutlined style={{ fontSize: 14 }} />
+            <span>{dateKey}</span>
           </div>
         ),
-        key: `snapshot-${version.snapshot.snapshot_id}`,
-        icon: <FileTextOutlined />,
+        key: `date-${dateKey}`,
+        icon: null, // 隐藏默认图标，因为 title 中已经包含了图标
         isLeaf: false,
-        snapshot: version.snapshot,
-        children: version.changes.map((change) => ({
-          title: (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Tag color={change.change_type === 'manual_save' ? 'orange' : 'default'}>
-                {getChangeTypeLabel(change.change_type)}
-              </Tag>
-              <Text type="secondary" style={{ fontSize: 12 }}>
-                {formatDate(change.created_at)}
-              </Text>
-              <Text type="secondary" style={{ fontSize: 12 }}>
-                {change.change_size} bytes
-              </Text>
-            </div>
-          ),
-          key: `change-${change.change_id}`,
-          isLeaf: true,
-          change,
-        })),
+        selectable: false, // 日期节点不可选择
+        children: versions.map((version) => {
+          const snapshotNode = {
+            title: (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <FileTextOutlined style={{ fontSize: 14 }} />
+                  <span style={{ fontSize: 13 }}>
+                    {formatTimeOnly(version.snapshot.created_at)}
+                  </span>
+                </div>
+                <span style={{ fontSize: 13 }}>
+                  {version.snapshot.metadata?.is_virtual
+                    ? version.snapshot.metadata.label || '初始版本'
+                    : getVersionTypeLabel(version.snapshot.version_type)}
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span
+                    style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: '50%',
+                      backgroundColor: '#722ed1',
+                      display: 'inline-block',
+                    }}
+                  />
+                  <span style={{ fontSize: 12, color: '#666' }}>
+                    {getCreatorName(version.snapshot.metadata)}
+                  </span>
+                </div>
+                <Tag
+                  color={version.snapshot.version_type === 'major' ? 'blue' : 'green'}
+                  style={{ margin: 0 }}
+                >
+                  {getVersionTypeLabel(version.snapshot.version_type)}
+                </Tag>
+              </div>
+            ),
+            key: `snapshot-${version.snapshot.snapshot_id}`,
+            icon: null, // 隐藏默认图标，因为 title 中已经包含了图标
+            isLeaf: version.changes.length === 0,
+            snapshot: version.snapshot,
+            children:
+              version.changes.length > 0
+                ? version.changes.map((change) => ({
+                    title: (
+                      <div
+                        style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <FileTextOutlined style={{ fontSize: 12, color: '#999' }} />
+                          <span style={{ fontSize: 12, color: '#666' }}>
+                            {formatTimeOnly(change.created_at)}
+                          </span>
+                        </div>
+                        <Tag
+                          color={change.change_type === 'manual_save' ? 'orange' : 'default'}
+                          style={{ margin: 0, fontSize: 11 }}
+                        >
+                          {getChangeTypeLabel(change.change_type)}
+                        </Tag>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <span
+                            style={{
+                              width: 6,
+                              height: 6,
+                              borderRadius: '50%',
+                              backgroundColor: '#722ed1',
+                              display: 'inline-block',
+                            }}
+                          />
+                          <span style={{ fontSize: 12, color: '#666' }}>
+                            {getCreatorName(change.metadata)}
+                          </span>
+                        </div>
+                      </div>
+                    ),
+                    key: `change-${change.change_id}`,
+                    icon: null, // 隐藏默认图标
+                    isLeaf: true,
+                    change,
+                  }))
+                : undefined,
+          };
+          return snapshotNode;
+        }),
       };
-      return snapshotNode;
+
+      result.push(dateNode);
     });
+
+    return result;
   }, [historyVersions]);
 
   // 处理树节点选择

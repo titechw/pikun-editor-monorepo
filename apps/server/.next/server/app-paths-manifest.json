@@ -1,6 +1,6 @@
 {
-  "/api/workspace/[workspace_id]/documents/route": "app/api/workspace/[workspace_id]/documents/route.js",
   "/api/workspace/[workspace_id]/documents/[object_id]/route": "app/api/workspace/[workspace_id]/documents/[object_id]/route.js",
+  "/api/workspace/[workspace_id]/documents/route": "app/api/workspace/[workspace_id]/documents/route.js",
   "/api/workspace/[workspace_id]/documents/[object_id]/changes/route": "app/api/workspace/[workspace_id]/documents/[object_id]/changes/route.js",
   "/api/workspace/[workspace_id]/documents/[object_id]/changes/between/[from_snapshot_id]/[to_snapshot_id]/route": "app/api/workspace/[workspace_id]/documents/[object_id]/changes/between/[from_snapshot_id]/[to_snapshot_id]/route.js",
   "/api/workspace/[workspace_id]/documents/[object_id]/snapshots/[snapshot_id]/route": "app/api/workspace/[workspace_id]/documents/[object_id]/snapshots/[snapshot_id]/route.js",

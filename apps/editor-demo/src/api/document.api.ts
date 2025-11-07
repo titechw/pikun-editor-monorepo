@@ -142,7 +142,7 @@ export const documentApi = {
     objectId: string,
     data: UpdateDocumentRequest,
   ): Promise<{ object_id: string; updated_at: string }> {
-    // 过滤掉 undefined 值
+    // 过滤掉 undefined 值，但保留所有可能的字段
     const requestData: any = {};
     if (data.title !== undefined && data.title !== null) {
       requestData.title = data.title;
@@ -150,8 +150,17 @@ export const documentApi = {
     if (data.content !== undefined && data.content !== null) {
       requestData.content = data.content;
     }
+    if (data.change_data !== undefined && data.change_data !== null) {
+      requestData.change_data = data.change_data;
+    }
+    if (data.snapshot !== undefined && data.snapshot !== null) {
+      requestData.snapshot = data.snapshot;
+    }
     if (data.metadata !== undefined && data.metadata !== null) {
       requestData.metadata = data.metadata;
+    }
+    if (data.forceSnapshot !== undefined) {
+      requestData.forceSnapshot = data.forceSnapshot;
     }
 
     const response = await apiClient.put<{ object_id: string; updated_at: string }>(
@@ -168,6 +177,10 @@ export const documentApi = {
    * 保存文档（将 Yjs 文档编码为 Base64）
    * @param forceSnapshot 是否强制创建快照（手动保存时使用）
    * @param changeData 增量更新（Yjs Update），如果提供则使用增量更新，否则使用完整状态
+   * 
+   * 优化策略：
+   * - 如果有增量数据（changeData），只传递增量，不传递全量（减少 IO）
+   * - 如果没有增量数据（手动保存），传递全量（需要创建快照）
    */
   async saveDocument(
     workspaceId: string,
@@ -176,13 +189,10 @@ export const documentApi = {
     forceSnapshot: boolean = false,
     changeData?: Uint8Array,
   ): Promise<{ object_id: string; updated_at: string }> {
-    // 获取完整文档状态（Doc State）
-    const docState = Y.encodeStateAsUpdate(ydoc);
-    const base64Content = btoa(String.fromCharCode(...docState));
-
     // 创建 Snapshot（状态向量）
     let base64Snapshot: string | undefined;
     let base64ChangeData: string | undefined;
+    let base64Content: string | undefined;
 
     try {
       // Y.snapshot 返回一个 Snapshot 对象
@@ -206,14 +216,23 @@ export const documentApi = {
       console.warn('Failed to create snapshot:', error);
     }
 
-    // 如果有增量更新，使用增量更新；否则使用完整状态
-    if (changeData) {
+    // 优化策略：优先使用增量更新，全量更新仅用于新建/复制场景
+    // 手动保存和自动保存都应该使用增量更新
+    if (changeData && changeData.length > 0) {
+      // 增量更新：只传递增量，不传递全量（减少 IO）
       base64ChangeData = btoa(String.fromCharCode(...changeData));
+      console.log(`[DocumentAPI] Sending incremental update, size: ${changeData.length} bytes`);
+    } else {
+      // 全量更新：仅在确实没有增量数据时使用（应该很少见）
+      // 正常情况下，手动保存和自动保存都应该有增量数据
+      const docState = Y.encodeStateAsUpdate(ydoc);
+      base64Content = btoa(String.fromCharCode(...docState));
+      console.warn(`[DocumentAPI] No incremental data, sending full update (size: ${docState.length} bytes). This should be rare.`);
     }
 
     return this.updateDocument(workspaceId, objectId, {
-      content: base64Content,
-      change_data: base64ChangeData,
+      content: base64Content,        // 只在没有增量时传递
+      change_data: base64ChangeData, // 只在有增量时传递
       snapshot: base64Snapshot,
       forceSnapshot,
     });

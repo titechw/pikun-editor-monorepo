@@ -1,4 +1,5 @@
 import { injectable, inject } from 'tsyringe';
+import * as Y from 'yjs';
 import { DocumentDAO } from '@/dao/document.dao';
 import { DocumentChangeDAO } from '@/dao/document-change.dao';
 import type { Document, DocumentSnapshot, DocumentChange } from '@/entities';
@@ -109,6 +110,10 @@ export class DocumentService {
 
   /**
    * 更新文档
+   *
+   * 优化策略：
+   * - 如果只有 change_data（增量），应用增量到现有文档状态，然后更新数据库
+   * - 如果有 content（全量），直接使用全量更新数据库
    */
   async updateDocument(
     object_id: string,
@@ -127,29 +132,60 @@ export class DocumentService {
       throw new Error('Document not found');
     }
 
+    // 优化：如果只有增量更新，应用增量到现有文档状态
+    let finalContent: Buffer | undefined;
+    let finalContentLength: number | undefined;
+
+    if (updates.change_data && !updates.content) {
+      // 只有增量更新：应用增量到现有文档状态
+      console.log(
+        `[DocumentService] Applying incremental update, size: ${updates.change_data.length} bytes`
+      );
+
+      try {
+        // 创建临时 Y.Doc 并应用现有状态
+        const ydoc = new Y.Doc();
+        if (currentDoc.content && currentDoc.content.length > 0) {
+          Y.applyUpdate(ydoc, currentDoc.content);
+        }
+
+        // 应用增量更新
+        Y.applyUpdate(ydoc, updates.change_data);
+
+        // 获取新的完整状态
+        finalContent = Buffer.from(Y.encodeStateAsUpdate(ydoc));
+        finalContentLength = finalContent.length;
+
+        console.log(
+          `[DocumentService] Incremental update applied, new content size: ${finalContentLength} bytes`
+        );
+      } catch (error) {
+        console.error('[DocumentService] Failed to apply incremental update:', error);
+        throw new Error('Failed to apply incremental update');
+      }
+    } else if (updates.content) {
+      // 有全量更新：直接使用
+      finalContent = updates.content;
+      finalContentLength = updates.content.length;
+      console.log(`[DocumentService] Using full update, size: ${finalContentLength} bytes`);
+    }
+
     const updateData: any = {};
     if (updates.title) updateData.title = updates.title;
-    if (updates.content) {
-      updateData.content = updates.content;
-      updateData.content_length = updates.content.length;
+    if (finalContent) {
+      updateData.content = finalContent;
+      updateData.content_length = finalContentLength!;
     }
     if (updates.metadata) updateData.metadata = updates.metadata;
 
     const document = await this.documentDAO.update(object_id, updateData);
 
     // 如果更新了内容，记录变更日志和快照
-    if (updates.content && updates.content.length > 0) {
+    if (finalContent && finalContent.length > 0) {
       try {
-        // 1. 获取上一次的内容（用于计算变更）
-        const previousContent = currentDoc.content;
-
-        // 2. 计算变更（增量更新）
-        // 优先使用 change_data（增量更新），否则使用完整状态
-        const changeData =
-          updates.change_data ||
-          (previousContent && previousContent.length > 0
-            ? this.calculateChange(previousContent, updates.content!)
-            : updates.content!);
+        // 确定变更数据（用于变更日志）
+        // 优先使用 change_data（增量更新），如果没有则使用完整状态
+        const changeData = updates.change_data || finalContent!;
 
         // 2. 记录变更日志（每次保存都记录）
         let snapshotId: string | null = null;
@@ -157,17 +193,35 @@ export class DocumentService {
           // 检查是否已有快照
           const hasSnapshot = await this.documentDAO.getLatestSnapshot(document.object_id);
 
-          // 如果是手动保存，使用策略判断创建大版本还是小版本快照
+          // 如果是手动保存，使用策略判断是否创建快照及版本类型
           // 如果没有快照，强制创建大版本（初始快照）
+          // 如果有快照，根据策略判断是否创建快照（避免频繁创建）
           if (updates.forceSnapshot && this.snapshotScheduler) {
-            const snapshot = await this.snapshotScheduler.createSnapshotManually(
-              document.object_id,
-              document.workspace_id,
-              updates.content,
-              updates.snapshot,
-              !hasSnapshot // 如果没有快照，强制创建大版本
-            );
-            snapshotId = snapshot.snapshot_id;
+            if (!hasSnapshot) {
+              // 没有快照，强制创建大版本（初始快照）
+              const snapshot = await this.snapshotScheduler.createSnapshotManually(
+                document.object_id,
+                document.workspace_id,
+                finalContent!,
+                updates.snapshot,
+                true // 强制创建大版本
+              );
+              snapshotId = snapshot.snapshot_id;
+            } else {
+              // 有快照，使用策略判断是否创建快照
+              // 手动保存时，也使用 recordEdit 来判断（复用相同的策略）
+              const snapshotResult = await this.snapshotScheduler.recordEdit(
+                document.object_id,
+                document.workspace_id,
+                finalContent!,
+                updates.snapshot
+              );
+              // 如果 recordEdit 创建了快照，使用它；否则不创建快照
+              if (snapshotResult) {
+                snapshotId = snapshotResult.snapshot_id;
+              }
+              // 如果 recordEdit 没有创建快照（不满足条件），snapshotId 保持为 null
+            }
           }
 
           await this.changeDAO.create({
@@ -179,7 +233,7 @@ export class DocumentService {
             before_state_vector: updates.snapshot || null,
             after_state_vector: updates.snapshot || null,
             metadata: {
-              content_length: updates.content?.length || 0,
+              content_length: finalContent?.length || 0,
               change_length: changeData.length,
               is_incremental: !!updates.change_data, // 标记是否为增量更新
             },
@@ -198,7 +252,7 @@ export class DocumentService {
             await this.snapshotScheduler.createSnapshotManually(
               document.object_id,
               document.workspace_id,
-              updates.content,
+              finalContent!,
               updates.snapshot,
               true // 强制创建大版本
             );
@@ -207,7 +261,7 @@ export class DocumentService {
             await this.snapshotScheduler.recordEdit(
               document.object_id,
               document.workspace_id,
-              updates.content,
+              finalContent!,
               updates.snapshot
             );
           }

@@ -113,6 +113,43 @@
         .ant-tree-node-content-wrapper {
           padding: 4px 8px;
         }
+
+        // 隐藏默认的节点图标（因为 title 中已经包含了图标）
+        .ant-tree-iconEle {
+          display: none !important;
+        }
+
+        // 日期标题节点样式
+        .ant-tree-node-selected {
+          .ant-tree-node-content-wrapper {
+            background: transparent !important;
+          }
+        }
+
+        // 日期分组节点样式
+        .ant-tree-treenode[data-node-key^="date-"] {
+          .ant-tree-node-content-wrapper {
+            cursor: default;
+            
+            &:hover {
+              background: #f5f5f5;
+            }
+          }
+        }
+
+        // 版本节点样式
+        .ant-tree-treenode[data-node-key^="snapshot-"] {
+          .ant-tree-node-content-wrapper {
+            padding-left: 24px;
+          }
+        }
+
+        // 变更节点样式
+        .ant-tree-treenode[data-node-key^="change-"] {
+          .ant-tree-node-content-wrapper {
+            padding-left: 40px;
+          }
+        }
       }
     }
   }
