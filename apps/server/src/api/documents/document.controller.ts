@@ -55,7 +55,7 @@ export class DocumentController {
         title: validatedData.title,
         content: contentBuffer,
         owner_uid: user.uid,
-        metadata: validatedData.metadata,
+        metadata: validatedData.metadata || {},
       });
 
       return NextResponse.json({
@@ -63,7 +63,10 @@ export class DocumentController {
         data: {
           object_id: document.object_id,
           workspace_id: document.workspace_id,
-          created_at: document.created_at instanceof Date ? document.created_at.toISOString() : document.created_at,
+          created_at:
+            document.created_at instanceof Date
+              ? document.created_at.toISOString()
+              : document.created_at,
         },
       });
     } catch (error: any) {
@@ -124,8 +127,14 @@ export class DocumentController {
           content_length: document.content_length,
           owner_uid: document.owner_uid,
           metadata: document.metadata,
-          created_at: document.created_at instanceof Date ? document.created_at.toISOString() : document.created_at,
-          updated_at: document.updated_at instanceof Date ? document.updated_at.toISOString() : document.updated_at,
+          created_at:
+            document.created_at instanceof Date
+              ? document.created_at.toISOString()
+              : document.created_at,
+          updated_at:
+            document.updated_at instanceof Date
+              ? document.updated_at.toISOString()
+              : document.updated_at,
         },
       });
     } catch (error: any) {
@@ -183,7 +192,10 @@ export class DocumentController {
         success: true,
         data: {
           object_id: document.object_id,
-          updated_at: document.updated_at instanceof Date ? document.updated_at.toISOString() : document.updated_at,
+          updated_at:
+            document.updated_at instanceof Date
+              ? document.updated_at.toISOString()
+              : document.updated_at,
         },
       });
     } catch (error: any) {
