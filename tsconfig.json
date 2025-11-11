@@ -17,7 +17,7 @@
     "allowJs": true,
     "checkJs": false,
     "paths": {
-      "@pikun/*": ["packages/*/src", "packages/*/dist"]
+      "@pikun/*": ["packages/*/src", "packages/*/dist", "features/*/src", "features/*/dist"]
     },
     "lib": ["esnext", "dom", "dom.iterable", "scripthost"]
   },
