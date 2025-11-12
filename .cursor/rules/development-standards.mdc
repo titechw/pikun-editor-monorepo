@@ -14,38 +14,11 @@ alwaysApply: true
 - **样式方案**: TailwindCSS + Less
 - **状态管理**: MobX (待集成)
 - **路由管理**: React Router DOM
-- **HTTP 客户端**: Axios
+- **HTTP 客户端**: jarvis-tools (@pikun/tools)
 - **组件库**: Antd
 - **桌面应用**: Electron
 
 ## 目录结构规范
-
-### 1. 通用逻辑目录 (`shared/`)
-
-存放前后端共享的通用逻辑和类型定义：
-
-```
-shared/
-├── apis/           # API 请求相关
-│   ├── axios.ts     # Axios 配置和封装
-│   └── index.ts     # API 接口导出
-├── constant.ts      # 常量定义
-└── interface.ts     # 共享类型定义
-```
-
-### 2. 辅助工具函数目录 (`src/common/utils/`)
-
-存放前端专用的工具函数：
-
-```
-src/common/utils/
-├── axios.ts         # 前端 Axios 封装
-├── env.ts          # 环境变量处理
-├── formatDate.ts   # 日期格式化工具
-├── json.ts         # JSON 处理工具
-├── number.ts       # 数字处理工具
-└── url.ts          # URL 处理工具
-```
 
 ## 开发规范
 
@@ -107,43 +80,130 @@ const data: any = response.data;
 
 #### 请求定义流程
 
-参考 `shared/apis` 目录的规范：
+使用 `jarvis-tools` (@pikun/tools) 进行 HTTP 请求封装：
 
-1. **基础配置** (`shared/apis/axios.ts`):
+1. **基础配置** (`src/utils/apiClient.ts`):
 
    ```typescript
-   // 统一的 Axios 配置
-   const baseConfig = {
-     timeout: 300000,
-     withCredentials: true,
-     headers: {
-       'x-requested-with': 'XMLHttpRequest',
+   import { createHttpClient, ApiError, ErrorCode } from '@pikun/tools';
+
+   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+
+   /**
+    * 后端 API 响应格式
+    */
+   interface ServerResponse<T> {
+     success: boolean;
+     data?: T;
+     message?: string;
+     errors?: unknown;
+   }
+
+   /**
+    * 获取认证 token
+    */
+   function getAuthToken(): string | undefined {
+     return localStorage.getItem('auth_token') || undefined;
+   }
+
+   /**
+    * 创建 HTTP 客户端实例（适配服务器响应格式）
+    */
+   const baseClient = createHttpClient({
+     baseURL: API_BASE_URL,
+     timeoutMs: 30000,
+     defaultHeaders: {
+       'Content-Type': 'application/json',
      },
-   };
+     getAuthToken,
+   });
    ```
 
 2. **请求封装**:
 
    ```typescript
-   // 统一的请求处理
-   export const postReq = (url: string, data: any, config: RequestConfig = {}) => {
-     return request({
-       url,
-       data,
-       method: 'POST',
-       ...config,
-     });
+   /**
+    * 适配服务器响应格式的 API 客户端
+    */
+   export const apiClient = {
+     /**
+      * GET 请求
+      */
+     async get<T = unknown>(url: string, query?: unknown, headers?: Record<string, string>) {
+       try {
+         const response = await baseClient.get<unknown>(url, query, headers);
+         const serverResponse = response.data as ServerResponse<T>;
+
+         if (!serverResponse || !serverResponse.success) {
+           throw new ApiError(
+             ErrorCode.Unknown,
+             serverResponse?.message || '请求失败',
+             response.status,
+             serverResponse?.errors
+           );
+         }
+
+         return {
+           ...response,
+           data: serverResponse.data as T,
+         };
+       } catch (error) {
+         if (error instanceof ApiError) {
+           throw error;
+         }
+         throw new ApiError(ErrorCode.Unknown, '请求失败', undefined, error);
+       }
+     },
+
+     /**
+      * POST 请求
+      */
+     async post<T = unknown>(url: string, body?: unknown, headers?: Record<string, string>) {
+       // 类似 GET 请求的处理逻辑
+     },
    };
    ```
 
-3. **类型定义**:
+3. **API 定义** (`src/api/` 目录):
+
    ```typescript
-   export type RequestHandler<T, V> = (params: T) => Promise<RequestResult<V>>;
+   // src/api/auth.api.ts
+   import { apiClient, setAuthToken } from '@/utils/apiClient';
+
+   export interface LoginRequest {
+     email: string;
+     password: string;
+   }
+
+   export interface AuthResponse {
+     user: User;
+     token: string;
+     refreshToken: string;
+   }
+
+   /**
+    * 认证 API
+    */
+   export const authApi = {
+     /**
+      * 用户登录
+      */
+     async login(data: LoginRequest): Promise<AuthResponse> {
+       const response = await apiClient.post<AuthResponse>('/auth/login', data);
+       if (response.data) {
+         setAuthToken(response.data.token);
+         return response.data;
+       }
+       throw new Error('登录失败');
+     },
+   };
    ```
 
-#### 前端请求封装
+#### API 文件组织
 
-在 `src/common/utils/axios.ts` 中封装前端专用请求逻辑。
+- **API 文件位置**: `src/api/` 目录
+- **文件命名**: 按功能模块命名，如 `auth.api.ts`、`user.api.ts`
+- **导出方式**: 每个 API 文件导出对应的 API 对象，如 `authApi`、`userApi`
 
 ### 4. 样式规范
 
@@ -197,34 +257,243 @@ const data: any = response.data;
 #### Store 组织
 
 ```typescript
-// stores/
-├── UserStore.ts
-├── AppStore.ts
-└── index.ts
+// src/stores/
+├── base/
+│   └── BaseListStore.ts      // 列表页 Store 基类
+├── auth/
+│   └── index.ts              // 认证 Store
+├── theme/
+│   └── index.ts              // 主题 Store
+└── [业务模块]/
+    └── index.ts              // 业务 Store
 ```
 
 #### Store 定义规范
 
-```typescript
-import { makeAutoObservable } from 'mobx';
+##### 基础 Store（非列表类型）
 
-export class UserStore {
+```typescript
+import { makeAutoObservable, runInAction } from 'mobx';
+
+export class AuthStore {
   user: User | null = null;
   loading = false;
+  isAuthenticated = false;
 
   constructor() {
     makeAutoObservable(this);
+    this.checkAuth();
   }
 
-  setUser(user: User) {
-    this.user = user;
-  }
-
-  setLoading(loading: boolean) {
-    this.loading = loading;
+  async login(email: string, password: string): Promise<void> {
+    this.loading = true;
+    try {
+      const response = await authApi.login({ email, password });
+      runInAction(() => {
+        this.user = response.user;
+        this.isAuthenticated = true;
+        this.loading = false;
+      });
+    } catch (error) {
+      runInAction(() => {
+        this.loading = false;
+      });
+      throw error;
+    }
   }
 }
+
+export const authStore = new AuthStore();
 ```
+
+##### 列表页 Store（继承 BaseListStore）
+
+对于需要列表、分页、筛选功能的 Store，必须继承 `BaseListStore`：
+
+```typescript
+import {
+  BaseListStore,
+  BaseListItem,
+  BaseListParams,
+  BaseListResponse,
+} from '@/stores/base/BaseListStore';
+import { makeObservable } from 'mobx';
+
+// 定义列表项类型
+export interface UserListItem extends BaseListItem {
+  name: string;
+  email: string;
+  status: string;
+}
+
+// 定义操作类型（可选，扩展默认操作）
+export enum UserOperationType {
+  View = 'view',
+  Edit = 'edit',
+  Delete = 'delete',
+  ResetPassword = 'resetPassword', // 扩展操作
+}
+
+// 定义批量操作类型（可选）
+export enum UserBatchOperationType {
+  Delete = 'delete',
+  Export = 'export',
+  Activate = 'activate', // 扩展操作
+}
+
+/**
+ * 用户列表 Store
+ */
+export class UserListStore extends BaseListStore<
+  UserListItem,
+  UserOperationType,
+  UserBatchOperationType
+> {
+  constructor() {
+    super();
+    makeObservable(this, {
+      // 如果需要添加新的 observable 属性，在这里声明
+    });
+    this.loadColumnSettings();
+  }
+
+  /**
+   * 实现抽象方法：查询数据
+   */
+  protected async queryData(params: BaseListParams): Promise<BaseListResponse<UserListItem>> {
+    const response = await userApi.getList({
+      current: params.current,
+      pageSize: params.pageSize,
+      ...params.filter,
+    });
+    return {
+      data: response.data.list,
+      pagination: {
+        current: response.data.current,
+        pageSize: response.data.pageSize,
+        total: response.data.total,
+      },
+    };
+  }
+
+  /**
+   * 实现抽象方法：获取数据
+   */
+  async fetchData(params?: Partial<BaseListParams>): Promise<void> {
+    this.setLoading(true);
+    try {
+      const queryParams: BaseListParams = {
+        current: this.pagination.current,
+        pageSize: this.pagination.pageSize,
+        filter: this.filter,
+        ...params,
+      };
+
+      const result = await this.queryData(queryParams);
+
+      this.setData(result.data);
+      this.setPagination(result.pagination);
+    } catch (error) {
+      console.error('获取数据失败:', error);
+    } finally {
+      this.setLoading(false);
+    }
+  }
+
+  /**
+   * 实现抽象方法：处理单个操作
+   */
+  async handleOperation(type: UserOperationType, record: UserListItem): Promise<void> {
+    await this.processOperation(type, record);
+  }
+
+  /**
+   * 实现抽象方法：处理批量操作
+   */
+  async handleBatchOperation(type: UserBatchOperationType): Promise<void> {
+    if (this.selectedRowKeys.length === 0) {
+      return;
+    }
+    await this.processBatchOperation(type);
+  }
+
+  /**
+   * 实现抽象方法：处理具体操作逻辑
+   */
+  protected async processOperation(type: UserOperationType, record: UserListItem): Promise<void> {
+    switch (type) {
+      case UserOperationType.View:
+        // 查看详情逻辑
+        break;
+      case UserOperationType.Edit:
+        // 编辑逻辑
+        break;
+      case UserOperationType.Delete:
+        // 删除逻辑
+        await userApi.delete(record.id);
+        await this.fetchData();
+        break;
+      case UserOperationType.ResetPassword:
+        // 重置密码逻辑
+        await userApi.resetPassword(record.id);
+        break;
+    }
+  }
+
+  /**
+   * 实现抽象方法：处理批量操作逻辑
+   */
+  protected async processBatchOperation(type: UserBatchOperationType): Promise<void> {
+    switch (type) {
+      case UserBatchOperationType.Delete:
+        await userApi.batchDelete(this.selectedRowKeys);
+        this.clearSelection();
+        await this.fetchData();
+        break;
+      case UserBatchOperationType.Export:
+        // 导出逻辑
+        break;
+      case UserBatchOperationType.Activate:
+        await userApi.batchActivate(this.selectedRowKeys);
+        this.clearSelection();
+        await this.fetchData();
+        break;
+    }
+  }
+
+  /**
+   * 实现抽象方法：获取列配置存储键
+   */
+  getColumnStorageKey(): string {
+    return 'user_list_column_settings';
+  }
+
+  /**
+   * 实现抽象方法：加载列配置
+   */
+  loadColumnSettings(): void {
+    const storageKey = this.getColumnStorageKey();
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      try {
+        this.columnSettings = JSON.parse(saved);
+      } catch (error) {
+        console.error('加载列配置失败:', error);
+      }
+    }
+  }
+}
+
+export const userListStore = new UserListStore();
+```
+
+#### Store 使用规范
+
+1. **列表页 Store**: 必须继承 `BaseListStore`，实现所有抽象方法
+2. **非列表 Store**: 使用 `makeAutoObservable` 或 `makeObservable` 定义
+3. **异步操作**: 使用 `runInAction` 包装状态更新
+4. **Store 实例**: 每个 Store 类导出单例实例，如 `export const authStore = new AuthStore()`
+5. **文件组织**: 每个 Store 使用文件夹形式，`stores/[模块名]/index.ts`
 
 ### 6. 组件开发规范
 
@@ -295,21 +564,88 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 
 #### 路由配置
 
-```typescript
-// Router.tsx
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+使用 `react-router-dom` 进行路由管理，路由配置在 `src/views/app/Router.tsx`：
 
-export const Routers = () => {
+```typescript
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { observer } from 'mobx-react-lite';
+import { authStore } from '@/stores/auth';
+import { Login } from '@/views/auth/Login';
+import { Dashboard } from '@/views/dashboard';
+import { AppLayout } from '@/components/AppLayout';
+
+/**
+ * 受保护的路由组件
+ */
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = observer(({ children }) => {
+  if (authStore.loading) {
+    return <Spin size="large" />;
+  }
+
+  if (!authStore.isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>;
+});
+
+/**
+ * 公共路由组件（已登录用户重定向）
+ */
+const PublicRoute: React.FC<{ children: React.ReactNode }> = observer(({ children }) => {
+  if (authStore.loading) {
+    return <Spin size="large" />;
+  }
+
+  if (authStore.isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <>{children}</>;
+});
+
+/**
+ * 应用路由配置
+ */
+export const AppRouter = observer((): React.JSX.Element => {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/about" element={<AboutPage />} />
+        <Route
+          path="/login"
+          element={
+            <PublicRoute>
+              <Login />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <Dashboard />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>
   );
-};
+});
 ```
+
+#### 路由规范
+
+1. **路由文件位置**: `src/views/app/Router.tsx`
+2. **路由守卫**: 使用 `ProtectedRoute` 和 `PublicRoute` 组件实现路由保护
+3. **路由组件**: 使用 `observer` 包装，确保响应 MobX 状态变化
+4. **嵌套路由**: 使用 `AppLayout` 等布局组件包裹需要布局的页面
+5. **默认路由**: 根路径 `/` 重定向到默认页面
+6. **404 处理**: 使用 `path="*"` 处理未匹配的路由
 
 ### 8. 环境配置规范
 
@@ -374,11 +710,12 @@ export const formateDate = (date: any, format: FormatStyle) => {
 
 ### 1. 新功能开发流程
 
-1. 在 `shared/interface.ts` 中定义类型
-2. 在 `shared/apis/` 中定义 API 接口
-3. 在 `src/common/utils/` 中创建工具函数
+1. 在 `src/api/` 中定义 API 接口类型和 API 方法
+2. 在 `src/stores/` 中创建 Store（列表页继承 `BaseListStore`）
+3. 在 `src/utils/` 中创建工具函数
 4. 在 `src/components/` 中创建组件
 5. 在 `src/views/` 中创建页面
+6. 在 `src/views/app/Router.tsx` 中添加路由配置
 
 ### 2. 组件开发流程
 
@@ -390,16 +727,18 @@ export const formateDate = (date: any, format: FormatStyle) => {
 
 ### 3. API 集成流程
 
-1. 在 `shared/apis/axios.ts` 中配置基础请求
-2. 在 `shared/apis/index.ts` 中定义接口
-3. 在组件中调用 API
-4. 处理错误和加载状态
+1. 在 `src/utils/apiClient.ts` 中配置基础请求客户端（已配置，无需重复）
+2. 在 `src/api/[模块名].api.ts` 中定义 API 接口
+3. 在 Store 中调用 API 并管理状态
+4. 在组件中通过 Store 访问数据和操作
+5. 处理错误和加载状态
 
 ### 4. 代码检查流程
 
 **必须执行代码检查**：完成代码编写后，必须执行以下检查：
 
 1. **TypeScript 类型检查**:
+
    ```bash
    pnpm typecheck
    # 或
@@ -407,6 +746,7 @@ export const formateDate = (date: any, format: FormatStyle) => {
    ```
 
 2. **ESLint 代码检查**:
+
    ```bash
    pnpm lint
    # 或
@@ -421,6 +761,7 @@ export const formateDate = (date: any, format: FormatStyle) => {
    ```
 
 **检查要求**:
+
 - ✅ 所有类型错误必须修复
 - ✅ 所有 ESLint 错误必须修复
 - ✅ 代码必须通过格式化检查
@@ -432,9 +773,738 @@ export const formateDate = (date: any, format: FormatStyle) => {
 2. **类型安全**: 禁止使用 `any`，必须明确类型
 3. **组件组织**: 必须使用文件夹形式组织组件
 4. **枚举使用**: 枚举变量必须使用 `enum` 定义
-5. **代码复用**: 通用逻辑放在 `shared/` 目录
-6. **工具函数**: 辅助工具放在 `src/common/utils/`
+5. **代码复用**: 通用逻辑放在 `src/stores/base/` 目录（如 BaseListStore）
+6. **工具函数**: 辅助工具放在 `src/utils/`
 7. **样式管理**: 优先使用 TailwindCSS，自定义样式用 Less
 8. **状态管理**: 使用 MobX 进行状态管理
-9. **API 规范**: 参考 `shared/apis` 目录的请求定义流程
-10. **代码检查**: 完成代码后必须执行 TypeScript 类型检查和 ESLint 检查，确保无错误
+9. **API 规范**: 使用 `jarvis-tools` (@pikun/tools) 进行请求封装，API 定义在 `src/api/` 目录
+10. **Store 规范**: 列表页 Store 必须继承 `BaseListStore`，实现所有抽象方法
+11. **代码检查**: 完成代码后必须执行 TypeScript 类型检查和 ESLint 检查，确保无错误
+
+---
+
+## 后端开发规范 (apps/server)
+
+### 技术栈
+
+后端采用以下技术栈：
+
+- **框架**: Next.js 14 (App Router)
+- **语言**: TypeScript
+- **数据库**: PostgreSQL
+- **缓存**: Redis
+- **依赖注入**: tsyringe
+- **验证**: zod + class-validator
+- **认证**: JWT
+
+### 目录结构规范
+
+```
+apps/server/
+├── src/
+│   ├── api/                    # API 路由层（Controller）
+│   │   ├── auth/
+│   │   │   └── auth.controller.ts
+│   │   ├── documents/
+│   │   │   └── document.controller.ts
+│   │   └── workspace/
+│   │       └── workspace.controller.ts
+│   ├── app/
+│   │   └── api/                # Next.js API 路由
+│   │       ├── auth/
+│   │       │   ├── login/
+│   │       │   │   └── route.ts
+│   │       │   ├── register/
+│   │       │   │   └── route.ts
+│   │       │   └── ...
+│   │       └── workspace/
+│   │           └── ...
+│   ├── services/               # 业务逻辑层（Service）
+│   │   ├── auth.service.ts
+│   │   ├── document.service.ts
+│   │   └── ...
+│   ├── dao/                    # 数据访问层（DAO）
+│   │   ├── user.dao.ts
+│   │   ├── document.dao.ts
+│   │   └── ...
+│   ├── entities/               # 实体类（类型定义）
+│   │   └── index.ts
+│   ├── decorators/             # 装饰器
+│   │   ├── injectable.decorator.ts
+│   │   ├── route.decorator.ts
+│   │   └── validation.decorator.ts
+│   ├── core/                   # 核心功能
+│   │   ├── container.ts       # 依赖注入容器
+│   │   ├── database.ts         # 数据库连接
+│   │   ├── redis.ts            # Redis 连接
+│   │   └── init.ts             # 初始化
+│   └── utils/                  # 工具函数
+├── migrations/                 # 数据库迁移文件
+│   ├── 001_initial_schema.sql
+│   ├── 002_create_tables.sql
+│   └── README.md
+└── scripts/                    # 脚本文件
+    ├── migrate.sh
+    └── setup_db.sh
+```
+
+### 分层架构规范
+
+后端采用**三层架构**：
+
+1. **Controller 层** (`src/api/`): 处理 HTTP 请求和响应
+2. **Service 层** (`src/services/`): 业务逻辑处理
+3. **DAO 层** (`src/dao/`): 数据库访问，防止 SQL 注入
+
+#### 数据流向
+
+```
+Next.js API Route (route.ts)
+    ↓
+Controller (controller.ts)
+    ↓
+Service (service.ts)
+    ↓
+DAO (dao.ts)
+    ↓
+Database
+```
+
+### API 接口开发规范
+
+#### Next.js API 路由
+
+在 `src/app/api/` 目录下创建 API 路由：
+
+```typescript
+// src/app/api/auth/login/route.ts
+import { NextRequest } from 'next/server';
+import '@/core/init';
+import { Container } from '@/core/container';
+import { AuthController } from '@/api/auth/auth.controller';
+
+/**
+ * POST /api/auth/login - 用户登录
+ */
+export async function POST(req: NextRequest) {
+  const controller = Container.resolve<AuthController>(AuthController);
+  return controller.login(req);
+}
+```
+
+#### Controller 层规范
+
+Controller 负责处理 HTTP 请求和响应：
+
+```typescript
+// src/api/auth/auth.controller.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import { injectable, inject } from 'tsyringe';
+import { AuthService } from '@/services/auth.service';
+
+@injectable()
+export class AuthController {
+  constructor(@inject(AuthService) private authService: AuthService) {}
+
+  /**
+   * 用户登录
+   */
+  async login(req: NextRequest): Promise<NextResponse> {
+    try {
+      const body = await req.json();
+      
+      // 使用 zod 进行输入验证
+      const loginSchema = z.object({
+        email: z.string().email(),
+        password: z.string().min(1),
+      });
+
+      const validatedData = loginSchema.parse(body);
+      const result = await this.authService.login(
+        validatedData.email,
+        validatedData.password
+      );
+
+      // 统一响应格式
+      return NextResponse.json({
+        success: true,
+        data: result,
+      });
+    } catch (error: any) {
+      // 处理 Zod 验证错误
+      if (error instanceof z.ZodError) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: 'Validation error',
+            errors: error.errors,
+          },
+          { status: 400 }
+        );
+      }
+      
+      // 处理业务错误
+      return NextResponse.json(
+        {
+          success: false,
+          message: error.message || 'Login failed',
+        },
+        { status: 401 }
+      );
+    }
+  }
+}
+```
+
+#### Controller 开发规范
+
+1. **必须使用依赖注入**: 使用 `@injectable()` 和 `@inject()` 装饰器
+2. **输入验证**: 使用 `zod` 进行请求参数验证
+3. **统一响应格式**: 所有响应必须遵循以下格式：
+   ```typescript
+   {
+     success: boolean;
+     data?: T;
+     message?: string;
+     errors?: unknown;
+   }
+   ```
+4. **错误处理**: 区分验证错误和业务错误，返回适当的 HTTP 状态码
+5. **类型安全**: 所有方法必须明确类型定义
+
+### Service 层开发规范
+
+Service 层负责业务逻辑处理：
+
+```typescript
+// src/services/auth.service.ts
+import { injectable, inject } from 'tsyringe';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import { UserDAO } from '@/dao/user.dao';
+import { WorkspaceDAO } from '@/dao/workspace.dao';
+import type { User } from '@/entities';
+import { Redis } from '@/core/redis';
+
+@injectable()
+export class AuthService {
+  constructor(
+    @inject('UserDAO') private userDAO: UserDAO,
+    @inject('WorkspaceDAO') private workspaceDAO: WorkspaceDAO,
+    private redis: Redis
+  ) {
+    this.redis = Redis.getInstance();
+  }
+
+  /**
+   * 用户登录
+   */
+  async login(
+    email: string,
+    password: string
+  ): Promise<{
+    user: Omit<User, 'password'>;
+    token: string;
+    refreshToken: string;
+    defaultWorkspaceId: string;
+  }> {
+    const user = await this.userDAO.findByEmail(email);
+    if (!user) {
+      throw new Error('Invalid email or password');
+    }
+
+    // 验证密码
+    const isValid = await bcrypt.compare(password, user.password);
+    if (!isValid) {
+      throw new Error('Invalid email or password');
+    }
+
+    // 获取或创建默认工作空间
+    const defaultWorkspace = await this.workspaceDAO.getOrCreateDefault(user.uid);
+
+    // 生成 token
+    const token = this.generateToken(user.uid, user.uuid);
+    const refreshToken = this.generateRefreshToken(user.uid);
+
+    // 保存刷新令牌到 Redis
+    await this.redis.set(
+      `refresh_token:${refreshToken}`,
+      user.uid.toString(),
+      30 * 24 * 60 * 60
+    );
+
+    const { password: _, ...userWithoutPassword } = user;
+    return {
+      user: userWithoutPassword,
+      token,
+      refreshToken,
+      defaultWorkspaceId: defaultWorkspace.workspace_id,
+    };
+  }
+
+  private generateToken(uid: number, uuid: string): string {
+    const secret = process.env.JWT_SECRET || 'your-secret-key';
+    const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
+    return jwt.sign({ uid, uuid }, secret, { expiresIn });
+  }
+
+  private generateRefreshToken(uid: number): string {
+    const secret = process.env.JWT_SECRET || 'your-secret-key';
+    const expiresIn = process.env.JWT_REFRESH_EXPIRES_IN || '30d';
+    return jwt.sign({ uid, type: 'refresh' }, secret, { expiresIn });
+  }
+}
+```
+
+#### Service 开发规范
+
+1. **必须使用依赖注入**: 使用 `@injectable()` 和 `@inject()` 装饰器注入 DAO 和其他 Service
+2. **业务逻辑封装**: 将复杂的业务逻辑封装在 Service 方法中
+3. **错误处理**: 抛出有意义的错误信息，由 Controller 层统一处理
+4. **不直接访问数据库**: Service 层只能通过 DAO 层访问数据库
+5. **可复用性**: Service 方法应该可被多个 Controller 复用
+
+### DAO 层开发规范
+
+DAO 层负责数据库访问，**必须使用参数化查询防止 SQL 注入**：
+
+```typescript
+// src/dao/user.dao.ts
+import { Database } from '@/core/database';
+import { Injectable } from '@/decorators/injectable.decorator';
+import type { User } from '@/entities';
+
+/**
+ * 用户 DAO
+ * 负责用户相关的数据库操作，使用参数化查询防止 SQL 注入
+ */
+@Injectable('UserDAO')
+export class UserDAO {
+  private db: Database;
+
+  constructor() {
+    this.db = Database.getInstance();
+  }
+
+  /**
+   * 根据邮箱查找用户
+   * 使用参数化查询：$1, $2, ... 防止 SQL 注入
+   */
+  async findByEmail(email: string): Promise<User | null> {
+    const result = await this.db.query<User>(
+      'SELECT * FROM pikun_db.users WHERE email = $1 AND deleted_at IS NULL',
+      [email]
+    );
+    return result.rows[0] || null;
+  }
+
+  /**
+   * 创建用户
+   */
+  async create(user: {
+    email: string;
+    password: string;
+    name: string;
+    metadata?: Record<string, any>;
+  }): Promise<User> {
+    const result = await this.db.query<User>(
+      `INSERT INTO pikun_db.users (email, password, name, metadata)
+       VALUES ($1, $2, $3, $4)
+       RETURNING uid, uuid, email, name, metadata, deleted_at, created_at, updated_at`,
+      [user.email, user.password, user.name, JSON.stringify(user.metadata || {})]
+    );
+    return result.rows[0];
+  }
+
+  /**
+   * 更新用户信息（动态构建更新语句）
+   */
+  async update(uid: number, updates: {
+    name?: string;
+    email?: string;
+    metadata?: Record<string, any>;
+  }): Promise<User> {
+    const fields: string[] = [];
+    const values: any[] = [];
+    let paramIndex = 1;
+
+    if (updates.name !== undefined) {
+      fields.push(`name = $${paramIndex++}`);
+      values.push(updates.name);
+    }
+    if (updates.email !== undefined) {
+      fields.push(`email = $${paramIndex++}`);
+      values.push(updates.email);
+    }
+    if (updates.metadata !== undefined) {
+      fields.push(`metadata = $${paramIndex++}`);
+      values.push(JSON.stringify(updates.metadata));
+    }
+
+    if (fields.length === 0) {
+      return this.findByUid(uid) as Promise<User>;
+    }
+
+    values.push(uid);
+    const result = await this.db.query<User>(
+      `UPDATE pikun_db.users SET ${fields.join(', ')} WHERE uid = $${paramIndex} AND deleted_at IS NULL
+       RETURNING uid, uuid, email, name, metadata, deleted_at, created_at, updated_at`,
+      values
+    );
+    return result.rows[0];
+  }
+}
+```
+
+#### DAO 开发规范
+
+1. **必须使用参数化查询**: 所有 SQL 查询必须使用 `$1, $2, ...` 参数占位符，**禁止字符串拼接**
+2. **使用 @Injectable 装饰器**: 标记 DAO 类可被依赖注入
+3. **Schema 前缀**: 所有表查询必须使用 `pikun_db.` schema 前缀
+4. **软删除**: 查询时检查 `deleted_at IS NULL`
+5. **类型安全**: 使用 TypeScript 类型定义返回结果
+6. **错误处理**: 数据库错误应该向上抛出，由 Service 层处理
+
+#### SQL 注入防护
+
+**❌ 错误示例**（禁止使用）:
+```typescript
+// 禁止：字符串拼接
+const query = `SELECT * FROM users WHERE email = '${email}'`;
+```
+
+**✅ 正确示例**（必须使用）:
+```typescript
+// 正确：参数化查询
+const result = await this.db.query(
+  'SELECT * FROM pikun_db.users WHERE email = $1',
+  [email]
+);
+```
+
+### 数据库规范
+
+#### 数据库连接
+
+使用 `Database` 单例类进行数据库操作：
+
+```typescript
+// src/core/database.ts
+import { Pool, PoolConfig } from 'pg';
+
+export class Database {
+  private static instance: Database;
+  private pool: Pool;
+
+  private constructor() {
+    const connectionString = process.env.DATABASE_URL;
+    if (!connectionString) {
+      throw new Error('DATABASE_URL environment variable is not set');
+    }
+
+    const config: PoolConfig = {
+      connectionString,
+      min: parseInt(process.env.DATABASE_POOL_MIN || '2', 10),
+      max: parseInt(process.env.DATABASE_POOL_MAX || '10', 10),
+    };
+
+    this.pool = new Pool(config);
+  }
+
+  public static getInstance(): Database {
+    if (!Database.instance) {
+      Database.instance = new Database();
+    }
+    return Database.instance;
+  }
+
+  /**
+   * 执行查询（自动设置 search_path）
+   */
+  public async query<T = any>(
+    text: string,
+    params?: any[]
+  ): Promise<{ rows: T[]; rowCount: number }> {
+    await this.pool.query('SET search_path TO pikun_db, public');
+    const result = await this.pool.query(text, params);
+    return {
+      rows: result.rows as T[],
+      rowCount: result.rowCount || 0,
+    };
+  }
+
+  /**
+   * 执行事务
+   */
+  public async transaction<T>(callback: (client: any) => Promise<T>): Promise<T> {
+    const client = await this.pool.connect();
+    try {
+      await client.query('SET search_path TO pikun_db, public');
+      await client.query('BEGIN');
+      const result = await callback(client);
+      await client.query('COMMIT');
+      return result;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+}
+```
+
+#### 数据库迁移
+
+1. **迁移文件位置**: `migrations/` 目录
+2. **文件命名**: `001_initial_schema.sql`, `002_create_tables.sql`, ...
+3. **执行迁移**: 使用 `./scripts/migrate.sh` 脚本
+4. **Schema 隔离**: 所有表都在 `pikun_db` schema 中
+
+#### 数据库查询规范
+
+1. **必须设置 search_path**: 所有查询前自动设置 `SET search_path TO pikun_db, public`
+2. **使用事务**: 多个相关操作必须使用事务
+3. **连接池管理**: 使用连接池管理数据库连接，避免连接泄漏
+4. **查询日志**: 开发环境记录查询日志，生产环境关闭
+
+### 依赖注入规范
+
+使用 `tsyringe` 实现依赖注入：
+
+#### 1. 注册服务
+
+在 `src/core/init.ts` 中注册所有服务和 DAO：
+
+```typescript
+// src/core/init.ts
+import { Container } from './container';
+import { UserDAO } from '@/dao/user.dao';
+import { AuthService } from '@/services/auth.service';
+import { AuthController } from '@/api/auth/auth.controller';
+
+export function initializeContainer() {
+  // 注册 DAO
+  Container.register('UserDAO', () => new UserDAO());
+  
+  // 注册 Service
+  Container.register(AuthService, () => {
+    const userDAO = Container.resolve<UserDAO>('UserDAO');
+    return new AuthService(userDAO, null as any);
+  });
+  
+  // 注册 Controller
+  Container.register(AuthController, () => {
+    const authService = Container.resolve<AuthService>(AuthService);
+    return new AuthController(authService);
+  });
+}
+
+// 自动初始化
+initializeContainer();
+```
+
+#### 2. 使用装饰器
+
+```typescript
+// 标记类可被注入
+@injectable()
+export class AuthService {
+  // 注入依赖
+  constructor(
+    @inject('UserDAO') private userDAO: UserDAO
+  ) {}
+}
+```
+
+#### 3. 解析服务
+
+```typescript
+// 在 API 路由中解析
+import { Container } from '@/core/container';
+import { AuthController } from '@/api/auth/auth.controller';
+
+const controller = Container.resolve<AuthController>(AuthController);
+```
+
+### Redis 缓存规范
+
+使用 `Redis` 单例类进行缓存操作：
+
+```typescript
+// src/core/redis.ts
+import { createClient, RedisClientType } from 'redis';
+
+export class Redis {
+  private static instance: Redis;
+  private client: RedisClientType;
+
+  public static getInstance(): Redis {
+    if (!Redis.instance) {
+      Redis.instance = new Redis();
+    }
+    return Redis.instance;
+  }
+
+  /**
+   * 设置缓存（带过期时间）
+   */
+  public async set(key: string, value: string, ttl?: number): Promise<void> {
+    await this.connect();
+    if (ttl) {
+      await this.client.setEx(key, ttl, value);
+    } else {
+      await this.client.set(key, value);
+    }
+  }
+
+  /**
+   * 获取缓存
+   */
+  public async get(key: string): Promise<string | null> {
+    await this.connect();
+    return await this.client.get(key);
+  }
+
+  /**
+   * 设置 JSON 缓存
+   */
+  public async setJSON<T>(key: string, value: T, ttl?: number): Promise<void> {
+    await this.set(key, JSON.stringify(value), ttl);
+  }
+
+  /**
+   * 获取 JSON 缓存
+   */
+  public async getJSON<T>(key: string): Promise<T | null> {
+    const value = await this.get(key);
+    if (!value) return null;
+    return JSON.parse(value) as T;
+  }
+}
+```
+
+#### Redis 使用规范
+
+1. **键命名规范**: 使用有意义的键名，如 `refresh_token:${token}`, `user:${uid}`
+2. **设置过期时间**: 缓存数据必须设置合理的过期时间
+3. **错误处理**: Redis 连接失败不应影响核心功能
+4. **批量操作**: 使用 `SCAN` 进行批量删除，避免阻塞
+
+### 实体类规范
+
+在 `src/entities/index.ts` 中定义所有实体类型：
+
+```typescript
+// src/entities/index.ts
+
+/**
+ * 用户实体
+ */
+export interface User {
+  uid: number;
+  uuid: string;
+  email: string;
+  password: string;
+  name: string;
+  metadata: Record<string, any>;
+  deleted_at: Date | null;
+  created_at: Date;
+  updated_at: Date;
+}
+
+/**
+ * 文档实体
+ */
+export interface Document {
+  object_id: string;
+  workspace_id: string;
+  title: string;
+  content: Buffer;
+  content_length: number;
+  owner_uid: number;
+  metadata: Record<string, any>;
+  deleted_at: Date | null;
+  created_at: Date;
+  updated_at: Date;
+}
+```
+
+#### 实体类规范
+
+1. **类型定义**: 所有实体必须使用 TypeScript `interface` 定义
+2. **统一导出**: 所有实体在 `src/entities/index.ts` 中统一导出
+3. **类型安全**: DAO 方法必须使用实体类型作为泛型参数
+
+### 响应格式规范
+
+所有 API 响应必须遵循统一格式：
+
+```typescript
+// 成功响应
+{
+  success: true,
+  data: T
+}
+
+// 错误响应
+{
+  success: false,
+  message: string,
+  errors?: unknown
+}
+```
+
+### 错误处理规范
+
+1. **验证错误**: 使用 `zod` 验证，返回 400 状态码
+2. **业务错误**: Service 层抛出错误，Controller 层捕获并返回相应状态码
+3. **认证错误**: 返回 401 状态码
+4. **权限错误**: 返回 403 状态码
+5. **服务器错误**: 返回 500 状态码
+
+### 环境变量规范
+
+在 `apps/server/.env` 中配置环境变量：
+
+```env
+# 数据库配置
+DATABASE_URL=postgresql://pikun@localhost:5432/postgres
+DATABASE_POOL_MIN=2
+DATABASE_POOL_MAX=10
+
+# Redis 配置
+REDIS_URL=redis://localhost:6379
+REDIS_PASSWORD=
+
+# JWT 配置
+JWT_SECRET=your-secret-key-change-in-production-min-32-chars
+JWT_EXPIRES_IN=7d
+JWT_REFRESH_EXPIRES_IN=30d
+
+# 应用配置
+NODE_ENV=development
+PORT=3000
+```
+
+### 后端开发流程
+
+1. **定义实体**: 在 `src/entities/index.ts` 中定义实体类型
+2. **创建 DAO**: 在 `src/dao/` 中创建 DAO 类，实现数据库操作
+3. **创建 Service**: 在 `src/services/` 中创建 Service 类，实现业务逻辑
+4. **创建 Controller**: 在 `src/api/` 中创建 Controller 类，处理 HTTP 请求
+5. **创建 API 路由**: 在 `src/app/api/` 中创建 Next.js API 路由
+6. **注册依赖**: 在 `src/core/init.ts` 中注册所有服务和控制器
+7. **数据库迁移**: 在 `migrations/` 中创建迁移文件
+
+### 注意事项
+
+1. **SQL 注入防护**: 必须使用参数化查询，禁止字符串拼接
+2. **类型安全**: 所有代码必须明确类型定义，禁止使用 `any`
+3. **依赖注入**: 所有 Service 和 Controller 必须使用依赖注入
+4. **错误处理**: 统一错误处理，返回适当的 HTTP 状态码
+5. **响应格式**: 所有 API 响应必须遵循统一格式
+6. **环境变量**: 敏感信息必须使用环境变量，不要硬编码
+7. **数据库连接**: 使用连接池管理数据库连接
+8. **事务处理**: 多个相关操作必须使用事务
