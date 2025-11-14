@@ -15,43 +15,17 @@ const baseConfig = createBaseViteConfig({ appDir: __dirname, dedupeDeps });
 
 /**
  * 路径式多入口插件
- * 让 /admin 和 /test 路径能够正确加载对应的 HTML 文件
+ * 让 /admin 和 /test 路径能够正确加载对应的 HTML 文件（支持无后缀访问）
  */
 function pathBasedEntryPlugin(): Plugin {
   return {
     name: 'path-based-entry',
     configureServer(server) {
-      // 保存原始的 transformIndexHtml
-      const originalTransformIndexHtml = server.transformIndexHtml;
-      
-      // 重写 transformIndexHtml 来处理多入口
-      server.transformIndexHtml = (url, html, req) => {
-        // 处理 /admin 路径及其子路径
-        if (url === '/admin' || url === '/admin/' || url.startsWith('/admin/')) {
-          const adminHtmlPath = path.resolve(__dirname, 'admin.html');
-          if (fs.existsSync(adminHtmlPath)) {
-            html = fs.readFileSync(adminHtmlPath, 'utf-8');
-          }
-        }
-        // 处理 /test 路径及其子路径
-        else if (url === '/test' || url === '/test/' || url.startsWith('/test/')) {
-          const testHtmlPath = path.resolve(__dirname, 'test.html');
-          if (fs.existsSync(testHtmlPath)) {
-            html = fs.readFileSync(testHtmlPath, 'utf-8');
-          }
-        }
-        
-        // 调用原始的 transformIndexHtml
-        if (originalTransformIndexHtml) {
-          return originalTransformIndexHtml.call(server, url, html, req);
-        }
-        return html;
-      };
-      
-      // 在服务器配置完成后添加中间件
       return () => {
-        // 添加中间件处理 HTML 请求（必须在最前面执行）
-        const middleware = (req: any, res: any, next: any) => {
+        // 添加中间件处理路径重写（支持无后缀访问）
+        // 例如：/admin 或 /admin/xxx -> /admin.html
+        //      /test 或 /test/xxx -> /test.html
+        server.middlewares.use((req, res, next) => {
           const url = req.url || '';
           
           // 跳过静态资源（JS、CSS、图片、字体、API 等）
@@ -67,28 +41,17 @@ function pathBasedEntryPlugin(): Plugin {
             return next();
           }
           
-          // 处理 /admin 路径及其子路径
+          // 处理 /admin 路径及其子路径 -> /admin.html
           if (url === '/admin' || url === '/admin/' || url.startsWith('/admin/')) {
             req.url = '/admin.html';
-            console.log(`[path-based-entry] Rewriting ${url} to /admin.html`);
           }
-          // 处理 /test 路径及其子路径
+          // 处理 /test 路径及其子路径 -> /test.html
           else if (url === '/test' || url === '/test/' || url.startsWith('/test/')) {
             req.url = '/test.html';
-            console.log(`[path-based-entry] Rewriting ${url} to /test.html`);
           }
           
           next();
-        };
-        
-        // 将中间件添加到最前面（使用 unshift 确保优先执行）
-        const stack = (server.middlewares as any).stack;
-        if (Array.isArray(stack)) {
-          stack.unshift({ route: '', handle: middleware });
-        } else {
-          // 如果不是数组，使用 use 方法
-          server.middlewares.use(middleware);
-        }
+        });
       };
     },
   };
@@ -98,14 +61,13 @@ export default defineConfig(() => {
   const port = Number(process.env.APP_PORT || 5174);
   
   return {
-    appType: 'mpa', // 启用多页应用模式
+    appType: 'mpa' as const, // 启用多页应用模式
     plugins: [
       react(),
       pathBasedEntryPlugin(), // 必须在 react() 之后，以便在服务器配置完成后修改中间件
     ],
     ...baseConfig,
     build: {
-      ...baseConfig.build,
       rollupOptions: {
         input: {
           main: path.resolve(__dirname, 'index.html'),
@@ -127,6 +89,14 @@ export default defineConfig(() => {
     server: {
       ...baseConfig.server,
       port,
+      // 允许 Vite 访问项目根目录下的 HTML 文件（MPA 模式需要）
+      fs: {
+        ...baseConfig.server?.fs,
+        allow: [
+          ...(baseConfig.server?.fs?.allow || []),
+          path.resolve(__dirname, '.'),
+        ],
+      },
       proxy: {
         '/api': {
           target: 'http://localhost:3000',

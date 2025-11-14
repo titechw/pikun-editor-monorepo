@@ -93,32 +93,32 @@ export const AbilityProfile = observer((): React.JSX.Element => {
           {/* 用户基本信息卡片 */}
           <div className="user-card">
             <div className="user-avatar">
-              <div className="avatar-circle">
-                {user?.name?.[0]?.toUpperCase() || 'U'}
-              </div>
-            </div>
+          <div className="avatar-circle">
+            {user?.name?.[0]?.toUpperCase() || 'U'}
+          </div>
+        </div>
             <div className="user-info">
               <h2 className="user-name">{user?.name || '未命名用户'}</h2>
               <div className="user-stats">
                 <div className="stat-row">
-                  <span className="stat-label">总经验</span>
+              <span className="stat-label">总经验</span>
                   <span className="stat-value">{totalExp.toLocaleString()}</span>
-                </div>
+            </div>
                 <div className="stat-row">
-                  <span className="stat-label">能力项</span>
-                  <span className="stat-value">{items.length}</span>
-                </div>
+              <span className="stat-label">能力项</span>
+              <span className="stat-value">{items.length}</span>
+            </div>
                 <div className="stat-row">
-                  <span className="stat-label">平均等级</span>
+              <span className="stat-label">平均等级</span>
                   <span className="stat-value">{avgLevel}</span>
                 </div>
                 <div className="stat-row">
                   <span className="stat-label">最高等级</span>
                   <span className="stat-value">Lv.{maxLevel}</span>
-                </div>
-              </div>
             </div>
           </div>
+        </div>
+      </div>
 
           {/* 能力分类概览 */}
           <div className="ability-overview">
@@ -181,72 +181,72 @@ export const AbilityProfile = observer((): React.JSX.Element => {
             <h2 className="detail-title">能力详情</h2>
           </div>
           <div className="detail-content">
-            {categories.map((category) => {
-              const categoryDimensions = dimensions.filter((d) => d.category_id === category.category_id);
-              return (
+        {categories.map((category) => {
+          const categoryDimensions = dimensions.filter((d) => d.category_id === category.category_id);
+          return (
                 <div key={category.category_id} className="detail-section">
-                  <div className="section-header">
+              <div className="section-header">
                     <h3 className="section-title">{category.name}</h3>
-                    <p className="section-description">{category.description}</p>
-                  </div>
+                <p className="section-description">{category.description}</p>
+              </div>
 
                   <div className="dimensions-list">
-                    {categoryDimensions.map((dimension) => {
-                      const dimensionItems = items.filter((item) => item.dimension_id === dimension.dimension_id);
-                      return (
+                {categoryDimensions.map((dimension) => {
+                  const dimensionItems = items.filter((item) => item.dimension_id === dimension.dimension_id);
+                  return (
                         <div key={dimension.dimension_id} className="dimension-detail">
-                          <div className="dimension-header">
+                      <div className="dimension-header">
                             <h4 className="dimension-title">{dimension.name}</h4>
-                          </div>
+                      </div>
                           <div className="items-grid">
-                            {dimensionItems.map((item) => {
-                              const userLevel = getUserLevel(item.item_id);
-                              const level = userLevel?.current_level || 1;
-                              const exp = userLevel?.current_exp || 0;
-                              const totalExp = userLevel?.total_exp || 0;
-                              const progress = getExpProgress(item.item_id, exp, level);
-                              const nextExp = getNextLevelExp(item.item_id, level);
+                        {dimensionItems.map((item) => {
+                          const userLevel = getUserLevel(item.item_id);
+                          const level = userLevel?.current_level || 1;
+                          const exp = userLevel?.current_exp || 0;
+                          const totalExp = userLevel?.total_exp || 0;
+                          const progress = getExpProgress(item.item_id, exp, level);
+                          const nextExp = getNextLevelExp(item.item_id, level);
 
-                              return (
+                          return (
                                 <div key={item.item_id} className="item-card">
-                                  <div className="item-header">
-                                    <span className="item-name">{item.name}</span>
-                                    <span className="item-level">Lv.{level}</span>
-                                  </div>
-                                  <div className="item-progress">
-                                    <div className="progress-bar">
-                                      <div
-                                        className="progress-fill"
-                                        style={{ width: `${progress}%` }}
-                                      />
-                                    </div>
-                                    <div className="exp-info">
-                                      <span className="current-exp">{exp.toLocaleString()}</span>
-                                      {nextExp > 0 && (
-                                        <>
-                                          <span className="exp-separator">/</span>
-                                          <span className="next-exp">{nextExp.toLocaleString()}</span>
-                                        </>
-                                      )}
-                                    </div>
-                                  </div>
-                                  <div className="item-stats">
-                                    <span className="stat">总经验: {totalExp.toLocaleString()}</span>
-                                    {userLevel && userLevel.level_up_count && userLevel.level_up_count > 0 && (
-                                      <span className="stat">升级: {userLevel.level_up_count}次</span>
-                                    )}
-                                  </div>
+                              <div className="item-header">
+                                <span className="item-name">{item.name}</span>
+                                <span className="item-level">Lv.{level}</span>
+                              </div>
+                              <div className="item-progress">
+                                <div className="progress-bar">
+                                  <div
+                                    className="progress-fill"
+                                    style={{ width: `${progress}%` }}
+                                  />
                                 </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
+                                <div className="exp-info">
+                                  <span className="current-exp">{exp.toLocaleString()}</span>
+                                  {nextExp > 0 && (
+                                    <>
+                                      <span className="exp-separator">/</span>
+                                      <span className="next-exp">{nextExp.toLocaleString()}</span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="item-stats">
+                                <span className="stat">总经验: {totalExp.toLocaleString()}</span>
+                                    {userLevel && userLevel.level_up_count && userLevel.level_up_count > 0 && (
+                                  <span className="stat">升级: {userLevel.level_up_count}次</span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
           </div>
         </div>
       </div>
