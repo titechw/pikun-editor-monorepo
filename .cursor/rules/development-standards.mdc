@@ -86,6 +86,7 @@ const data: any = response.data;
 
    ```typescript
    import { createHttpClient, ApiError, ErrorCode } from '@pikun/tools';
+   import { AUTH_TOKEN_KEY } from '@/constants/auth';
 
    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
@@ -100,10 +101,10 @@ const data: any = response.data;
    }
 
    /**
-    * 获取认证 token
+    * 获取认证 token（C端用户）
     */
    function getAuthToken(): string | undefined {
-     return localStorage.getItem('auth_token') || undefined;
+     return localStorage.getItem(AUTH_TOKEN_KEY) || undefined;
    }
 
    /**
@@ -205,6 +206,102 @@ const data: any = response.data;
 - **文件命名**: 按功能模块命名，如 `auth.api.ts`、`user.api.ts`
 - **导出方式**: 每个 API 文件导出对应的 API 对象，如 `authApi`、`userApi`
 
+#### 认证和 Token 管理规范
+
+##### Token 存储常量
+
+- **必须使用全局常量**: 所有 token 存储键名必须从 `src/constants/auth.ts` 导入
+- **禁止硬编码**: 不允许在代码中直接使用字符串 `'auth_token'` 或 `'admin_auth_token'`
+- **常量定义位置**: `src/constants/auth.ts`
+
+```typescript
+// src/constants/auth.ts
+/**
+ * Token 存储键名
+ */
+export const AUTH_TOKEN_KEY = 'auth_token';           // C端用户 token
+export const ADMIN_AUTH_TOKEN_KEY = 'admin_auth_token'; // 管理端 token
+```
+
+##### 多入口应用的 Token 隔离
+
+项目支持多入口应用（C端、管理端、测试端），不同入口使用不同的 token 存储：
+
+1. **C端用户 Token** (`AUTH_TOKEN_KEY = 'auth_token'`):
+   - 存储位置: `localStorage.getItem('auth_token')`
+   - 使用场景: C端用户登录后存储
+   - API 客户端: `apiClient` (`src/utils/apiClient.ts`)
+   - 认证 Store: `AuthStore` (`src/stores/auth/index.ts`)
+   - 认证 API: `authApi` (`src/api/auth.api.ts`)
+
+2. **管理端 Token** (`ADMIN_AUTH_TOKEN_KEY = 'admin_auth_token'`):
+   - 存储位置: `localStorage.getItem('admin_auth_token')`
+   - 使用场景: 管理端管理员登录后存储
+   - API 客户端: `adminApiClient` (`src/utils/adminApiClient.ts`)
+   - 认证 Store: `AdminAuthStore` (`src/stores/admin-auth/index.ts`)
+   - 认证 API: `adminAuthApi` (`src/api/admin-auth.api.ts`)
+
+##### Token 使用规范
+
+```typescript
+// ✅ 正确：使用常量
+import { AUTH_TOKEN_KEY, ADMIN_AUTH_TOKEN_KEY } from '@/constants/auth';
+
+const token = localStorage.getItem(AUTH_TOKEN_KEY);
+localStorage.setItem(ADMIN_AUTH_TOKEN_KEY, adminToken);
+
+// ❌ 错误：硬编码字符串
+const token = localStorage.getItem('auth_token');
+localStorage.setItem('admin_auth_token', adminToken);
+```
+
+##### API 客户端使用规范
+
+- **C端 API**: 使用 `apiClient` (`src/utils/apiClient.ts`)，自动携带 `auth_token`
+- **管理端 API**: 使用 `adminApiClient` (`src/utils/adminApiClient.ts`)，自动携带 `admin_auth_token`
+- **禁止混用**: C端页面不能使用 `adminApiClient`，管理端页面不能使用 `apiClient`
+
+```typescript
+// C端 API 调用
+import { apiClient } from '@/utils/apiClient';
+import { abilityApi } from '@/api/ability.api';
+
+// 管理端 API 调用
+import { adminApiClient } from '@/utils/adminApiClient';
+import { adminAbilityApi } from '@/api/admin-ability.api';
+```
+
+##### 用户类型和权限
+
+- **用户类型字段**: `type` (不是 `role`)
+  - `'admin'`: 管理员用户，可以访问管理端
+  - `'user'`: 普通用户，只能访问 C端
+- **后续扩展**: `role` 字段可用于管理端内部角色（如：超级管理员、普通管理员等）
+
+##### 认证流程
+
+1. **C端登录流程**:
+   ```typescript
+   // 用户登录
+   await authApi.login({ email, password });
+   // 自动存储到 localStorage['auth_token']
+   // 后续 API 请求自动携带此 token
+   ```
+
+2. **管理端登录流程**:
+   ```typescript
+   // 管理员登录
+   await adminAuthApi.adminLogin({ email, password });
+   // 自动存储到 localStorage['admin_auth_token']
+   // 后续 API 请求自动携带此 token
+   // 后端会验证用户 type 是否为 'admin'
+   ```
+
+3. **Token 隔离**:
+   - C端和管理端的 token 完全隔离
+   - C端登录不会影响管理端，管理端登录不会影响 C端
+   - 两个入口可以同时登录不同的账号
+
 ### 4. 样式规范
 
 #### TailwindCSS 使用
@@ -251,6 +348,71 @@ const data: any = response.data;
   }
 }
 ```
+
+#### Ant Design 样式覆盖规范
+
+当需要覆盖 Ant Design 组件样式时，**必须遵循以下规范**：
+
+1. **禁止使用 `:global` 和 `/deep/`**: 这些关键词在某些构建环境下不生效
+2. **在组件根节点下直接使用 Ant Design 类名**: 在组件的根 class 下直接写 Ant Design 的类名选择器
+3. **作用域隔离**: 这样样式只会影响当前组件内的 Ant Design 组件，不会影响其他地方
+
+**正确示例**:
+
+```less
+// components/MyComponent/MyComponent.less
+.my-component {
+  // 组件自己的样式
+  padding: 20px;
+
+  // 直接覆盖 Ant Design 组件样式（在根节点下）
+  .ant-btn {
+    height: 32px;
+    border-radius: 8px;
+  }
+
+  .ant-input {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .ant-tabs-tab {
+    color: #fff;
+    
+    &.ant-tabs-tab-active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+  }
+}
+```
+
+**错误示例**:
+
+```less
+// ❌ 错误：使用 :global
+.my-component {
+  :global(.ant-btn) {
+    height: 32px;
+  }
+}
+
+// ❌ 错误：使用 /deep/
+.my-component {
+  /deep/ .ant-btn {
+    height: 32px;
+  }
+}
+
+// ❌ 错误：在组件外部直接写全局样式（会影响所有组件）
+.ant-btn {
+  height: 32px;
+}
+```
+
+**注意事项**:
+
+- 使用 `!important` 确保样式优先级（如果需要）
+- 样式选择器会自动作用域化，只影响当前组件内的 Ant Design 组件
+- 如果需要覆盖嵌套较深的 Ant Design 组件，可以继续嵌套选择器
 
 ### 5. 状态管理规范 (MobX)
 
@@ -559,6 +721,59 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   loading?: boolean;
 }
 ```
+
+#### 表单交互规范
+
+- **必须使用 Drawer（抽屉）**: 所有表单的增删改查操作必须使用 `Drawer` 组件，禁止使用 `Modal` 组件
+- **Drawer 位置**: 默认从右侧滑出（`placement="right"`）
+- **Drawer 宽度**: 根据表单复杂度设置，建议 `width={600}` 或 `width={800}`
+- **示例**:
+
+  ```typescript
+  // ✅ 正确：使用 Drawer
+  import { Drawer, Form, Input, Button } from 'antd';
+
+  const [drawerVisible, setDrawerVisible] = useState(false);
+  const [editingItem, setEditingItem] = useState<Item | null>(null);
+
+  <Drawer
+    title={editingItem ? '编辑' : '新建'}
+    open={drawerVisible}
+    onClose={() => {
+      setDrawerVisible(false);
+      setEditingItem(null);
+      form.resetFields();
+    }}
+    width={600}
+  >
+    <Form form={form} onFinish={handleSubmit} layout="vertical">
+      <Form.Item name="name" label="名称" rules={[{ required: true }]}>
+        <Input />
+      </Form.Item>
+      {/* 更多表单项 */}
+      <Form.Item>
+        <Button type="primary" htmlType="submit">
+          提交
+        </Button>
+      </Form.Item>
+    </Form>
+  </Drawer>
+
+  // ❌ 错误：使用 Modal
+  <Modal
+    title="编辑"
+    open={modalVisible}
+    onCancel={() => setModalVisible(false)}
+  >
+    {/* 表单内容 */}
+  </Modal>
+  ```
+
+- **Drawer 使用场景**:
+  - 创建新记录
+  - 编辑现有记录
+  - 查看详情（只读表单）
+  - 批量操作配置
 
 ### 7. 路由规范
 

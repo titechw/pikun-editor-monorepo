@@ -52,6 +52,7 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = observer(
   }
 );
 
+
 /**
  * 应用路由配置
  */
@@ -100,7 +101,6 @@ export const AppRouter = observer((): React.JSX.Element => {
             }
           />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </BrowserRouter>
     </ConfigProvider>

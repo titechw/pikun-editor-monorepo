@@ -92,6 +92,46 @@ export class AuthController {
   }
 
   /**
+   * 管理员登录（仅允许 role 为 'admin' 的用户登录）
+   */
+  async adminLogin(req: NextRequest): Promise<NextResponse> {
+    try {
+      const body = await req.json();
+      const loginSchema = z.object({
+        email: z.string().email(),
+        password: z.string().min(1),
+      });
+
+      const validatedData = loginSchema.parse(body);
+      const result = await this.authService.adminLogin(validatedData.email, validatedData.password);
+
+      return NextResponse.json({
+        success: true,
+        data: result,
+      });
+    } catch (error: any) {
+      // 处理 Zod 验证错误
+      if (error instanceof z.ZodError) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: 'Validation error',
+            errors: error.errors,
+          },
+          { status: 400 }
+        );
+      }
+      return NextResponse.json(
+        {
+          success: false,
+          message: error.message || 'Admin login failed',
+        },
+        { status: 401 }
+      );
+    }
+  }
+
+  /**
    * 刷新 token
    */
   async refreshToken(req: NextRequest): Promise<NextResponse> {

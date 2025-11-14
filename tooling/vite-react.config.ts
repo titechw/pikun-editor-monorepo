@@ -79,7 +79,7 @@ const getPackageDependencies = () => {
 };
 
 const paths = getPackageDependencies();
-console.log('pathspathspaths:', paths);
+// console.log('pathspathspaths:', paths);
 
 export function createBaseViteConfig({ appDir, dedupeDeps }: BaseViteConfigOptions) {
   return {

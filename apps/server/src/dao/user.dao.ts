@@ -30,7 +30,7 @@ export class UserDAO {
    */
   async findByUuid(uuid: string): Promise<User | null> {
     const result = await this.db.query<User>(
-      'SELECT uid, uuid, email, name, metadata, deleted_at, created_at, updated_at FROM pikun_db.users WHERE uuid = $1 AND deleted_at IS NULL',
+      'SELECT uid, uuid, email, name, type, metadata, deleted_at, created_at, updated_at FROM pikun_db.users WHERE uuid = $1 AND deleted_at IS NULL',
       [uuid]
     );
     return result.rows[0] || null;
@@ -41,10 +41,21 @@ export class UserDAO {
    */
   async findByUid(uid: number): Promise<User | null> {
     const result = await this.db.query<User>(
-      'SELECT uid, uuid, email, name, metadata, deleted_at, created_at, updated_at FROM pikun_db.users WHERE uid = $1 AND deleted_at IS NULL',
+      'SELECT uid, uuid, email, name, type, metadata, deleted_at, created_at, updated_at FROM pikun_db.users WHERE uid = $1 AND deleted_at IS NULL',
       [uid]
     );
     return result.rows[0] || null;
+  }
+
+  /**
+   * 根据用户类型查找用户
+   */
+  async findByType(type: 'admin' | 'user'): Promise<User[]> {
+    const result = await this.db.query<User>(
+      'SELECT uid, uuid, email, name, type, metadata, deleted_at, created_at, updated_at FROM pikun_db.users WHERE type = $1 AND deleted_at IS NULL',
+      [type]
+    );
+    return result.rows;
   }
 
   /**
@@ -54,13 +65,15 @@ export class UserDAO {
     email: string;
     password: string;
     name: string;
+    type?: 'admin' | 'user';
     metadata?: Record<string, any>;
   }): Promise<User> {
+    const type = user.type || 'user';
     const result = await this.db.query<User>(
-      `INSERT INTO pikun_db.users (email, password, name, metadata)
-       VALUES ($1, $2, $3, $4)
-       RETURNING uid, uuid, email, name, metadata, deleted_at, created_at, updated_at`,
-      [user.email, user.password, user.name, JSON.stringify(user.metadata || {})]
+      `INSERT INTO pikun_db.users (email, password, name, type, metadata)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING uid, uuid, email, name, type, metadata, deleted_at, created_at, updated_at`,
+      [user.email, user.password, user.name, type, JSON.stringify(user.metadata || {})]
     );
     return result.rows[0];
   }
@@ -71,6 +84,7 @@ export class UserDAO {
   async update(uid: number, updates: {
     name?: string;
     email?: string;
+    type?: 'admin' | 'user';
     metadata?: Record<string, any>;
   }): Promise<User> {
     const fields: string[] = [];
@@ -85,6 +99,10 @@ export class UserDAO {
       fields.push(`email = $${paramIndex++}`);
       values.push(updates.email);
     }
+    if (updates.type !== undefined) {
+      fields.push(`type = $${paramIndex++}`);
+      values.push(updates.type);
+    }
     if (updates.metadata !== undefined) {
       fields.push(`metadata = $${paramIndex++}`);
       values.push(JSON.stringify(updates.metadata));
@@ -97,7 +115,7 @@ export class UserDAO {
     values.push(uid);
     const result = await this.db.query<User>(
       `UPDATE pikun_db.users SET ${fields.join(', ')} WHERE uid = $${paramIndex} AND deleted_at IS NULL
-       RETURNING uid, uuid, email, name, metadata, deleted_at, created_at, updated_at`,
+       RETURNING uid, uuid, email, name, type, metadata, deleted_at, created_at, updated_at`,
       values
     );
     return result.rows[0];

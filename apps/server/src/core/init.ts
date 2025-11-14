@@ -4,13 +4,25 @@ import { UserDAO } from '@/dao/user.dao';
 import { DocumentDAO } from '@/dao/document.dao';
 import { DocumentChangeDAO } from '@/dao/document-change.dao';
 import { WorkspaceDAO } from '@/dao/workspace.dao';
+import { AbilityCategoryDAO } from '@/dao/ability-category.dao';
+import { AbilityDimensionDAO } from '@/dao/ability-dimension.dao';
+import { AbilityItemDAO } from '@/dao/ability-item.dao';
+import { AbilityItemLevelConfigDAO } from '@/dao/ability-item-level-config.dao';
+import { UserAbilityLevelDAO } from '@/dao/user-ability-level.dao';
+import { UserAbilityExperienceLogDAO } from '@/dao/user-ability-experience-log.dao';
 import { AuthService } from '@/services/auth.service';
 import { DocumentService } from '@/services/document.service';
 import { SnapshotService } from '@/services/snapshot.service';
 import { SnapshotScheduler } from '@/services/snapshot-scheduler.service';
+import { AbilityModelService } from '@/services/ability-model.service';
+import { AbilityLevelConfigService } from '@/services/ability-level-config.service';
+import { UserAbilityService } from '@/services/user-ability.service';
+import { ExperienceService } from '@/services/experience.service';
 import { AuthController } from '@/api/auth/auth.controller';
 import { DocumentController } from '@/api/documents/document.controller';
 import { WorkspaceController } from '@/api/workspace/workspace.controller';
+import { AbilityModelController } from '@/api/ability/ability-model.controller';
+import { AbilityLevelConfigController } from '@/api/ability/ability-level-config.controller';
 
 /**
  * 初始化依赖注入容器
@@ -22,6 +34,12 @@ export function initializeContainer() {
   Container.register('DocumentDAO', () => new DocumentDAO());
   Container.register('WorkspaceDAO', () => new WorkspaceDAO());
   Container.register('DocumentChangeDAO', () => new DocumentChangeDAO());
+  Container.register('AbilityCategoryDAO', () => new AbilityCategoryDAO());
+  Container.register('AbilityDimensionDAO', () => new AbilityDimensionDAO());
+  Container.register('AbilityItemDAO', () => new AbilityItemDAO());
+  Container.register('AbilityItemLevelConfigDAO', () => new AbilityItemLevelConfigDAO());
+  Container.register('UserAbilityLevelDAO', () => new UserAbilityLevelDAO());
+  Container.register('UserAbilityExperienceLogDAO', () => new UserAbilityExperienceLogDAO());
 
   // 注册 Service
   Container.register(AuthService, () => {
@@ -63,6 +81,45 @@ export function initializeContainer() {
     const workspaceDAO = Container.resolve<WorkspaceDAO>('WorkspaceDAO');
     const authService = Container.resolve<AuthService>(AuthService);
     return new WorkspaceController(workspaceDAO, authService);
+  });
+
+  // 注册能力模型相关 Service
+  Container.register(AbilityModelService, () => {
+    const categoryDAO = Container.resolve<AbilityCategoryDAO>('AbilityCategoryDAO');
+    const dimensionDAO = Container.resolve<AbilityDimensionDAO>('AbilityDimensionDAO');
+    const itemDAO = Container.resolve<AbilityItemDAO>('AbilityItemDAO');
+    return new AbilityModelService(categoryDAO, dimensionDAO, itemDAO);
+  });
+
+  Container.register(AbilityLevelConfigService, () => {
+    const levelConfigDAO = Container.resolve<AbilityItemLevelConfigDAO>('AbilityItemLevelConfigDAO');
+    return new AbilityLevelConfigService(levelConfigDAO);
+  });
+
+  Container.register(UserAbilityService, () => {
+    const userLevelDAO = Container.resolve<UserAbilityLevelDAO>('UserAbilityLevelDAO');
+    const experienceLogDAO = Container.resolve<UserAbilityExperienceLogDAO>('UserAbilityExperienceLogDAO');
+    return new UserAbilityService(userLevelDAO, experienceLogDAO);
+  });
+
+  Container.register(ExperienceService, () => {
+    const userLevelDAO = Container.resolve<UserAbilityLevelDAO>('UserAbilityLevelDAO');
+    const experienceLogDAO = Container.resolve<UserAbilityExperienceLogDAO>('UserAbilityExperienceLogDAO');
+    const levelConfigDAO = Container.resolve<AbilityItemLevelConfigDAO>('AbilityItemLevelConfigDAO');
+    return new ExperienceService(userLevelDAO, experienceLogDAO, levelConfigDAO);
+  });
+
+  // 注册能力模型 Controller
+  Container.register(AbilityModelController, () => {
+    const abilityModelService = Container.resolve<AbilityModelService>(AbilityModelService);
+    return new AbilityModelController(abilityModelService);
+  });
+
+  Container.register(AbilityLevelConfigController, () => {
+    const levelConfigService = Container.resolve<AbilityLevelConfigService>(
+      AbilityLevelConfigService
+    );
+    return new AbilityLevelConfigController(levelConfigService);
   });
 }
 

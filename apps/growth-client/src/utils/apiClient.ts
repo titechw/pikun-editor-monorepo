@@ -1,4 +1,5 @@
-import { createHttpClient, ApiError, ErrorCode } from '@pikun/tools';
+import { createHttpClient, ApiError, ErrorCode, HttpMethod } from '@pikun/tools';
+import { AUTH_TOKEN_KEY } from '@/constants/auth';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
@@ -13,10 +14,10 @@ interface ServerResponse<T> {
 }
 
 /**
- * 获取认证 token
+ * 获取认证 token（C端用户）
  */
 function getAuthToken(): string | undefined {
-  return localStorage.getItem('auth_token') || undefined;
+  return localStorage.getItem(AUTH_TOKEN_KEY) || undefined;
 }
 
 /**
@@ -94,18 +95,85 @@ export const apiClient = {
       throw new ApiError(ErrorCode.Unknown, '请求失败', undefined, error);
     }
   },
+
+  /**
+   * PUT 请求
+   */
+  async put<T = unknown>(url: string, body?: unknown, headers?: Record<string, string>) {
+    try {
+      const response = await baseClient.request<unknown, unknown, unknown>({
+        url,
+        method: HttpMethod.PUT,
+        body,
+        headers,
+      });
+      const serverResponse = response.data as ServerResponse<T>;
+
+      if (!serverResponse || !serverResponse.success) {
+        throw new ApiError(
+          ErrorCode.Unknown,
+          serverResponse?.message || '请求失败',
+          response.status,
+          serverResponse?.errors,
+        );
+      }
+
+      return {
+        ...response,
+        data: serverResponse.data as T,
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(ErrorCode.Unknown, '请求失败', undefined, error);
+    }
+  },
+
+  /**
+   * DELETE 请求
+   */
+  async delete<T = unknown>(url: string, headers?: Record<string, string>) {
+    try {
+      const response = await baseClient.request<unknown>({
+        url,
+        method: HttpMethod.DELETE,
+        headers,
+      });
+      const serverResponse = response.data as ServerResponse<T>;
+
+      if (!serverResponse || !serverResponse.success) {
+        throw new ApiError(
+          ErrorCode.Unknown,
+          serverResponse?.message || '请求失败',
+          response.status,
+          serverResponse?.errors,
+        );
+      }
+
+      return {
+        ...response,
+        data: serverResponse.data as T,
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(ErrorCode.Unknown, '请求失败', undefined, error);
+    }
+  },
 };
 
 /**
- * 设置认证 token
+ * 设置认证 token（C端用户）
  */
 export function setAuthToken(token: string): void {
-  localStorage.setItem('auth_token', token);
+  localStorage.setItem(AUTH_TOKEN_KEY, token);
 }
 
 /**
- * 清除认证 token
+ * 清除认证 token（C端用户）
  */
 export function clearAuthToken(): void {
-  localStorage.removeItem('auth_token');
+  localStorage.removeItem(AUTH_TOKEN_KEY);
 }

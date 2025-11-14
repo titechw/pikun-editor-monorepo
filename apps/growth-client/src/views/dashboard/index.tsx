@@ -78,6 +78,8 @@ export const Dashboard = observer((): React.JSX.Element => {
             </Text>
           </Space>
         </Card>
+
+        <AbilityLevels />
       </Space>
     </div>
   );

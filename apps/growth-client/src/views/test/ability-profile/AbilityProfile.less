@@ -1,0 +1,479 @@
+.ability-profile {
+  height: 100vh;
+  overflow: hidden;
+  background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+
+  .ability-profile-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+
+  .profile-container {
+    display: flex;
+    height: 100%;
+    gap: 16px;
+    padding: 16px;
+    overflow: hidden;
+  }
+
+  // 左侧：用户能力信息整合
+  .profile-left {
+    width: 320px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 8px;
+
+    // 自定义滚动条
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 3px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: rgba(102, 126, 234, 0.5);
+      border-radius: 3px;
+
+      &:hover {
+        background: rgba(102, 126, 234, 0.7);
+      }
+    }
+
+    // 用户基本信息卡片
+    .user-card {
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+
+      .user-avatar {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 12px;
+
+        .avatar-circle {
+          width: 64px;
+          height: 64px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 24px;
+          font-weight: bold;
+          color: #fff;
+          border: 2px solid rgba(255, 255, 255, 0.3);
+          box-shadow: 0 2px 12px rgba(102, 126, 234, 0.4);
+        }
+      }
+
+      .user-info {
+        text-align: center;
+
+        .user-name {
+          font-size: 18px;
+          font-weight: 700;
+          margin: 0 0 12px 0;
+          background: linear-gradient(135deg, #fff 0%, #a8a8a8 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+
+        .user-stats {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+
+          .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+
+            &:last-child {
+              border-bottom: none;
+            }
+
+            .stat-label {
+              font-size: 12px;
+              color: rgba(255, 255, 255, 0.6);
+            }
+
+            .stat-value {
+              font-size: 14px;
+              font-weight: 600;
+              color: #667eea;
+            }
+          }
+        }
+      }
+    }
+
+    // 能力分类概览
+    .ability-overview {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+
+      .category-summary {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        padding: 12px;
+        transition: all 0.2s ease;
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.08);
+          border-color: rgba(102, 126, 234, 0.4);
+        }
+
+        .category-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 10px;
+
+          .category-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin: 0;
+            color: #fff;
+          }
+
+          .category-badge {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.7);
+            background: rgba(102, 126, 234, 0.2);
+            padding: 2px 8px;
+            border-radius: 10px;
+          }
+        }
+
+        .category-stats {
+          display: flex;
+          gap: 12px;
+          margin-bottom: 10px;
+          padding-bottom: 10px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+
+          .category-stat {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+
+            .category-stat-label {
+              font-size: 10px;
+              color: rgba(255, 255, 255, 0.5);
+            }
+
+            .category-stat-value {
+              font-size: 13px;
+              font-weight: 600;
+              color: #667eea;
+            }
+          }
+        }
+
+        .category-dimensions {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+
+          .dimension-summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 8px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 6px;
+            font-size: 12px;
+
+            .dimension-name {
+              color: rgba(255, 255, 255, 0.8);
+            }
+
+            .dimension-level {
+              color: #667eea;
+              font-weight: 600;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // 右侧：详细能力数据
+  .profile-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 16px;
+
+    .detail-header {
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+      .detail-title {
+        font-size: 20px;
+        font-weight: 700;
+        margin: 0;
+        background: linear-gradient(135deg, #fff 0%, #a8a8a8 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+    }
+
+    .detail-content {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding-right: 8px;
+
+      // 自定义滚动条
+      &::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      &::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 3px;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        background: rgba(102, 126, 234, 0.5);
+        border-radius: 3px;
+
+        &:hover {
+          background: rgba(102, 126, 234, 0.7);
+        }
+      }
+
+      .detail-section {
+        margin-bottom: 24px;
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+
+        .section-header {
+          margin-bottom: 16px;
+
+          .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin: 0 0 4px 0;
+            color: #fff;
+          }
+
+          .section-description {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+            margin: 0;
+          }
+        }
+
+        .dimensions-list {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+
+          .dimension-detail {
+            .dimension-header {
+              margin-bottom: 12px;
+              padding-bottom: 8px;
+              border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+
+              .dimension-title {
+                font-size: 14px;
+                font-weight: 600;
+                margin: 0;
+                color: rgba(255, 255, 255, 0.9);
+              }
+            }
+
+            .items-grid {
+              display: grid;
+              grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+              gap: 10px;
+
+              .item-card {
+                background: rgba(0, 0, 0, 0.2);
+                border: 1px solid rgba(255, 255, 255, 0.05);
+                border-radius: 8px;
+                padding: 12px;
+                transition: all 0.2s ease;
+
+                &:hover {
+                  background: rgba(0, 0, 0, 0.3);
+                  border-color: rgba(102, 126, 234, 0.3);
+                  transform: translateY(-1px);
+                }
+
+                .item-header {
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  margin-bottom: 10px;
+
+                  .item-name {
+                    font-size: 13px;
+                    font-weight: 600;
+                    color: #fff;
+                    flex: 1;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                  }
+
+                  .item-level {
+                    font-size: 11px;
+                    font-weight: 700;
+                    color: #667eea;
+                    background: rgba(102, 126, 234, 0.2);
+                    padding: 2px 8px;
+                    border-radius: 10px;
+                    margin-left: 8px;
+                    flex-shrink: 0;
+                  }
+                }
+
+                .item-progress {
+                  margin-bottom: 10px;
+
+                  .progress-bar {
+                    width: 100%;
+                    height: 6px;
+                    background: rgba(255, 255, 255, 0.1);
+                    border-radius: 3px;
+                    overflow: hidden;
+                    margin-bottom: 6px;
+
+                    .progress-fill {
+                      height: 100%;
+                      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+                      border-radius: 3px;
+                      transition: width 0.3s ease;
+                      box-shadow: 0 0 8px rgba(102, 126, 234, 0.5);
+                    }
+                  }
+
+                  .exp-info {
+                    display: flex;
+                    align-items: center;
+                    gap: 4px;
+                    font-size: 11px;
+                    color: rgba(255, 255, 255, 0.7);
+
+                    .current-exp {
+                      color: #667eea;
+                      font-weight: 600;
+                    }
+
+                    .exp-separator {
+                      color: rgba(255, 255, 255, 0.4);
+                    }
+
+                    .next-exp {
+                      color: rgba(255, 255, 255, 0.5);
+                    }
+                  }
+                }
+
+                .item-stats {
+                  display: flex;
+                  flex-wrap: wrap;
+                  gap: 8px;
+                  font-size: 10px;
+                  color: rgba(255, 255, 255, 0.6);
+
+                  .stat {
+                    display: inline-block;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// 响应式设计
+@media (max-width: 1024px) {
+  .ability-profile {
+    .profile-container {
+      flex-direction: column;
+
+      .profile-left {
+        width: 100%;
+        max-height: 40vh;
+      }
+
+      .profile-right {
+        flex: 1;
+        min-height: 0;
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .ability-profile {
+    .profile-container {
+      padding: 12px;
+      gap: 12px;
+
+      .profile-left {
+        .user-card {
+          padding: 12px;
+
+          .user-avatar .avatar-circle {
+            width: 56px;
+            height: 56px;
+            font-size: 20px;
+          }
+
+          .user-info .user-name {
+            font-size: 16px;
+          }
+        }
+      }
+
+      .profile-right {
+        padding: 12px;
+
+        .detail-content .detail-section {
+          .items-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+      }
+    }
+  }
+}

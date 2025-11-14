@@ -113,6 +113,54 @@ export class AuthService {
   }
 
   /**
+   * 管理员登录（仅允许 type 为 'admin' 的用户登录）
+   */
+  async adminLogin(
+    email: string,
+    password: string
+  ): Promise<{
+    user: Omit<User, 'password'>;
+    token: string;
+    refreshToken: string;
+    defaultWorkspaceId: string;
+  }> {
+    const user = await this.userDAO.findByEmail(email);
+    if (!user) {
+      throw new Error('Invalid email or password');
+    }
+
+    // 检查是否为管理员
+    if (user.type !== 'admin') {
+      throw new Error('Access denied. Admin type required.');
+    }
+
+    // 验证密码
+    const isValid = await bcrypt.compare(password, user.password);
+    if (!isValid) {
+      throw new Error('Invalid email or password');
+    }
+
+    // 获取或创建默认工作空间
+    const defaultWorkspace = await this.workspaceDAO.getOrCreateDefault(user.uid);
+
+    // 生成 token
+    const token = this.generateToken(user.uid, user.uuid);
+    const refreshToken = this.generateRefreshToken(user.uid);
+
+    // 保存刷新令牌
+    await this.redis.set(`refresh_token:${refreshToken}`, user.uid.toString(), 30 * 24 * 60 * 60);
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password: _, ...userWithoutPassword } = user;
+    return {
+      user: userWithoutPassword,
+      token,
+      refreshToken,
+      defaultWorkspaceId: defaultWorkspace.workspace_id,
+    };
+  }
+
+  /**
    * 刷新 token
    */
   async refreshToken(refreshToken: string): Promise<{ token: string; refreshToken: string }> {
@@ -169,6 +217,29 @@ export class AuthService {
 
     const token = authHeader.substring(7);
     return await this.verifyToken(token);
+  }
+
+  /**
+   * 从请求中获取当前用户完整信息（包括类型）
+   */
+  async getCurrentUserWithType(req: NextRequest): Promise<User> {
+    const { uid } = await this.getCurrentUser(req);
+    const user = await this.userDAO.findByUid(uid);
+    if (!user) {
+      throw new Error('User not found');
+    }
+    return user;
+  }
+
+  /**
+   * 检查当前用户是否为管理员
+   */
+  async checkAdminRole(req: NextRequest): Promise<User> {
+    const user = await this.getCurrentUserWithType(req);
+    if (user.type !== 'admin') {
+      throw new Error('Access denied. Admin type required.');
+    }
+    return user;
   }
 
   /**

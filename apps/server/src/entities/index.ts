@@ -1,4 +1,10 @@
 /**
+ * 用户类型
+ * 用于区分管理员和普通用户，后续 role 字段可用于管理端内部角色（如：超级管理员、普通管理员等）
+ */
+export type UserType = 'admin' | 'user';
+
+/**
  * 用户实体
  */
 export interface User {
@@ -7,6 +13,7 @@ export interface User {
   email: string;
   password: string;
   name: string;
+  type: UserType;
   metadata: Record<string, any>;
   deleted_at: Date | null;
   created_at: Date;
@@ -107,6 +114,114 @@ export interface RefreshToken {
   uid: number;
   token: string;
   expires_at: Date;
+  created_at: Date;
+}
+
+/**
+ * 能力类别实体
+ */
+export interface AbilityCategory {
+  category_id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  sort_order: number;
+  metadata: Record<string, any>;
+  created_at: Date;
+  updated_at: Date;
+  deleted_at: Date | null;
+}
+
+/**
+ * 能力维度实体
+ */
+export interface AbilityDimension {
+  dimension_id: string;
+  category_id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  sort_order: number;
+  metadata: Record<string, any>;
+  created_at: Date;
+  updated_at: Date;
+  deleted_at: Date | null;
+}
+
+/**
+ * 能力项实体
+ */
+export interface AbilityItem {
+  item_id: string;
+  dimension_id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  definition: string | null;
+  performance_description: string | null;
+  evaluation_points: string | null;
+  training_strategies: string | null;
+  theoretical_basis: string | null;
+  sort_order: number;
+  metadata: Record<string, any>;
+  created_at: Date;
+  updated_at: Date;
+  deleted_at: Date | null;
+}
+
+/**
+ * 能力项等级配置实体
+ */
+export interface AbilityItemLevelConfig {
+  config_id: string;
+  item_id: string | null;
+  level: number;
+  required_exp: number;
+  requires_assessment: boolean;
+  level_name: string | null;
+  level_description: string | null;
+  is_template: boolean;
+  sort_order: number;
+  metadata: Record<string, any>;
+  created_at: Date;
+  updated_at: Date;
+}
+
+/**
+ * 用户能力等级实体
+ */
+export interface UserAbilityLevel {
+  user_level_id: string;
+  uid: number;
+  item_id: string;
+  current_level: number;
+  current_exp: number;
+  total_exp: number;
+  level_up_count: number;
+  last_level_up_at: Date | null;
+  metadata: Record<string, any>;
+  created_at: Date;
+  updated_at: Date;
+}
+
+/**
+ * 用户经验获得记录实体
+ */
+export interface UserAbilityExperienceLog {
+  log_id: string;
+  uid: number;
+  item_id: string;
+  exp_amount: number;
+  exp_type: string;
+  source_id: string | null;
+  source_type: string | null;
+  before_level: number;
+  after_level: number;
+  before_exp: number;
+  after_exp: number;
+  is_level_up: boolean;
+  notes: string | null;
+  metadata: Record<string, any>;
   created_at: Date;
 }
 

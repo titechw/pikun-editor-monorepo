@@ -5,6 +5,7 @@ export interface User {
   uuid: string;
   email: string;
   name: string;
+  type?: 'admin' | 'user';
   metadata?: Record<string, unknown>;
   deleted_at?: Date | null;
   created_at?: Date;
@@ -61,6 +62,18 @@ export const authApi = {
       return response.data;
     }
     throw new Error('登录失败');
+  },
+
+  /**
+   * 管理员登录
+   */
+  async adminLogin(data: LoginRequest): Promise<AuthResponse> {
+    const response = await apiClient.post<AuthResponse>('/admin/auth/login', data);
+    if (response.data) {
+      setAuthToken(response.data.token);
+      return response.data;
+    }
+    throw new Error('管理员登录失败');
   },
 
   /**

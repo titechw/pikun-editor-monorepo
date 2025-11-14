@@ -1,5 +1,6 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 import { authApi, User } from '@/api/auth.api';
+import { AUTH_TOKEN_KEY } from '@/constants/auth';
 
 export class AuthStore {
   user: User | null = null;
@@ -15,7 +16,7 @@ export class AuthStore {
    * 检查认证状态
    */
   async checkAuth(): Promise<void> {
-    const token = localStorage.getItem('auth_token');
+    const token = localStorage.getItem(AUTH_TOKEN_KEY);
     if (!token) {
       this.isAuthenticated = false;
       return;
