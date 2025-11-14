@@ -15,6 +15,19 @@ export class UserAbilityLevelDAO {
   }
 
   /**
+   * 规范化数字字段（PostgreSQL BIGINT 可能返回为字符串）
+   */
+  private normalizeUserLevel(level: UserAbilityLevel): UserAbilityLevel {
+    return {
+      ...level,
+      current_level: Number(level.current_level),
+      current_exp: Number(level.current_exp),
+      total_exp: Number(level.total_exp),
+      level_up_count: Number(level.level_up_count),
+    };
+  }
+
+  /**
    * 获取用户的所有能力等级
    */
   async findByUserId(uid: number): Promise<UserAbilityLevel[]> {
@@ -22,7 +35,7 @@ export class UserAbilityLevelDAO {
       'SELECT * FROM pikun_db.user_ability_levels WHERE uid = $1 ORDER BY created_at ASC',
       [uid]
     );
-    return result.rows;
+    return result.rows.map((row) => this.normalizeUserLevel(row));
   }
 
   /**
@@ -33,7 +46,7 @@ export class UserAbilityLevelDAO {
       'SELECT * FROM pikun_db.user_ability_levels WHERE uid = $1 AND item_id = $2',
       [uid, itemId]
     );
-    return result.rows[0] || null;
+    return result.rows[0] ? this.normalizeUserLevel(result.rows[0]) : null;
   }
 
   /**
@@ -92,7 +105,7 @@ export class UserAbilityLevelDAO {
         JSON.stringify(data.metadata || {}),
       ]
     );
-    return result.rows[0];
+    return this.normalizeUserLevel(result.rows[0]);
   }
 
   /**
@@ -149,7 +162,7 @@ export class UserAbilityLevelDAO {
        RETURNING *`,
       values
     );
-    return result.rows[0];
+    return this.normalizeUserLevel(result.rows[0]);
   }
 
   /**
@@ -166,9 +179,12 @@ export class UserAbilityLevelDAO {
         total_exp: expAmount,
       });
     }
+    // 确保 existing 的数字字段是数字类型（防止字符串拼接）
+    const currentExp = Number(existing.current_exp);
+    const totalExp = Number(existing.total_exp);
     return this.update(uid, itemId, {
-      current_exp: existing.current_exp + expAmount,
-      total_exp: existing.total_exp + expAmount,
+      current_exp: currentExp + expAmount,
+      total_exp: totalExp + expAmount,
     });
   }
 }

@@ -99,7 +99,8 @@ export function initializeContainer() {
   Container.register(UserAbilityService, () => {
     const userLevelDAO = Container.resolve<UserAbilityLevelDAO>('UserAbilityLevelDAO');
     const experienceLogDAO = Container.resolve<UserAbilityExperienceLogDAO>('UserAbilityExperienceLogDAO');
-    return new UserAbilityService(userLevelDAO, experienceLogDAO);
+    const levelConfigDAO = Container.resolve<AbilityItemLevelConfigDAO>('AbilityItemLevelConfigDAO');
+    return new UserAbilityService(userLevelDAO, experienceLogDAO, levelConfigDAO);
   });
 
   Container.register(ExperienceService, () => {

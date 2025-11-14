@@ -207,4 +207,27 @@ export class AuthController {
       );
     }
   }
+
+  /**
+   * 获取当前用户信息
+   */
+  async getMe(req: NextRequest): Promise<NextResponse> {
+    try {
+      const user = await this.authService.getCurrentUserWithType(req);
+      // 移除敏感信息
+      const { password, ...userWithoutPassword } = user;
+      return NextResponse.json({
+        success: true,
+        data: userWithoutPassword,
+      });
+    } catch (error: any) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: error.message || 'Failed to get user info',
+        },
+        { status: 401 }
+      );
+    }
+  }
 }

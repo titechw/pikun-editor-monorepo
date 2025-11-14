@@ -43,11 +43,11 @@ function pathBasedEntryPlugin(): Plugin {
           
           // 处理 /admin 路径及其子路径 -> /admin.html
           if (url === '/admin' || url === '/admin/' || url.startsWith('/admin/')) {
-            req.url = '/admin.html';
+              req.url = '/admin.html';
           }
           // 处理 /test 路径及其子路径 -> /test.html
           else if (url === '/test' || url === '/test/' || url.startsWith('/test/')) {
-            req.url = '/test.html';
+              req.url = '/test.html';
           }
           
           next();
@@ -66,28 +66,28 @@ export default defineConfig(() => {
       react(),
       pathBasedEntryPlugin(), // 必须在 react() 之后，以便在服务器配置完成后修改中间件
     ],
-    ...baseConfig,
-    build: {
-      rollupOptions: {
-        input: {
-          main: path.resolve(__dirname, 'index.html'),
-          admin: path.resolve(__dirname, 'admin.html'),
-          test: path.resolve(__dirname, 'test.html'),
-        },
+  ...baseConfig,
+  build: {
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'index.html'),
+        admin: path.resolve(__dirname, 'admin.html'),
+        test: path.resolve(__dirname, 'test.html'),
       },
     },
-    resolve: {
-      ...baseConfig.resolve,
-      alias: [
-        ...(baseConfig.resolve?.alias || []),
-        {
-          find: '@pikun/tools',
-          replacement: path.resolve(__dirname, '../../features/jarvis-tools/src/index.ts'),
-        },
-      ],
-    },
-    server: {
-      ...baseConfig.server,
+  },
+  resolve: {
+    ...baseConfig.resolve,
+    alias: [
+      ...(baseConfig.resolve?.alias || []),
+      {
+        find: '@pikun/tools',
+        replacement: path.resolve(__dirname, '../../features/jarvis-tools/src/index.ts'),
+      },
+    ],
+  },
+  server: {
+    ...baseConfig.server,
       port,
       // 允许 Vite 访问项目根目录下的 HTML 文件（MPA 模式需要）
       fs: {
@@ -97,13 +97,13 @@ export default defineConfig(() => {
           path.resolve(__dirname, '.'),
         ],
       },
-      proxy: {
-        '/api': {
-          target: 'http://localhost:3000',
-          changeOrigin: true,
-          secure: false,
-        },
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        secure: false,
       },
     },
+  },
   };
 });

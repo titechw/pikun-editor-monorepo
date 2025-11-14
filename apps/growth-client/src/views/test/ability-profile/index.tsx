@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Spin, message } from 'antd';
-import { abilityApi, type AbilityCategory, type AbilityDimension, type AbilityItem, type UserAbilityLevel, type AbilityItemLevelConfig } from '@/api/ability.api';
+import { abilityApi, type AbilityCategory, type AbilityDimension, type AbilityItem, type UserAbilityLevel } from '@/api/ability.api';
 import { authStore } from '@/stores/auth';
 import './AbilityProfile.less';
 
@@ -13,7 +13,6 @@ export const AbilityProfile = observer((): React.JSX.Element => {
   const [dimensions, setDimensions] = useState<AbilityDimension[]>([]);
   const [items, setItems] = useState<AbilityItem[]>([]);
   const [userLevels, setUserLevels] = useState<UserAbilityLevel[]>([]);
-  const [levelConfigs, setLevelConfigs] = useState<AbilityItemLevelConfig[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -25,19 +24,17 @@ export const AbilityProfile = observer((): React.JSX.Element => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [categoriesData, dimensionsData, itemsData, levelsData, configsData] = await Promise.all([
+      const [categoriesData, dimensionsData, itemsData, levelsData] = await Promise.all([
         abilityApi.getCategories(),
         abilityApi.getDimensions(),
         abilityApi.getItems(),
-        abilityApi.getMyLevels(),
-        abilityApi.getLevelConfigs(),
+        abilityApi.getMyLevels(), // 后端已整合下一级信息
       ]);
 
       setCategories(categoriesData);
       setDimensions(dimensionsData);
       setItems(itemsData);
       setUserLevels(levelsData);
-      setLevelConfigs(configsData);
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : '加载数据失败';
       message.error(errorMessage);
@@ -51,17 +48,15 @@ export const AbilityProfile = observer((): React.JSX.Element => {
     return userLevels.find((level) => level.item_id === itemId) || null;
   };
 
-  // 获取下一级所需经验
-  const getNextLevelExp = (itemId: string, currentLevel: number): number => {
-    const config = levelConfigs.find(
-      (c) => (c.item_id === itemId || c.is_template) && c.level === currentLevel + 1
-    );
-    return config?.required_exp || 0;
+  // 获取下一级所需经验（从后端返回的数据中获取）
+  const getNextLevelExp = (itemId: string): number => {
+    const userLevel = getUserLevel(itemId);
+    return userLevel?.next_level_required_exp || 0;
   };
 
   // 计算经验进度百分比
-  const getExpProgress = (itemId: string, currentExp: number, currentLevel: number): number => {
-    const nextExp = getNextLevelExp(itemId, currentLevel);
+  const getExpProgress = (itemId: string, currentExp: number): number => {
+    const nextExp = getNextLevelExp(itemId);
     if (nextExp === 0) return 100; // 已满级
     return Math.min((currentExp / nextExp) * 100, 100);
   };
@@ -204,8 +199,8 @@ export const AbilityProfile = observer((): React.JSX.Element => {
                           const level = userLevel?.current_level || 1;
                           const exp = userLevel?.current_exp || 0;
                           const totalExp = userLevel?.total_exp || 0;
-                          const progress = getExpProgress(item.item_id, exp, level);
-                          const nextExp = getNextLevelExp(item.item_id, level);
+                          const progress = getExpProgress(item.item_id, exp);
+                          const nextExp = getNextLevelExp(item.item_id);
 
                           return (
                                 <div key={item.item_id} className="item-card">

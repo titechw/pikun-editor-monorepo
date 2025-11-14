@@ -24,12 +24,12 @@ export class AuthStore {
 
     try {
       this.loading = true;
-      const result = await authApi.verifyToken();
-      // 验证成功后，需要获取用户信息
-      // 这里暂时使用 verifyToken 返回的信息，后续可以添加获取用户详情的接口
+      // 先验证 token
+      await authApi.verifyToken();
+      // 验证成功后，获取用户信息
+      const user = await authApi.getMe();
       runInAction(() => {
-        // 注意：verifyToken 只返回 uid 和 uuid，不返回完整用户信息
-        // 如果需要完整用户信息，需要调用其他接口或从已存储的信息中获取
+        this.user = user;
         this.isAuthenticated = true;
         this.loading = false;
       });

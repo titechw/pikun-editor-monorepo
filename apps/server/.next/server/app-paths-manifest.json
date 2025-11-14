@@ -1,4 +1,8 @@
 {
-  "/api/auth/login/route": "app/api/auth/login/route.js",
-  "/_not-found/page": "app/_not-found/page.js"
+  "/api/auth/verify/route": "app/api/auth/verify/route.js",
+  "/api/ability/items/route": "app/api/ability/items/route.js",
+  "/api/ability/dimensions/route": "app/api/ability/dimensions/route.js",
+  "/api/ability/my-levels/route": "app/api/ability/my-levels/route.js",
+  "/api/auth/me/route": "app/api/auth/me/route.js",
+  "/api/ability/categories/route": "app/api/ability/categories/route.js"
 }

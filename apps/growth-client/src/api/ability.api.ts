@@ -85,6 +85,13 @@ export interface UserAbilityLevel {
   metadata: Record<string, any>;
   created_at: string;
   updated_at: string;
+  // 下一级信息（后端整合返回）
+  next_level?: number; // 下一级等级
+  next_level_required_exp?: number; // 下一级所需经验
+  exp_needed?: number; // 还需多少经验
+  requires_assessment?: boolean; // 是否需要考试
+  next_level_name?: string | null; // 下一级名称
+  is_max_level?: boolean; // 是否已满级
 }
 
 /**
@@ -280,11 +287,11 @@ export const abilityApi = {
   },
 
   /**
-   * 获取全局模板配置
+   * 获取全局模板配置（用户端）
    */
   async getTemplateConfigs(): Promise<AbilityItemLevelConfig[]> {
     const response = await apiClient.get<AbilityItemLevelConfig[]>(
-      '/admin/ability/level-configs/template'
+      '/ability/level-configs/template'
     );
     return response.data || [];
   },
@@ -417,6 +424,56 @@ export const abilityApi = {
     });
     if (!response.data) {
       throw new Error('增加经验失败');
+    }
+    return response.data;
+  },
+
+  /**
+   * 完成考试（标记考试通过并升级）
+   */
+  async completeAssessment(
+    itemId: string,
+    targetLevel: number
+  ): Promise<{
+    userLevel: UserAbilityLevel;
+    levelUp: boolean;
+    newLevel?: number;
+  }> {
+    const response = await apiClient.post<{
+      userLevel: UserAbilityLevel;
+      levelUp: boolean;
+      newLevel?: number;
+    }>('/ability/experience/complete-assessment', {
+      item_id: itemId,
+      target_level: targetLevel,
+    });
+    if (!response.data) {
+      throw new Error('完成考试失败');
+    }
+    return response.data;
+  },
+
+  /**
+   * 升级指定等级数（自动完成过程中需要的考试）
+   */
+  async levelUpBy(
+    itemId: string,
+    levels: number
+  ): Promise<{
+    userLevel: UserAbilityLevel;
+    levelUp: boolean;
+    newLevel?: number;
+  }> {
+    const response = await apiClient.post<{
+      userLevel: UserAbilityLevel;
+      levelUp: boolean;
+      newLevel?: number;
+    }>('/ability/experience/level-up-by', {
+      item_id: itemId,
+      levels,
+    });
+    if (!response.data) {
+      throw new Error('升级失败');
     }
     return response.data;
   },

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import '@/core/init';
 import { Container } from '@/core/container';
 import { ExperienceService } from '@/services/experience.service';
+import { UserAbilityService } from '@/services/user-ability.service';
 import { getCurrentUserId } from '@/utils/auth';
 
 /**
@@ -39,9 +40,16 @@ export async function POST(req: NextRequest) {
       }
     );
 
+    // 获取包含下一级信息的 userLevel
+    const userAbilityService = Container.resolve<UserAbilityService>(UserAbilityService);
+    const userLevelWithNextInfo = await userAbilityService.getUserLevelWithNextInfo(uid, validatedData.item_id);
+
     return Response.json({
       success: true,
-      data: result,
+      data: {
+        ...result,
+        userLevel: userLevelWithNextInfo || result.userLevel, // 如果获取失败，使用原始数据
+      },
     });
   } catch (error: any) {
     if (error instanceof z.ZodError) {

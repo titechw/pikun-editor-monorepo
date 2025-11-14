@@ -15,6 +15,17 @@ export class AbilityItemLevelConfigDAO {
   }
 
   /**
+   * 规范化数字字段（PostgreSQL BIGINT 可能返回为字符串）
+   */
+  private normalizeLevelConfig(config: AbilityItemLevelConfig): AbilityItemLevelConfig {
+    return {
+      ...config,
+      level: Number(config.level),
+      required_exp: Number(config.required_exp),
+    };
+  }
+
+  /**
    * 获取所有等级配置
    */
   async findAll(itemId?: string): Promise<AbilityItemLevelConfig[]> {
@@ -23,13 +34,13 @@ export class AbilityItemLevelConfigDAO {
         'SELECT * FROM pikun_db.ability_item_level_configs WHERE item_id = $1 ORDER BY level ASC',
         [itemId]
       );
-      return result.rows;
+      return result.rows.map((row) => this.normalizeLevelConfig(row));
     }
     const result = await this.db.query<AbilityItemLevelConfig>(
       'SELECT * FROM pikun_db.ability_item_level_configs ORDER BY level ASC',
       []
     );
-    return result.rows;
+    return result.rows.map((row) => this.normalizeLevelConfig(row));
   }
 
   /**
@@ -40,7 +51,7 @@ export class AbilityItemLevelConfigDAO {
       'SELECT * FROM pikun_db.ability_item_level_configs WHERE is_template = true ORDER BY level ASC',
       []
     );
-    return result.rows;
+    return result.rows.map((row) => this.normalizeLevelConfig(row));
   }
 
   /**
@@ -51,7 +62,7 @@ export class AbilityItemLevelConfigDAO {
       'SELECT * FROM pikun_db.ability_item_level_configs WHERE config_id = $1',
       [configId]
     );
-    return result.rows[0] || null;
+    return result.rows[0] ? this.normalizeLevelConfig(result.rows[0]) : null;
   }
 
   /**
@@ -63,13 +74,13 @@ export class AbilityItemLevelConfigDAO {
         'SELECT * FROM pikun_db.ability_item_level_configs WHERE item_id IS NULL AND level = $1 AND is_template = true',
         [level]
       );
-      return result.rows[0] || null;
+      return result.rows[0] ? this.normalizeLevelConfig(result.rows[0]) : null;
     }
     const result = await this.db.query<AbilityItemLevelConfig>(
       'SELECT * FROM pikun_db.ability_item_level_configs WHERE item_id = $1 AND level = $2',
       [itemId, level]
     );
-    return result.rows[0] || null;
+    return result.rows[0] ? this.normalizeLevelConfig(result.rows[0]) : null;
   }
 
   /**
@@ -127,7 +138,7 @@ export class AbilityItemLevelConfigDAO {
         JSON.stringify(data.metadata || {}),
       ]
     );
-    return result.rows[0];
+    return this.normalizeLevelConfig(result.rows[0]);
   }
 
   /**
@@ -210,7 +221,7 @@ export class AbilityItemLevelConfigDAO {
        RETURNING *`,
       values
     );
-    return result.rows[0];
+    return this.normalizeLevelConfig(result.rows[0]);
   }
 
   /**

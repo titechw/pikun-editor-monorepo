@@ -103,6 +103,17 @@ export const authApi = {
   },
 
   /**
+   * 获取当前用户信息
+   */
+  async getMe(): Promise<User> {
+    const response = await apiClient.get<User>('/auth/me');
+    if (response.data) {
+      return response.data;
+    }
+    throw new Error('获取用户信息失败');
+  },
+
+  /**
    * 登出
    */
   logout(): void {
