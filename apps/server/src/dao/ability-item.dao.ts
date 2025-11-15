@@ -67,14 +67,20 @@ export class AbilityItemDAO {
     evaluation_points?: string;
     training_strategies?: string;
     theoretical_basis?: string;
+    talent_ratio?: number;
+    acquired_training_ratio?: number;
     sort_order?: number;
     metadata?: Record<string, any>;
   }): Promise<AbilityItem> {
+    // 如果没有提供占比，默认各 50%
+    const talentRatio = data.talent_ratio ?? 50.00;
+    const acquiredTrainingRatio = data.acquired_training_ratio ?? 50.00;
+
     const result = await this.db.query<AbilityItem>(
       `INSERT INTO pikun_db.ability_items (
         dimension_id, code, name, description, definition, performance_description,
-        evaluation_points, training_strategies, theoretical_basis, sort_order, metadata
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        evaluation_points, training_strategies, theoretical_basis, talent_ratio, acquired_training_ratio, sort_order, metadata
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
        RETURNING *`,
       [
         data.dimension_id,
@@ -86,6 +92,8 @@ export class AbilityItemDAO {
         data.evaluation_points || null,
         data.training_strategies || null,
         data.theoretical_basis || null,
+        talentRatio,
+        acquiredTrainingRatio,
         data.sort_order || 0,
         JSON.stringify(data.metadata || {}),
       ]
@@ -107,6 +115,8 @@ export class AbilityItemDAO {
       evaluation_points?: string;
       training_strategies?: string;
       theoretical_basis?: string;
+      talent_ratio?: number;
+      acquired_training_ratio?: number;
       sort_order?: number;
       metadata?: Record<string, any>;
     }
@@ -146,6 +156,14 @@ export class AbilityItemDAO {
     if (updates.theoretical_basis !== undefined) {
       fields.push(`theoretical_basis = $${paramIndex++}`);
       values.push(updates.theoretical_basis);
+    }
+    if (updates.talent_ratio !== undefined) {
+      fields.push(`talent_ratio = $${paramIndex++}`);
+      values.push(updates.talent_ratio);
+    }
+    if (updates.acquired_training_ratio !== undefined) {
+      fields.push(`acquired_training_ratio = $${paramIndex++}`);
+      values.push(updates.acquired_training_ratio);
     }
     if (updates.sort_order !== undefined) {
       fields.push(`sort_order = $${paramIndex++}`);

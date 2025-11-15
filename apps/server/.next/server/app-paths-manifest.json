@@ -1,8 +1,5 @@
 {
-  "/api/auth/verify/route": "app/api/auth/verify/route.js",
-  "/api/ability/items/route": "app/api/ability/items/route.js",
-  "/api/ability/dimensions/route": "app/api/ability/dimensions/route.js",
-  "/api/ability/my-levels/route": "app/api/ability/my-levels/route.js",
-  "/api/auth/me/route": "app/api/auth/me/route.js",
-  "/api/ability/categories/route": "app/api/ability/categories/route.js"
+  "/api/admin/ability/categories/route": "app/api/admin/ability/categories/route.js",
+  "/api/admin/ability/items/route": "app/api/admin/ability/items/route.js",
+  "/api/admin/ability/dimensions/route": "app/api/admin/ability/dimensions/route.js"
 }

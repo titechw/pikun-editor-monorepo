@@ -61,7 +61,11 @@ export const AbilityItems = (): React.JSX.Element => {
 
   const handleEdit = (item: AbilityItem) => {
     setEditingItem(item);
-    form.setFieldsValue(item);
+    form.setFieldsValue({
+      ...item,
+      talent_ratio: item.talent_ratio ?? 50,
+      acquired_training_ratio: item.acquired_training_ratio ?? 50,
+    });
     setDrawerVisible(true);
   };
 
@@ -123,6 +127,19 @@ export const AbilityItems = (): React.JSX.Element => {
       title: '描述',
       dataIndex: 'description',
       key: 'description',
+      ellipsis: true,
+    },
+    {
+      title: '天赋占比',
+      dataIndex: 'talent_ratio',
+      key: 'talent_ratio',
+      render: (value: number) => value ? `${value}%` : '-',
+    },
+    {
+      title: '后天训练占比',
+      dataIndex: 'acquired_training_ratio',
+      key: 'acquired_training_ratio',
+      render: (value: number) => value ? `${value}%` : '-',
     },
     {
       title: '排序',
@@ -214,6 +231,54 @@ export const AbilityItems = (): React.JSX.Element => {
           </Form.Item>
           <Form.Item name="theoretical_basis" label="理论依据">
             <Input.TextArea rows={3} placeholder="理论依据" />
+          </Form.Item>
+          <Form.Item
+            name="talent_ratio"
+            label="天赋占比 (%)"
+            initialValue={50}
+            rules={[
+              { required: true, message: '请输入天赋占比' },
+              { type: 'number', min: 0, max: 100, message: '天赋占比必须在 0-100 之间' },
+            ]}
+          >
+            <InputNumber
+              min={0}
+              max={100}
+              precision={2}
+              step={1}
+              placeholder="0-100"
+              onChange={(value) => {
+                if (value !== null && value !== undefined) {
+                  form.setFieldsValue({
+                    acquired_training_ratio: Number((100 - value).toFixed(2)),
+                  });
+                }
+              }}
+            />
+          </Form.Item>
+          <Form.Item
+            name="acquired_training_ratio"
+            label="后天训练占比 (%)"
+            initialValue={50}
+            rules={[
+              { required: true, message: '请输入后天训练占比' },
+              { type: 'number', min: 0, max: 100, message: '后天训练占比必须在 0-100 之间' },
+            ]}
+          >
+            <InputNumber
+              min={0}
+              max={100}
+              precision={2}
+              step={1}
+              placeholder="0-100"
+              onChange={(value) => {
+                if (value !== null && value !== undefined) {
+                  form.setFieldsValue({
+                    talent_ratio: Number((100 - value).toFixed(2)),
+                  });
+                }
+              }}
+            />
           </Form.Item>
           <Form.Item name="sort_order" label="排序" initialValue={0}>
             <InputNumber min={0} />

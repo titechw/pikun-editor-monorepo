@@ -45,6 +45,8 @@ export interface AbilityItem {
   evaluation_points: string | null;
   training_strategies: string | null;
   theoretical_basis: string | null;
+  talent_ratio: number; // 天赋占比（0-100）
+  acquired_training_ratio: number; // 后天训练占比（0-100）
   sort_order: number;
   metadata: Record<string, any>;
   created_at: string;

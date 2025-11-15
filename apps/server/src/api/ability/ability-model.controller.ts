@@ -411,6 +411,8 @@ export class AbilityModelController {
         evaluation_points: z.string().optional(),
         training_strategies: z.string().optional(),
         theoretical_basis: z.string().optional(),
+        talent_ratio: z.number().min(0).max(100).optional(),
+        acquired_training_ratio: z.number().min(0).max(100).optional(),
         sort_order: z.number().optional(),
         metadata: z.record(z.any()).optional(),
       });
@@ -458,6 +460,8 @@ export class AbilityModelController {
         evaluation_points: z.string().optional(),
         training_strategies: z.string().optional(),
         theoretical_basis: z.string().optional(),
+        talent_ratio: z.number().min(0).max(100).optional(),
+        acquired_training_ratio: z.number().min(0).max(100).optional(),
         sort_order: z.number().optional(),
         metadata: z.record(z.any()).optional(),
       });

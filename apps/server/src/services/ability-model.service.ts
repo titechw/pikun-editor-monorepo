@@ -181,6 +181,8 @@ export class AbilityModelService {
     evaluation_points?: string;
     training_strategies?: string;
     theoretical_basis?: string;
+    talent_ratio?: number;
+    acquired_training_ratio?: number;
     sort_order?: number;
     metadata?: Record<string, any>;
   }): Promise<AbilityItem> {
@@ -201,6 +203,8 @@ export class AbilityModelService {
       evaluation_points?: string;
       training_strategies?: string;
       theoretical_basis?: string;
+      talent_ratio?: number;
+      acquired_training_ratio?: number;
       sort_order?: number;
       metadata?: Record<string, any>;
     }
