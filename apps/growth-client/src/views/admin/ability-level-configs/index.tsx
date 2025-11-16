@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { observer } from 'mobx-react-lite';
 import {
   Button,
   Modal,
@@ -8,7 +9,6 @@ import {
   InputNumber,
   Switch,
   Select,
-  message,
   Space,
   Tabs,
   Alert,
@@ -16,170 +16,99 @@ import {
   Tooltip,
 } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, CopyOutlined, InfoCircleOutlined } from '@ant-design/icons';
-import { adminAbilityApi } from '@/api/admin-ability.api';
-import type { AbilityItemLevelConfig, AbilityItem } from '@/api/ability.api';
+import { abilityLevelConfigStore } from '@/stores/admin-ability-level-configs';
+import type { AbilityItemLevelConfig } from '@/api/ability.api';
 import './AbilityLevelConfigs.less';
 
 /**
  * 能力项等级配置管理页面
  */
-export const AbilityLevelConfigs = (): React.JSX.Element => {
-  const [configs, setConfigs] = useState<AbilityItemLevelConfig[]>([]);
-  const [items, setItems] = useState<AbilityItem[]>([]);
-  const [templateConfigs, setTemplateConfigs] = useState<AbilityItemLevelConfig[]>([]);
-  const [loading, setLoading] = useState(false);
+export const AbilityLevelConfigs = observer((): React.JSX.Element => {
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [editingConfig, setEditingConfig] = useState<AbilityItemLevelConfig | null>(null);
-  const [selectedItemId, setSelectedItemId] = useState<string>('');
-  const [activeTab, setActiveTab] = useState('template');
   const [copyModalVisible, setCopyModalVisible] = useState(false);
   const [form] = Form.useForm();
 
   useEffect(() => {
-    loadItems();
-    loadTemplateConfigs();
+    abilityLevelConfigStore.loadItems();
+    abilityLevelConfigStore.loadTemplateConfigs();
   }, []);
 
   useEffect(() => {
-    if (activeTab === 'item' && selectedItemId) {
-      loadConfigs(selectedItemId);
+    if (abilityLevelConfigStore.activeTab === 'item' && abilityLevelConfigStore.selectedItemId) {
+      abilityLevelConfigStore.loadConfigs(abilityLevelConfigStore.selectedItemId);
     }
-  }, [activeTab, selectedItemId]);
+  }, [abilityLevelConfigStore.activeTab, abilityLevelConfigStore.selectedItemId]);
 
-  const loadItems = async () => {
-    try {
-      const data = await adminAbilityApi.getItems();
-      setItems(data);
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : '加载能力项失败';
-      message.error(errorMessage);
-    }
-  };
-
-  const loadTemplateConfigs = async () => {
-    setLoading(true);
-    try {
-      const data = await adminAbilityApi.getTemplateConfigs();
-      setTemplateConfigs(data);
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : '加载失败';
-      message.error(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadConfigs = async (itemId?: string) => {
-    setLoading(true);
-    try {
-      const data = await adminAbilityApi.getLevelConfigs(itemId);
-      setConfigs(data);
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : '加载失败';
-      message.error(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCreate = () => {
-    if (activeTab === 'item' && !selectedItemId) {
-      message.warning('请先选择能力项');
+  const handleCreate = (): void => {
+    if (abilityLevelConfigStore.activeTab === 'item' && !abilityLevelConfigStore.selectedItemId) {
       return;
     }
     setEditingConfig(null);
     form.resetFields();
     form.setFieldsValue({
-      is_template: activeTab === 'template',
-      item_id: activeTab === 'item' ? selectedItemId : null,
+      is_template: abilityLevelConfigStore.activeTab === 'template',
+      item_id: abilityLevelConfigStore.activeTab === 'item' ? abilityLevelConfigStore.selectedItemId : null,
     });
     setDrawerVisible(true);
   };
 
-  const handleEdit = (config: AbilityItemLevelConfig) => {
+  const handleEdit = (config: AbilityItemLevelConfig): void => {
     setEditingConfig(config);
     form.setFieldsValue(config);
     setDrawerVisible(true);
   };
 
-  const handleDelete = async (configId: string) => {
+  const handleDelete = (configId: string): void => {
     Modal.confirm({
       title: '确认删除',
       content: '确定要删除这个等级配置吗？',
       onOk: async () => {
-        try {
-          await adminAbilityApi.deleteLevelConfig(configId);
-          message.success('删除成功');
-          if (activeTab === 'template') {
-            loadTemplateConfigs();
-          } else {
-            loadConfigs(selectedItemId);
-          }
-        } catch (error: unknown) {
-          const errorMessage = error instanceof Error ? error.message : '删除失败';
-          message.error(errorMessage);
-        }
+        await abilityLevelConfigStore.deleteConfig(configId);
       },
     });
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (): Promise<void> => {
     try {
       const values = await form.validateFields();
       if (editingConfig) {
-        await adminAbilityApi.updateLevelConfig(editingConfig.config_id, values);
-        message.success('更新成功');
+        await abilityLevelConfigStore.updateConfig(editingConfig.config_id, values);
       } else {
         // 确保正确传递 item_id 和 is_template
         const submitData = {
           ...values,
-          item_id: activeTab === 'item' ? selectedItemId : null,
-          is_template: activeTab === 'template',
+          item_id: abilityLevelConfigStore.activeTab === 'item' ? abilityLevelConfigStore.selectedItemId : null,
+          is_template: abilityLevelConfigStore.activeTab === 'template',
         };
-        await adminAbilityApi.createLevelConfig(submitData);
-        message.success('创建成功');
+        await abilityLevelConfigStore.createConfig(submitData);
       }
       setDrawerVisible(false);
       setEditingConfig(null);
       form.resetFields();
-      if (activeTab === 'template') {
-        loadTemplateConfigs();
-      } else {
-        loadConfigs(selectedItemId);
-      }
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : '操作失败';
-      message.error(errorMessage);
+    } catch {
+      // 错误已在 Store 中处理
     }
   };
 
-  const handleCopyToItem = () => {
-    if (!selectedItemId) {
-      message.warning('请先选择能力项');
+  const handleCopyToItem = (): void => {
+    if (!abilityLevelConfigStore.selectedItemId) {
       return;
     }
     setCopyModalVisible(true);
   };
 
-  const handleConfirmCopy = async () => {
+  const handleConfirmCopy = async (): Promise<void> => {
     try {
-      setLoading(true);
-      await adminAbilityApi.copyTemplateToItem(selectedItemId);
-      // 重新加载配置列表
-      await loadConfigs(selectedItemId);
-      message.success('复制成功');
+      await abilityLevelConfigStore.copyTemplateToItem(abilityLevelConfigStore.selectedItemId);
       setCopyModalVisible(false);
-    } catch (error: unknown) {
-      console.error('复制失败:', error);
-      const errorMessage = error instanceof Error ? error.message : '复制失败';
-      message.error(errorMessage);
-    } finally {
-      setLoading(false);
+    } catch {
+      // 错误已在 Store 中处理
     }
   };
 
   // 渲染配置卡片
-  const renderConfigCard = (config: AbilityItemLevelConfig) => {
+  const renderConfigCard = (config: AbilityItemLevelConfig): React.JSX.Element => {
     return (
       <div key={config.config_id} className="config-card">
         <div className="card-header">
@@ -228,7 +157,7 @@ export const AbilityLevelConfigs = (): React.JSX.Element => {
     );
   };
 
-  if (loading && templateConfigs.length === 0 && configs.length === 0) {
+  if (abilityLevelConfigStore.loading && abilityLevelConfigStore.templateConfigs.length === 0 && abilityLevelConfigStore.configs.length === 0) {
     return (
       <div className="ability-level-configs">
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -247,25 +176,26 @@ export const AbilityLevelConfigs = (): React.JSX.Element => {
         </Button>
       </div>
       <Tabs
-        activeKey={activeTab}
-        onChange={setActiveTab}
+        activeKey={abilityLevelConfigStore.activeTab}
+        onChange={abilityLevelConfigStore.setActiveTab}
         items={[
           {
             key: 'template',
             label: '全局模板',
             children: (
               <div className="configs-container">
-                {loading && templateConfigs.length === 0 ? (
+                {abilityLevelConfigStore.loading && abilityLevelConfigStore.templateConfigs.length === 0 ? (
                   <div className="loading-container">
                     <Spin size="large" />
                   </div>
-                ) : templateConfigs.length === 0 ? (
+                ) : abilityLevelConfigStore.templateConfigs.length === 0 ? (
                   <div className="empty-container">
                     <div className="empty-text">暂无全局模板配置</div>
                   </div>
                 ) : (
                   <div className="configs-grid">
-                    {templateConfigs
+                    {abilityLevelConfigStore.templateConfigs
+                      .slice()
                       .sort((a, b) => (a.level || 0) - (b.level || 0))
                       .map((config) => renderConfigCard(config))}
                   </div>
@@ -299,13 +229,13 @@ export const AbilityLevelConfigs = (): React.JSX.Element => {
                   <Select
                     className="item-select"
                     placeholder="选择能力项"
-                    value={selectedItemId}
+                    value={abilityLevelConfigStore.selectedItemId}
                     onChange={(val) => {
-                      setSelectedItemId(val);
-                      loadConfigs(val);
+                      abilityLevelConfigStore.setSelectedItemId(val);
+                      abilityLevelConfigStore.loadConfigs(val);
                     }}
                   >
-                    {items.map((item) => (
+                    {abilityLevelConfigStore.items.map((item) => (
                       <Select.Option key={item.item_id} value={item.item_id}>
                         {item.name}
                       </Select.Option>
@@ -315,7 +245,7 @@ export const AbilityLevelConfigs = (): React.JSX.Element => {
                     type="default"
                     icon={<CopyOutlined />}
                     onClick={handleCopyToItem}
-                    disabled={!selectedItemId}
+                    disabled={!abilityLevelConfigStore.selectedItemId}
                   >
                     从模板复制
                   </Button>
@@ -323,27 +253,28 @@ export const AbilityLevelConfigs = (): React.JSX.Element => {
                     type="primary"
                     icon={<PlusOutlined />}
                     onClick={handleCreate}
-                    disabled={!selectedItemId}
+                    disabled={!abilityLevelConfigStore.selectedItemId}
                   >
                     新增等级
                   </Button>
                 </div>
                 <div className="configs-container">
-                  {loading && configs.length === 0 ? (
+                  {abilityLevelConfigStore.loading && abilityLevelConfigStore.configs.length === 0 ? (
                     <div className="loading-container">
                       <Spin size="large" />
                     </div>
-                  ) : !selectedItemId ? (
+                  ) : !abilityLevelConfigStore.selectedItemId ? (
                     <div className="empty-container">
                       <div className="empty-text">请先选择能力项</div>
                     </div>
-                  ) : configs.length === 0 ? (
+                  ) : abilityLevelConfigStore.configs.length === 0 ? (
                     <div className="empty-container">
                       <div className="empty-text">暂无配置，可以"从模板复制"或"新增等级"</div>
                     </div>
                   ) : (
                     <div className="configs-grid">
-                      {configs
+                      {abilityLevelConfigStore.configs
+                        .slice()
                         .sort((a, b) => (a.level || 0) - (b.level || 0))
                         .map((config) => renderConfigCard(config))}
                     </div>
@@ -356,7 +287,7 @@ export const AbilityLevelConfigs = (): React.JSX.Element => {
         className="config-tabs"
       />
       <Drawer
-        title={editingConfig ? '编辑等级配置' : activeTab === 'template' ? '新增全局模板等级' : '新增能力项等级'}
+        title={editingConfig ? '编辑等级配置' : abilityLevelConfigStore.activeTab === 'template' ? '新增全局模板等级' : '新增能力项等级'}
         open={drawerVisible}
         onClose={() => {
           setDrawerVisible(false);
@@ -367,7 +298,7 @@ export const AbilityLevelConfigs = (): React.JSX.Element => {
         className="admin-drawer"
         rootClassName="admin-drawer-root"
       >
-        {activeTab === 'item' && !editingConfig && (
+        {abilityLevelConfigStore.activeTab === 'item' && !editingConfig && (
           <Alert
             message="提示"
             description="为当前能力项新增独立等级配置。可以创建任意等级（如11级、12级等），不受全局模板限制。"
@@ -381,7 +312,7 @@ export const AbilityLevelConfigs = (): React.JSX.Element => {
             name="level"
             label="等级"
             rules={[{ required: true, message: '请输入等级' }]}
-            extra={activeTab === 'item' ? '可以设置任意等级数字，不受模板限制（如11、12、13等）' : '全局模板的等级编号'}
+            extra={abilityLevelConfigStore.activeTab === 'item' ? '可以设置任意等级数字，不受模板限制（如11、12、13等）' : '全局模板的等级编号'}
           >
             <InputNumber min={1} max={1000} style={{ width: '100%' }} />
           </Form.Item>
@@ -429,12 +360,12 @@ export const AbilityLevelConfigs = (): React.JSX.Element => {
         onCancel={() => setCopyModalVisible(false)}
         okText="确定"
         cancelText="取消"
-        confirmLoading={loading}
+        confirmLoading={abilityLevelConfigStore.loading}
       >
         <p>确定要将全局模板的所有等级配置复制到该能力项吗？</p>
         <p>复制后，该能力项将拥有独立的等级配置，可以单独编辑。如果该能力项已有配置，将不会覆盖现有配置。</p>
       </Modal>
     </div>
   );
-};
+});
 

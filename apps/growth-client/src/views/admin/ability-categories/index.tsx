@@ -1,84 +1,71 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Modal, Drawer, Form, Input, InputNumber, message, Space, Spin, Tooltip } from 'antd';
+import { observer } from 'mobx-react-lite';
+import { Button, Modal, Drawer, Form, Input, InputNumber, Space, Spin, Tooltip } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { adminAbilityApi } from '@/api/admin-ability.api';
-import type { AbilityCategory } from '@/api/ability.api';
+import {
+  abilityCategoryListStore,
+  AbilityCategoryOperationType,
+  type AbilityCategoryListItem,
+} from '@/stores/admin-ability-categories';
 import './AbilityCategories.less';
 
 /**
  * 能力类别管理页面
  */
-export const AbilityCategories = (): React.JSX.Element => {
-  const [categories, setCategories] = useState<AbilityCategory[]>([]);
-  const [loading, setLoading] = useState(false);
+export const AbilityCategories = observer((): React.JSX.Element => {
   const [drawerVisible, setDrawerVisible] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<AbilityCategory | null>(null);
+  const [editingCategory, setEditingCategory] = useState<AbilityCategoryListItem | null>(null);
   const [form] = Form.useForm();
 
   useEffect(() => {
-    loadCategories();
+    abilityCategoryListStore.fetchData();
   }, []);
 
-  const loadCategories = async () => {
-    setLoading(true);
-    try {
-      const data = await adminAbilityApi.getCategories();
-      setCategories(data);
-    } catch (error: any) {
-      message.error(error.message || '加载失败');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCreate = () => {
+  const handleCreate = (): void => {
     setEditingCategory(null);
     form.resetFields();
     setDrawerVisible(true);
   };
 
-  const handleEdit = (category: AbilityCategory) => {
+  const handleEdit = (category: AbilityCategoryListItem): void => {
     setEditingCategory(category);
     form.setFieldsValue(category);
     setDrawerVisible(true);
   };
 
-  const handleDelete = async (categoryId: string) => {
+  const handleDelete = (categoryId: string): void => {
     Modal.confirm({
       title: '确认删除',
       content: '确定要删除这个能力类别吗？',
       onOk: async () => {
-        try {
-          await adminAbilityApi.deleteCategory(categoryId);
-          message.success('删除成功');
-          loadCategories();
-        } catch (error: any) {
-          message.error(error.message || '删除失败');
+        const category = abilityCategoryListStore.data.find((item) => item.category_id === categoryId);
+        if (category) {
+          await abilityCategoryListStore.handleOperation(
+            AbilityCategoryOperationType.Delete,
+            category
+          );
         }
       },
     });
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (): Promise<void> => {
     try {
       const values = await form.validateFields();
       if (editingCategory) {
-        await adminAbilityApi.updateCategory(editingCategory.category_id, values);
-        message.success('更新成功');
+        await abilityCategoryListStore.updateCategory(editingCategory.category_id, values);
       } else {
-        await adminAbilityApi.createCategory(values);
-        message.success('创建成功');
+        await abilityCategoryListStore.createCategory(values);
       }
       setDrawerVisible(false);
       setEditingCategory(null);
       form.resetFields();
-      loadCategories();
-    } catch (error: any) {
-      message.error(error.message || '操作失败');
+    } catch (error) {
+      // 错误已在 Store 中处理
     }
   };
 
-  if (loading && categories.length === 0) {
+  if (abilityCategoryListStore.loading && abilityCategoryListStore.data.length === 0) {
     return (
       <div className="ability-categories">
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -97,7 +84,7 @@ export const AbilityCategories = (): React.JSX.Element => {
         </Button>
       </div>
       <div className="categories-grid">
-        {categories.map((category) => (
+        {abilityCategoryListStore.data.map((category) => (
           <div key={category.category_id} className="category-card">
             <div className="card-header">
               <div className="category-info">
@@ -187,5 +174,5 @@ export const AbilityCategories = (): React.JSX.Element => {
       </Drawer>
     </div>
   );
-};
+});
 

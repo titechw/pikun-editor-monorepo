@@ -1,112 +1,84 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Modal, Drawer, Form, Input, InputNumber, Select, message, Space, Spin, Tabs, Tooltip } from 'antd';
+import { observer } from 'mobx-react-lite';
+import { Button, Modal, Drawer, Form, Input, InputNumber, Select, Space, Spin, Tabs, Tooltip } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { adminAbilityApi } from '@/api/admin-ability.api';
-import type { AbilityDimension, AbilityCategory } from '@/api/ability.api';
+import {
+  abilityDimensionListStore,
+  AbilityDimensionOperationType,
+  type AbilityDimensionListItem,
+} from '@/stores/admin-ability-dimensions';
 import './AbilityDimensions.less';
 
 /**
  * 能力维度管理页面
  */
-export const AbilityDimensions = (): React.JSX.Element => {
-  const [dimensions, setDimensions] = useState<AbilityDimension[]>([]);
-  const [categories, setCategories] = useState<AbilityCategory[]>([]);
-  const [loading, setLoading] = useState(false);
+export const AbilityDimensions = observer((): React.JSX.Element => {
   const [drawerVisible, setDrawerVisible] = useState(false);
-  const [editingDimension, setEditingDimension] = useState<AbilityDimension | null>(null);
-  const [activeTab, setActiveTab] = useState<string>('');
+  const [editingDimension, setEditingDimension] = useState<AbilityDimensionListItem | null>(null);
   const [form] = Form.useForm();
 
   useEffect(() => {
-    loadCategories();
-    loadDimensions();
+    abilityDimensionListStore.loadCategories();
+    abilityDimensionListStore.fetchData();
   }, []);
 
   useEffect(() => {
-    if (categories.length > 0 && !activeTab) {
-      setActiveTab(categories[0].category_id);
+    if (abilityDimensionListStore.categories.length > 0 && !abilityDimensionListStore.activeTab) {
+      abilityDimensionListStore.setActiveTab(abilityDimensionListStore.categories[0].category_id);
     }
-  }, [categories]);
+  }, [abilityDimensionListStore.categories]);
 
-  const loadCategories = async () => {
-    try {
-      const data = await adminAbilityApi.getCategories();
-      const sorted = data.sort((a, b) => a.sort_order - b.sort_order);
-      setCategories(sorted);
-      if (sorted.length > 0 && !activeTab) {
-        setActiveTab(sorted[0].category_id);
-      }
-    } catch (error: any) {
-      message.error(error.message || '加载类别失败');
-    }
-  };
-
-  const loadDimensions = async () => {
-    setLoading(true);
-    try {
-      const data = await adminAbilityApi.getDimensions();
-      setDimensions(data);
-    } catch (error: any) {
-      message.error(error.message || '加载失败');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCreate = () => {
+  const handleCreate = (): void => {
     setEditingDimension(null);
     form.resetFields();
     // 如果当前有选中的分类，设置为默认值
-    if (activeTab) {
-      form.setFieldsValue({ category_id: activeTab });
+    if (abilityDimensionListStore.activeTab) {
+      form.setFieldsValue({ category_id: abilityDimensionListStore.activeTab });
     }
     setDrawerVisible(true);
   };
 
-  const handleEdit = (dimension: AbilityDimension) => {
+  const handleEdit = (dimension: AbilityDimensionListItem): void => {
     setEditingDimension(dimension);
     form.setFieldsValue(dimension);
     setDrawerVisible(true);
   };
 
-  const handleDelete = async (dimensionId: string) => {
+  const handleDelete = (dimensionId: string): void => {
     Modal.confirm({
       title: '确认删除',
       content: '确定要删除这个能力维度吗？',
       onOk: async () => {
-        try {
-          await adminAbilityApi.deleteDimension(dimensionId);
-          message.success('删除成功');
-          loadDimensions();
-        } catch (error: any) {
-          message.error(error.message || '删除失败');
+        const dimension = abilityDimensionListStore.data.find((item) => item.dimension_id === dimensionId);
+        if (dimension) {
+          await abilityDimensionListStore.handleOperation(
+            AbilityDimensionOperationType.Delete,
+            dimension
+          );
         }
       },
     });
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (): Promise<void> => {
     try {
       const values = await form.validateFields();
       if (editingDimension) {
-        await adminAbilityApi.updateDimension(editingDimension.dimension_id, values);
-        message.success('更新成功');
+        await abilityDimensionListStore.updateDimension(editingDimension.dimension_id, values);
       } else {
-        await adminAbilityApi.createDimension(values);
-        message.success('创建成功');
+        await abilityDimensionListStore.createDimension(values);
       }
       setDrawerVisible(false);
       setEditingDimension(null);
       form.resetFields();
-      loadDimensions();
-    } catch (error: any) {
-      message.error(error.message || '操作失败');
+    } catch (error) {
+      // 错误已在 Store 中处理
     }
   };
 
   // 渲染维度卡片
-  const renderDimensionCard = (dimension: AbilityDimension) => {
-    const category = categories.find((c) => c.category_id === dimension.category_id);
+  const renderDimensionCard = (dimension: AbilityDimensionListItem) => {
+    const category = abilityDimensionListStore.categories.find((c) => c.category_id === dimension.category_id);
 
     return (
       <div key={dimension.dimension_id} className="dimension-card">
@@ -155,9 +127,10 @@ export const AbilityDimensions = (): React.JSX.Element => {
   };
 
   // 准备 Tab 数据
-  const tabItems = categories.map((category) => {
-    const categoryDimensions = dimensions
+  const tabItems = abilityDimensionListStore.categories.map((category) => {
+    const categoryDimensions = abilityDimensionListStore.data
       .filter((d) => d.category_id === category.category_id)
+      .slice()
       .sort((a, b) => a.sort_order - b.sort_order);
 
     if (categoryDimensions.length === 0) return null;
@@ -173,7 +146,7 @@ export const AbilityDimensions = (): React.JSX.Element => {
     };
   }).filter((item): item is NonNullable<typeof item> => item !== null);
 
-  if (loading && dimensions.length === 0) {
+  if (abilityDimensionListStore.loading && abilityDimensionListStore.data.length === 0) {
     return (
       <div className="ability-dimensions">
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -192,8 +165,8 @@ export const AbilityDimensions = (): React.JSX.Element => {
         </Button>
       </div>
       <Tabs
-        activeKey={activeTab}
-        onChange={setActiveTab}
+        activeKey={abilityDimensionListStore.activeTab}
+        onChange={abilityDimensionListStore.setActiveTab}
         items={tabItems}
         className="category-tabs"
       />
@@ -216,7 +189,7 @@ export const AbilityDimensions = (): React.JSX.Element => {
             rules={[{ required: true, message: '请选择类别' }]}
           >
             <Select placeholder="选择类别">
-              {categories.map((category) => (
+              {abilityDimensionListStore.categories.map((category) => (
                 <Select.Option key={category.category_id} value={category.category_id}>
                   {category.name}
                 </Select.Option>
@@ -261,5 +234,5 @@ export const AbilityDimensions = (): React.JSX.Element => {
       </Drawer>
     </div>
   );
-};
+});
 
