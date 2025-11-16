@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Table,
   Button,
   Modal,
   Drawer,
@@ -13,6 +12,8 @@ import {
   Space,
   Tabs,
   Alert,
+  Spin,
+  Tooltip,
 } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, CopyOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { adminAbilityApi } from '@/api/admin-ability.api';
@@ -49,8 +50,9 @@ export const AbilityLevelConfigs = (): React.JSX.Element => {
     try {
       const data = await adminAbilityApi.getItems();
       setItems(data);
-    } catch (error: any) {
-      message.error(error.message || '加载能力项失败');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : '加载能力项失败';
+      message.error(errorMessage);
     }
   };
 
@@ -59,8 +61,9 @@ export const AbilityLevelConfigs = (): React.JSX.Element => {
     try {
       const data = await adminAbilityApi.getTemplateConfigs();
       setTemplateConfigs(data);
-    } catch (error: any) {
-      message.error(error.message || '加载失败');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : '加载失败';
+      message.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -71,8 +74,9 @@ export const AbilityLevelConfigs = (): React.JSX.Element => {
     try {
       const data = await adminAbilityApi.getLevelConfigs(itemId);
       setConfigs(data);
-    } catch (error: any) {
-      message.error(error.message || '加载失败');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : '加载失败';
+      message.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -111,8 +115,9 @@ export const AbilityLevelConfigs = (): React.JSX.Element => {
           } else {
             loadConfigs(selectedItemId);
           }
-        } catch (error: any) {
-          message.error(error.message || '删除失败');
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error ? error.message : '删除失败';
+          message.error(errorMessage);
         }
       },
     });
@@ -142,8 +147,9 @@ export const AbilityLevelConfigs = (): React.JSX.Element => {
       } else {
         loadConfigs(selectedItemId);
       }
-    } catch (error: any) {
-      message.error(error.message || '操作失败');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : '操作失败';
+      message.error(errorMessage);
     }
   };
 
@@ -163,57 +169,74 @@ export const AbilityLevelConfigs = (): React.JSX.Element => {
       await loadConfigs(selectedItemId);
       message.success('复制成功');
       setCopyModalVisible(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('复制失败:', error);
-      const errorMessage = error.message || '复制失败';
+      const errorMessage = error instanceof Error ? error.message : '复制失败';
       message.error(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
-  const columns = [
-    {
-      title: '等级',
-      dataIndex: 'level',
-      key: 'level',
-    },
-    {
-      title: '等级名称',
-      dataIndex: 'level_name',
-      key: 'level_name',
-    },
-    {
-      title: '所需经验',
-      dataIndex: 'required_exp',
-      key: 'required_exp',
-    },
-    {
-      title: '需要考核',
-      dataIndex: 'requires_assessment',
-      key: 'requires_assessment',
-      render: (val: boolean) => (val ? '是' : '否'),
-    },
-    {
-      title: '操作',
-      key: 'action',
-      render: (_: any, record: AbilityItemLevelConfig) => (
-        <Space>
-          <Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
-            编辑
-          </Button>
-          <Button
-            type="link"
-            danger
-            icon={<DeleteOutlined />}
-            onClick={() => handleDelete(record.config_id)}
-          >
-            删除
-          </Button>
-        </Space>
-      ),
-    },
-  ];
+  // 渲染配置卡片
+  const renderConfigCard = (config: AbilityItemLevelConfig) => {
+    return (
+      <div key={config.config_id} className="config-card">
+        <div className="card-header">
+          <div className="config-info">
+            <div className="config-level">Lv.{config.level}</div>
+            {config.level_name && (
+              <div className="config-level-name">{config.level_name}</div>
+            )}
+          </div>
+          <div className="config-actions">
+            <Button
+              type="text"
+              icon={<EditOutlined />}
+              onClick={() => handleEdit(config)}
+              title="编辑"
+            />
+            <Button
+              type="text"
+              danger
+              icon={<DeleteOutlined />}
+              onClick={() => handleDelete(config.config_id)}
+              title="删除"
+            />
+          </div>
+        </div>
+        <div className="card-body">
+          <div className="config-stats">
+            <div className="stat-item">
+              <span className="stat-label">所需经验:</span>
+              <span className="stat-value">{config.required_exp?.toLocaleString() || 0}</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-label">需要考核:</span>
+              <span className={`stat-value ${config.requires_assessment ? 'yes' : 'no'}`}>
+                {config.requires_assessment ? '是' : '否'}
+              </span>
+            </div>
+          </div>
+          {config.level_description && (
+            <Tooltip title={config.level_description} placement="top">
+              <div className="config-description">{config.level_description}</div>
+            </Tooltip>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  if (loading && templateConfigs.length === 0 && configs.length === 0) {
+    return (
+      <div className="ability-level-configs">
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+          <Spin size="large" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="ability-level-configs">
@@ -231,19 +254,30 @@ export const AbilityLevelConfigs = (): React.JSX.Element => {
             key: 'template',
             label: '全局模板',
             children: (
-              <Table
-                columns={columns}
-                dataSource={templateConfigs}
-                loading={loading}
-                rowKey="config_id"
-              />
+              <div className="configs-container">
+                {loading && templateConfigs.length === 0 ? (
+                  <div className="loading-container">
+                    <Spin size="large" />
+                  </div>
+                ) : templateConfigs.length === 0 ? (
+                  <div className="empty-container">
+                    <div className="empty-text">暂无全局模板配置</div>
+                  </div>
+                ) : (
+                  <div className="configs-grid">
+                    {templateConfigs
+                      .sort((a, b) => (a.level || 0) - (b.level || 0))
+                      .map((config) => renderConfigCard(config))}
+                  </div>
+                )}
+              </div>
             ),
           },
           {
             key: 'item',
             label: '能力项配置',
             children: (
-              <div>
+              <div className="item-config-container">
                 <Alert
                   message="能力项等级配置说明"
                   description={
@@ -259,11 +293,11 @@ export const AbilityLevelConfigs = (): React.JSX.Element => {
                   type="info"
                   icon={<InfoCircleOutlined />}
                   showIcon
-                  style={{ marginBottom: 16 }}
+                  className="info-alert"
                 />
-                <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div className="item-selector">
                   <Select
-                    style={{ width: 300 }}
+                    className="item-select"
                     placeholder="选择能力项"
                     value={selectedItemId}
                     onChange={(val) => {
@@ -294,19 +328,32 @@ export const AbilityLevelConfigs = (): React.JSX.Element => {
                     新增等级
                   </Button>
                 </div>
-                <Table
-                  columns={columns}
-                  dataSource={configs}
-                  loading={loading}
-                  rowKey="config_id"
-                  locale={{
-                    emptyText: selectedItemId ? '暂无配置，可以"从模板复制"或"新增等级"' : '请先选择能力项',
-                  }}
-                />
+                <div className="configs-container">
+                  {loading && configs.length === 0 ? (
+                    <div className="loading-container">
+                      <Spin size="large" />
+                    </div>
+                  ) : !selectedItemId ? (
+                    <div className="empty-container">
+                      <div className="empty-text">请先选择能力项</div>
+                    </div>
+                  ) : configs.length === 0 ? (
+                    <div className="empty-container">
+                      <div className="empty-text">暂无配置，可以"从模板复制"或"新增等级"</div>
+                    </div>
+                  ) : (
+                    <div className="configs-grid">
+                      {configs
+                        .sort((a, b) => (a.level || 0) - (b.level || 0))
+                        .map((config) => renderConfigCard(config))}
+                    </div>
+                  )}
+                </div>
               </div>
             ),
           },
         ]}
+        className="config-tabs"
       />
       <Drawer
         title={editingConfig ? '编辑等级配置' : activeTab === 'template' ? '新增全局模板等级' : '新增能力项等级'}
@@ -317,6 +364,8 @@ export const AbilityLevelConfigs = (): React.JSX.Element => {
           form.resetFields();
         }}
         width={600}
+        className="admin-drawer"
+        rootClassName="admin-drawer-root"
       >
         {activeTab === 'item' && !editingConfig && (
           <Alert

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Button, Modal, Drawer, Form, Input, InputNumber, message, Space } from 'antd';
+import { Button, Modal, Drawer, Form, Input, InputNumber, message, Space, Spin, Tooltip } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { adminAbilityApi } from '@/api/admin-ability.api';
 import type { AbilityCategory } from '@/api/ability.api';
@@ -78,51 +78,15 @@ export const AbilityCategories = (): React.JSX.Element => {
     }
   };
 
-  const columns = [
-    {
-      title: '代码',
-      dataIndex: 'code',
-      key: 'code',
-    },
-    {
-      title: '名称',
-      dataIndex: 'name',
-      key: 'name',
-    },
-    {
-      title: '描述',
-      dataIndex: 'description',
-      key: 'description',
-    },
-    {
-      title: '排序',
-      dataIndex: 'sort_order',
-      key: 'sort_order',
-    },
-    {
-      title: '操作',
-      key: 'action',
-      render: (_: any, record: AbilityCategory) => (
-        <Space>
-          <Button
-            type="link"
-            icon={<EditOutlined />}
-            onClick={() => handleEdit(record)}
-          >
-            编辑
-          </Button>
-          <Button
-            type="link"
-            danger
-            icon={<DeleteOutlined />}
-            onClick={() => handleDelete(record.category_id)}
-          >
-            删除
-          </Button>
-        </Space>
-      ),
-    },
-  ];
+  if (loading && categories.length === 0) {
+    return (
+      <div className="ability-categories">
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+          <Spin size="large" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="ability-categories">
@@ -132,12 +96,46 @@ export const AbilityCategories = (): React.JSX.Element => {
           新增类别
         </Button>
       </div>
-      <Table
-        columns={columns}
-        dataSource={categories}
-        loading={loading}
-        rowKey="category_id"
-      />
+      <div className="categories-grid">
+        {categories.map((category) => (
+          <div key={category.category_id} className="category-card">
+            <div className="card-header">
+              <div className="category-info">
+                <div className="category-name">{category.name}</div>
+                <div className="category-code">{category.code}</div>
+              </div>
+              <div className="category-actions">
+                <Button
+                  type="text"
+                  icon={<EditOutlined />}
+                  onClick={() => handleEdit(category)}
+                  title="编辑"
+                />
+                <Button
+                  type="text"
+                  danger
+                  icon={<DeleteOutlined />}
+                  onClick={() => handleDelete(category.category_id)}
+                  title="删除"
+                />
+              </div>
+            </div>
+            <div className="card-body">
+              {category.description && (
+                <Tooltip title={category.description} placement="top">
+                  <div className="category-description">{category.description}</div>
+                </Tooltip>
+              )}
+              <div className="category-stats">
+                <div className="stat-item">
+                  <span className="stat-label">排序:</span>
+                  <span className="stat-value">{category.sort_order}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
       <Drawer
         title={editingCategory ? '编辑能力类别' : '新增能力类别'}
         open={drawerVisible}
@@ -147,6 +145,8 @@ export const AbilityCategories = (): React.JSX.Element => {
           form.resetFields();
         }}
         width={600}
+        className="admin-drawer"
+        rootClassName="admin-drawer-root"
       >
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Form.Item

@@ -1,4 +1,4 @@
-// File: /Users/kp/Documents/ai-works/pikun-editor-monorepo/apps/server/src/app/api/ability/categories/route.ts
+// File: /Users/pikun/Documents/tech_projects/pikun-editor-monorepo/apps/server/src/app/api/ability/categories/route.ts
 import * as entry from '../../../../../../src/app/api/ability/categories/route.js'
 import type { NextRequest } from 'next/server.js'
 

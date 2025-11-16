@@ -1,14 +1,419 @@
 .ability-items {
-  padding: 24px;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
 
   .header {
-    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
 
     h1 {
-      margin: 0;
+      color: #fff;
       font-size: 24px;
       font-weight: 600;
+      margin: 0;
+    }
+  }
+
+  // Tab 样式
+  .category-tabs {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+
+    .ant-tabs-nav {
+      margin: 0 0 16px 0 !important;
+      padding: 4px !important;
+      background: rgba(255, 255, 255, 0.05) !important;
+      border-radius: 8px !important;
+
+      &::before {
+        display: none !important;
+      }
+
+      .ant-tabs-tab {
+        color: rgba(255, 255, 255, 0.95) !important;
+        padding: 10px 20px !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+        border: none !important;
+        border-radius: 6px !important;
+        margin: 0 4px !important;
+        background: transparent !important;
+        transition: all 0.2s ease !important;
+
+        &:hover {
+          color: #fff !important;
+          background: rgba(255, 255, 255, 0.15) !important;
+        }
+
+        &.ant-tabs-tab-active {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+          color: #fff !important;
+          font-weight: 600 !important;
+          box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3) !important;
+
+          .ant-tabs-tab-btn {
+            color: #fff !important;
+          }
+        }
+
+        .ant-tabs-tab-btn {
+          color: inherit !important;
+        }
+      }
+
+      .ant-tabs-ink-bar {
+        display: none !important;
+      }
+    }
+
+    .ant-tabs-content-holder {
+      flex: 1;
+      overflow: hidden;
+
+      .ant-tabs-content {
+        height: 100%;
+
+        .ant-tabs-tabpane {
+          height: 100%;
+          overflow: hidden;
+        }
+      }
+    }
+  }
+
+  .content-container {
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+
+    .category-content {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      overflow-y: auto;
+      padding-right: 8px;
+
+      &::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      &::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 3px;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        background: rgba(102, 126, 234, 0.5);
+        border-radius: 3px;
+
+        &:hover {
+          background: rgba(102, 126, 234, 0.7);
+        }
+      }
+    }
+
+    .dimension-section {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+
+      .dimension-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #fff;
+        margin: 0;
+        padding: 8px 12px;
+        background: rgba(102, 126, 234, 0.15);
+        border-left: 4px solid #667eea;
+        border-radius: 6px;
+        backdrop-filter: blur(10px);
+      }
+    }
+
+    .items-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px;
+
+      .item-card {
+        background: rgba(255, 255, 255, 0.06);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 12px;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        height: 180px;
+        overflow: hidden;
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.08);
+          border-color: rgba(102, 126, 234, 0.4);
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+
+        .card-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 8px;
+          padding-bottom: 8px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+          flex-shrink: 0;
+
+          .item-info {
+            flex: 1;
+            min-width: 0;
+
+            .item-name {
+              font-size: 16px;
+              font-weight: 600;
+              color: #fff;
+              margin-bottom: 4px;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+            }
+
+            .item-code {
+              font-size: 12px;
+              color: rgba(255, 255, 255, 0.5);
+              font-family: 'Monaco', 'Courier New', monospace;
+            }
+          }
+
+          .item-actions {
+            display: flex;
+            gap: 6px;
+            flex-shrink: 0;
+          }
+        }
+
+        .card-body {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          flex: 1;
+          min-height: 0;
+          overflow: hidden;
+
+          .item-description {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.4;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            margin-bottom: 6px;
+            flex-shrink: 0;
+          }
+
+          .item-stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            font-size: 11px;
+            flex-shrink: 0;
+            max-height: 80px;
+            overflow: hidden;
+
+            .stat-item {
+              display: flex;
+              align-items: center;
+              gap: 4px;
+              padding: 3px 6px;
+              background: rgba(102, 126, 234, 0.1);
+              border-radius: 4px;
+              white-space: nowrap;
+
+              .stat-label {
+                color: rgba(255, 255, 255, 0.6);
+              }
+
+              .stat-value {
+                color: #667eea;
+                font-weight: 600;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // 按钮样式覆盖
+  .ant-btn {
+    height: 32px !important;
+    padding: 0 14px !important;
+    font-size: 12px !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.3) !important;
+    color: #fff !important;
+    background: rgba(255, 255, 255, 0.12) !important;
+    border-radius: 8px !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    font-weight: 600 !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+
+    &:hover:not(:disabled) {
+      border-color: rgba(102, 126, 234, 0.8) !important;
+      background: rgba(102, 126, 234, 0.35) !important;
+      transform: translateY(-2px) !important;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4) !important;
+    }
+
+    &.ant-btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+      border-color: transparent !important;
+      box-shadow: 0 3px 8px rgba(102, 126, 234, 0.5) !important;
+
+      &:hover:not(:disabled) {
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%) !important;
+        box-shadow: 0 5px 16px rgba(102, 126, 234, 0.6) !important;
+      }
+    }
+
+    &.ant-btn-text {
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      padding: 4px 8px !important;
+      height: auto !important;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.1) !important;
+        transform: none !important;
+      }
+    }
+
+    &.ant-btn-dangerous {
+      color: #ff4d4f !important;
+
+      &:hover {
+        background: rgba(255, 77, 79, 0.2) !important;
+        border-color: rgba(255, 77, 79, 0.5) !important;
+      }
+    }
+  }
+
+  // Drawer 样式覆盖
+  .ant-drawer {
+    .ant-drawer-header {
+      background: rgba(15, 12, 41, 0.95) !important;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+
+      .ant-drawer-title {
+        color: #fff !important;
+      }
+
+      .ant-drawer-close {
+        color: rgba(255, 255, 255, 0.7) !important;
+
+        &:hover {
+          color: #fff !important;
+        }
+      }
+    }
+
+    .ant-drawer-body {
+      background: rgba(15, 12, 41, 0.95) !important;
+      color: #fff !important;
+    }
+  }
+
+  // Form 样式覆盖
+  .ant-form {
+    .ant-form-item-label > label {
+      color: rgba(255, 255, 255, 0.8) !important;
+    }
+
+    .ant-input,
+    .ant-input-number,
+    .ant-select-selector,
+    .ant-input-number-input {
+      background: rgba(0, 0, 0, 0.4) !important;
+      border: 1.5px solid rgba(255, 255, 255, 0.3) !important;
+      color: #fff !important;
+
+      &:hover {
+        border-color: rgba(102, 126, 234, 0.7) !important;
+      }
+
+      &:focus,
+      &.ant-input-focused,
+      &.ant-select-focused .ant-select-selector {
+        border-color: rgba(102, 126, 234, 0.9) !important;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2) !important;
+      }
+    }
+
+    textarea.ant-input {
+      background: rgba(0, 0, 0, 0.4) !important;
+      color: #fff !important;
+    }
+
+    .ant-select {
+      .ant-select-selector {
+        background: rgba(0, 0, 0, 0.4) !important;
+        border: 1.5px solid rgba(255, 255, 255, 0.3) !important;
+        color: #fff !important;
+
+        .ant-select-selection-item,
+        .ant-select-selection-placeholder {
+          color: #fff !important;
+        }
+      }
+
+      &.ant-select-focused .ant-select-selector {
+        border-color: rgba(102, 126, 234, 0.9) !important;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2) !important;
+      }
+    }
+
+    .ant-select-dropdown {
+      background: rgba(15, 12, 41, 0.98) !important;
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+
+      .ant-select-item {
+        color: rgba(255, 255, 255, 0.8) !important;
+
+        &:hover {
+          background: rgba(102, 126, 234, 0.2) !important;
+        }
+
+        &.ant-select-item-option-selected {
+          background: rgba(102, 126, 234, 0.3) !important;
+          color: #fff !important;
+        }
+      }
+    }
+  }
+
+  // Tooltip 样式
+  .ant-tooltip {
+    .ant-tooltip-inner {
+      background: rgba(15, 12, 41, 0.95) !important;
+      color: #fff !important;
+      border: 1px solid rgba(255, 255, 255, 0.2) !important;
+      backdrop-filter: blur(10px) !important;
+    }
+
+    .ant-tooltip-arrow::before {
+      background: rgba(15, 12, 41, 0.95) !important;
+      border: 1px solid rgba(255, 255, 255, 0.2) !important;
     }
   }
 }
-

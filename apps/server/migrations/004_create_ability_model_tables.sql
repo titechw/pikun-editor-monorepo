@@ -63,12 +63,15 @@ CREATE TABLE IF NOT EXISTS pikun_db.ability_items (
     evaluation_points TEXT,
     training_strategies TEXT,
     theoretical_basis TEXT,
+    talent_ratio DECIMAL(5,2) DEFAULT 50.00 CHECK (talent_ratio >= 0 AND talent_ratio <= 100),
+    acquired_training_ratio DECIMAL(5,2) DEFAULT 50.00 CHECK (acquired_training_ratio >= 0 AND acquired_training_ratio <= 100),
     sort_order INTEGER NOT NULL DEFAULT 0,
     metadata JSONB DEFAULT '{}'::JSONB,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
-    UNIQUE(dimension_id, code)
+    UNIQUE(dimension_id, code),
+    CONSTRAINT check_talent_ratio_sum CHECK (talent_ratio + acquired_training_ratio = 100)
 );
 
 CREATE INDEX idx_ability_items_dimension_id ON pikun_db.ability_items(dimension_id);

@@ -61,7 +61,7 @@ export const AdminLayout = observer(({ children }: AdminLayoutProps): React.JSX.
     <Layout className="admin-layout">
       <Sider trigger={null} collapsible collapsed={collapsed} className="admin-sider">
         <div className="admin-logo">
-          {!collapsed && <Text strong>能力模型管理</Text>}
+          {!collapsed && <Text strong style={{ color: '#fff' }}>能力模型管理</Text>}
         </div>
         <Menu
           theme="dark"

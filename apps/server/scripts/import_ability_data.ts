@@ -289,7 +289,7 @@ const abilityData: AbilityData[] = [
         ],
       },
       {
-        code: 'meta_ability',
+        code: 'meta',
         name: '元能力',
         description: '元认知和自我管理能力',
         sort_order: 3,
@@ -359,7 +359,7 @@ const abilityData: AbilityData[] = [
     },
     dimensions: [
       {
-        code: 'professional_knowledge',
+        code: 'professional_skills',
         name: '专业知识与技能',
         description: '专业知识与技能',
         sort_order: 1,
@@ -419,7 +419,7 @@ const abilityData: AbilityData[] = [
         ],
       },
       {
-        code: 'practical_strategic',
+        code: 'practical_strategy',
         name: '实践与策略能力',
         description: '实践与策略能力',
         sort_order: 2,
@@ -451,7 +451,7 @@ const abilityData: AbilityData[] = [
             sort_order: 2,
           },
           {
-            code: 'communication_expression',
+            code: 'communication',
             name: '沟通表达',
             description: '信息传递、说服他人的能力',
             definition: '信息传递、说服他人的能力',
@@ -464,7 +464,7 @@ const abilityData: AbilityData[] = [
             sort_order: 3,
           },
           {
-            code: 'negotiation_collaboration',
+            code: 'negotiation',
             name: '谈判协作',
             description: '谈判中的利益协调与团队协作能力',
             definition: '谈判中的利益协调与团队协作能力',
@@ -537,7 +537,7 @@ const abilityData: AbilityData[] = [
             sort_order: 2,
           },
           {
-            code: 'entrepreneurship_operation',
+            code: 'entrepreneurship',
             name: '创业运营能力',
             description: '创业项目的运营、资源整合能力',
             definition: '创业项目的运营、资源整合能力',
@@ -578,10 +578,14 @@ async function importData() {
 
     // 遍历每个类别
     for (const categoryData of abilityData) {
-      // 1. 创建类别
+      // 1. 创建类别（使用 ON CONFLICT 处理重复）
       const categoryResult = await client.query(
         `INSERT INTO pikun_db.ability_categories (code, name, description, sort_order)
          VALUES ($1, $2, $3, $4)
+         ON CONFLICT (code) DO UPDATE SET
+           name = EXCLUDED.name,
+           description = EXCLUDED.description,
+           sort_order = EXCLUDED.sort_order
          RETURNING category_id`,
         [
           categoryData.category.code,
@@ -595,10 +599,14 @@ async function importData() {
 
       // 2. 遍历每个维度
       for (const dimensionData of categoryData.dimensions) {
-        // 创建维度
+        // 创建维度（使用 ON CONFLICT 处理重复）
         const dimensionResult = await client.query(
           `INSERT INTO pikun_db.ability_dimensions (category_id, code, name, description, sort_order)
            VALUES ($1, $2, $3, $4, $5)
+           ON CONFLICT (category_id, code) DO UPDATE SET
+             name = EXCLUDED.name,
+             description = EXCLUDED.description,
+             sort_order = EXCLUDED.sort_order
            RETURNING dimension_id`,
           [
             categoryId,
@@ -613,13 +621,24 @@ async function importData() {
 
         // 3. 遍历每个能力项
         for (const itemData of dimensionData.items) {
-          // 创建能力项
+          // 创建能力项（使用 ON CONFLICT 处理重复）
           await client.query(
             `INSERT INTO pikun_db.ability_items (
               dimension_id, code, name, description, definition, performance_description,
               evaluation_points, training_strategies, theoretical_basis,
               talent_ratio, acquired_training_ratio, sort_order
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            ON CONFLICT (dimension_id, code) DO UPDATE SET
+              name = EXCLUDED.name,
+              description = EXCLUDED.description,
+              definition = EXCLUDED.definition,
+              performance_description = EXCLUDED.performance_description,
+              evaluation_points = EXCLUDED.evaluation_points,
+              training_strategies = EXCLUDED.training_strategies,
+              theoretical_basis = EXCLUDED.theoretical_basis,
+              talent_ratio = EXCLUDED.talent_ratio,
+              acquired_training_ratio = EXCLUDED.acquired_training_ratio,
+              sort_order = EXCLUDED.sort_order`,
             [
               dimensionId,
               itemData.code,
@@ -697,30 +716,42 @@ async function ensureColumnsExist() {
   }
 }
 
+async function checkTableExists(client: any, tableName: string): Promise<boolean> {
+  const result = await client.query(`
+    SELECT EXISTS (
+      SELECT FROM information_schema.tables 
+      WHERE table_schema = 'pikun_db' 
+      AND table_name = $1
+    )
+  `, [tableName]);
+  return result.rows[0].exists;
+}
+
 async function clearData() {
   const client = await pool.connect();
   try {
     await client.query('SET search_path TO pikun_db, public');
     console.log('开始清空现有数据...\n');
 
-    // 按依赖顺序删除
-    await client.query('DELETE FROM pikun_db.user_ability_experience_logs');
-    console.log('✓ 清空用户经验记录');
+    // 检查表是否存在，如果不存在则跳过
+    const tables = [
+      { name: 'user_ability_experience_logs', label: '用户经验记录' },
+      { name: 'user_ability_levels', label: '用户能力等级' },
+      { name: 'ability_item_level_configs', label: '能力项等级配置' },
+      { name: 'ability_items', label: '能力项' },
+      { name: 'ability_dimensions', label: '能力维度' },
+      { name: 'ability_categories', label: '能力类别' },
+    ];
 
-    await client.query('DELETE FROM pikun_db.user_ability_levels');
-    console.log('✓ 清空用户能力等级');
-
-    await client.query('DELETE FROM pikun_db.ability_item_level_configs');
-    console.log('✓ 清空能力项等级配置');
-
-    await client.query('DELETE FROM pikun_db.ability_items');
-    console.log('✓ 清空能力项');
-
-    await client.query('DELETE FROM pikun_db.ability_dimensions');
-    console.log('✓ 清空能力维度');
-
-    await client.query('DELETE FROM pikun_db.ability_categories');
-    console.log('✓ 清空能力类别');
+    for (const table of tables) {
+      const exists = await checkTableExists(client, table.name);
+      if (exists) {
+        await client.query(`DELETE FROM pikun_db.${table.name}`);
+        console.log(`✓ 清空${table.label}`);
+      } else {
+        console.log(`⚠ 表 ${table.name} 不存在，跳过清空`);
+      }
+    }
 
     console.log('\n数据清空完成！\n');
   } catch (error) {
@@ -731,9 +762,45 @@ async function clearData() {
   }
 }
 
+async function checkTablesExist(): Promise<boolean> {
+  const client = await pool.connect();
+  try {
+    await client.query('SET search_path TO pikun_db, public');
+    
+    const requiredTables = [
+      'ability_categories',
+      'ability_dimensions',
+      'ability_items',
+    ];
+
+    for (const tableName of requiredTables) {
+      const exists = await checkTableExists(client, tableName);
+      if (!exists) {
+        console.error(`\n❌ 错误: 表 ${tableName} 不存在！`);
+        console.error('请先运行数据库初始化脚本：');
+        console.error('  cd apps/server');
+        console.error('  ./scripts/init_ability_database.sh');
+        return false;
+      }
+    }
+
+    return true;
+  } finally {
+    client.release();
+  }
+}
+
 async function main() {
   try {
-    // 先确保字段存在
+    // 先检查表是否存在
+    console.log('检查数据库表...\n');
+    const tablesExist = await checkTablesExist();
+    if (!tablesExist) {
+      process.exit(1);
+    }
+    console.log('✓ 数据库表检查通过\n');
+
+    // 确保字段存在
     await ensureColumnsExist();
 
     // 再清空数据

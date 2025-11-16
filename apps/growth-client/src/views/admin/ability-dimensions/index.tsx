@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Button, Modal, Drawer, Form, Input, InputNumber, Select, message, Space } from 'antd';
+import { Button, Modal, Drawer, Form, Input, InputNumber, Select, message, Space, Spin, Tabs, Tooltip } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { adminAbilityApi } from '@/api/admin-ability.api';
 import type { AbilityDimension, AbilityCategory } from '@/api/ability.api';
@@ -14,6 +14,7 @@ export const AbilityDimensions = (): React.JSX.Element => {
   const [loading, setLoading] = useState(false);
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [editingDimension, setEditingDimension] = useState<AbilityDimension | null>(null);
+  const [activeTab, setActiveTab] = useState<string>('');
   const [form] = Form.useForm();
 
   useEffect(() => {
@@ -21,10 +22,20 @@ export const AbilityDimensions = (): React.JSX.Element => {
     loadDimensions();
   }, []);
 
+  useEffect(() => {
+    if (categories.length > 0 && !activeTab) {
+      setActiveTab(categories[0].category_id);
+    }
+  }, [categories]);
+
   const loadCategories = async () => {
     try {
       const data = await adminAbilityApi.getCategories();
-      setCategories(data);
+      const sorted = data.sort((a, b) => a.sort_order - b.sort_order);
+      setCategories(sorted);
+      if (sorted.length > 0 && !activeTab) {
+        setActiveTab(sorted[0].category_id);
+      }
     } catch (error: any) {
       message.error(error.message || '加载类别失败');
     }
@@ -45,6 +56,10 @@ export const AbilityDimensions = (): React.JSX.Element => {
   const handleCreate = () => {
     setEditingDimension(null);
     form.resetFields();
+    // 如果当前有选中的分类，设置为默认值
+    if (activeTab) {
+      form.setFieldsValue({ category_id: activeTab });
+    }
     setDrawerVisible(true);
   };
 
@@ -89,55 +104,84 @@ export const AbilityDimensions = (): React.JSX.Element => {
     }
   };
 
-  const columns = [
-    {
-      title: '类别',
-      key: 'category',
-      render: (_: any, record: AbilityDimension) => {
-        const category = categories.find((c) => c.category_id === record.category_id);
-        return category?.name || record.category_id;
-      },
-    },
-    {
-      title: '代码',
-      dataIndex: 'code',
-      key: 'code',
-    },
-    {
-      title: '名称',
-      dataIndex: 'name',
-      key: 'name',
-    },
-    {
-      title: '描述',
-      dataIndex: 'description',
-      key: 'description',
-    },
-    {
-      title: '排序',
-      dataIndex: 'sort_order',
-      key: 'sort_order',
-    },
-    {
-      title: '操作',
-      key: 'action',
-      render: (_: any, record: AbilityDimension) => (
-        <Space>
-          <Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
-            编辑
-          </Button>
-          <Button
-            type="link"
-            danger
-            icon={<DeleteOutlined />}
-            onClick={() => handleDelete(record.dimension_id)}
-          >
-            删除
-          </Button>
-        </Space>
+  // 渲染维度卡片
+  const renderDimensionCard = (dimension: AbilityDimension) => {
+    const category = categories.find((c) => c.category_id === dimension.category_id);
+
+    return (
+      <div key={dimension.dimension_id} className="dimension-card">
+        <div className="card-header">
+          <div className="dimension-info">
+            <div className="dimension-name">{dimension.name}</div>
+            <div className="dimension-code">{dimension.code}</div>
+          </div>
+          <div className="dimension-actions">
+            <Button
+              type="text"
+              icon={<EditOutlined />}
+              onClick={() => handleEdit(dimension)}
+              title="编辑"
+            />
+            <Button
+              type="text"
+              danger
+              icon={<DeleteOutlined />}
+              onClick={() => handleDelete(dimension.dimension_id)}
+              title="删除"
+            />
+          </div>
+        </div>
+        <div className="card-body">
+          {dimension.description && (
+            <Tooltip title={dimension.description} placement="top">
+              <div className="dimension-description">{dimension.description}</div>
+            </Tooltip>
+          )}
+          <div className="dimension-stats">
+            {category && (
+              <div className="stat-item">
+                <span className="stat-label">类别:</span>
+                <span className="stat-value">{category.name}</span>
+              </div>
+            )}
+            <div className="stat-item">
+              <span className="stat-label">排序:</span>
+              <span className="stat-value">{dimension.sort_order}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // 准备 Tab 数据
+  const tabItems = categories.map((category) => {
+    const categoryDimensions = dimensions
+      .filter((d) => d.category_id === category.category_id)
+      .sort((a, b) => a.sort_order - b.sort_order);
+
+    if (categoryDimensions.length === 0) return null;
+
+    return {
+      key: category.category_id,
+      label: category.name,
+      children: (
+        <div className="dimensions-grid">
+          {categoryDimensions.map((dimension) => renderDimensionCard(dimension))}
+        </div>
       ),
-    },
-  ];
+    };
+  }).filter((item): item is NonNullable<typeof item> => item !== null);
+
+  if (loading && dimensions.length === 0) {
+    return (
+      <div className="ability-dimensions">
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+          <Spin size="large" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="ability-dimensions">
@@ -147,11 +191,11 @@ export const AbilityDimensions = (): React.JSX.Element => {
           新增维度
         </Button>
       </div>
-      <Table
-        columns={columns}
-        dataSource={dimensions}
-        loading={loading}
-        rowKey="dimension_id"
+      <Tabs
+        activeKey={activeTab}
+        onChange={setActiveTab}
+        items={tabItems}
+        className="category-tabs"
       />
       <Drawer
         title={editingDimension ? '编辑能力维度' : '新增能力维度'}
@@ -162,6 +206,8 @@ export const AbilityDimensions = (): React.JSX.Element => {
           form.resetFields();
         }}
         width={600}
+        className="admin-drawer"
+        rootClassName="admin-drawer-root"
       >
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Form.Item

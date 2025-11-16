@@ -109,6 +109,32 @@
       }
     }
 
+    // 分类内容容器
+    .category-content {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    // 维度分组区域
+    .dimension-section {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+
+      .dimension-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #fff;
+        margin: 0;
+        padding: 8px 12px;
+        background: rgba(102, 126, 234, 0.15);
+        border-left: 4px solid #667eea;
+        border-radius: 6px;
+        backdrop-filter: blur(10px);
+      }
+    }
+
     .items-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));

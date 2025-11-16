@@ -9,6 +9,8 @@ import { AbilityCategories } from './ability-categories';
 import { AbilityDimensions } from './ability-dimensions';
 import { AbilityItems } from './ability-items';
 import { AbilityLevelConfigs } from './ability-level-configs';
+// 导入全局 Drawer 样式
+import '@/components/AdminLayout/AdminLayout.less';
 
 /**
  * 受保护的管理端路由组件
