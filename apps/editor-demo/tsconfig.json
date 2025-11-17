@@ -5,7 +5,8 @@
     "baseUrl": ".",
     // "rootDir": "../../",
     "paths": {
-      "@pikun/*": ["../../packages/*/dist", "../../packages/*/src"],
+      "@pikun/*": ["../../packages/*/dist", "../../packages/*/src", "../../packages/*"],
+      "@pikun/react/menus": ["../../packages/react/src/menus"],
       "@/components/*": ["src/components/*"],
       "@/pages/*": ["src/pages/*"],
       "@/stores/*": ["src/stores/*"],

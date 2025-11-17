@@ -1,16 +1,16 @@
-import type { MarkConfig, NodeConfig } from '../index.js'
-import type { AnyConfig, Attribute, Attributes, ExtensionAttribute, Extensions } from '../types.js'
-import { getExtensionField } from './getExtensionField.js'
-import { splitExtensions } from './splitExtensions.js'
+import type { MarkConfig, NodeConfig } from '../index.js';
+import type { AnyConfig, Attribute, Attributes, ExtensionAttribute, Extensions } from '../types.js';
+import { getExtensionField } from './getExtensionField.js';
+import { splitExtensions } from './splitExtensions.js';
 
 /**
  * Get a list of all extension attributes defined in `addAttribute` and `addGlobalAttribute`.
  * @param extensions List of extensions
  */
 export function getAttributesFromExtensions(extensions: Extensions): ExtensionAttribute[] {
-  const extensionAttributes: ExtensionAttribute[] = []
-  const { nodeExtensions, markExtensions } = splitExtensions(extensions)
-  const nodeAndMarkExtensions = [...nodeExtensions, ...markExtensions]
+  const extensionAttributes: ExtensionAttribute[] = [];
+  const { nodeExtensions, markExtensions } = splitExtensions(extensions);
+  const nodeAndMarkExtensions = [...nodeExtensions, ...markExtensions];
   const defaultAttribute: Required<Omit<Attribute, 'validate'>> & Pick<Attribute, 'validate'> = {
     default: null,
     validate: undefined,
@@ -19,30 +19,30 @@ export function getAttributesFromExtensions(extensions: Extensions): ExtensionAt
     parseHTML: null,
     keepOnSplit: true,
     isRequired: false,
-  }
+  };
 
-  extensions.forEach(extension => {
+  extensions.forEach((extension) => {
     const context = {
       name: extension.name,
       options: extension.options,
       storage: extension.storage,
       extensions: nodeAndMarkExtensions,
-    }
+    };
 
     const addGlobalAttributes = getExtensionField<AnyConfig['addGlobalAttributes']>(
       extension,
       'addGlobalAttributes',
-      context,
-    )
+      context
+    );
 
     if (!addGlobalAttributes) {
-      return
+      return;
     }
 
-    const globalAttributes = addGlobalAttributes()
+    const globalAttributes = addGlobalAttributes();
 
-    globalAttributes.forEach(globalAttribute => {
-      globalAttribute.types.forEach(type => {
+    globalAttributes.forEach((globalAttribute) => {
+      globalAttribute.types.forEach((type) => {
         Object.entries(globalAttribute.attributes).forEach(([name, attribute]) => {
           extensionAttributes.push({
             type,
@@ -51,53 +51,51 @@ export function getAttributesFromExtensions(extensions: Extensions): ExtensionAt
               ...defaultAttribute,
               ...attribute,
             },
-          })
-        })
-      })
-    })
-  })
+          });
+        });
+      });
+    });
+  });
 
-  nodeAndMarkExtensions.forEach(extension => {
+  nodeAndMarkExtensions.forEach((extension) => {
     const context = {
       name: extension.name,
       options: extension.options,
       storage: extension.storage,
-    }
+    };
 
-    const addAttributes = getExtensionField<NodeConfig['addAttributes'] | MarkConfig['addAttributes']>(
-      extension,
-      'addAttributes',
-      context,
-    )
+    const addAttributes = getExtensionField<
+      NodeConfig['addAttributes'] | MarkConfig['addAttributes']
+    >(extension, 'addAttributes', context);
 
     if (!addAttributes) {
-      return
+      return;
     }
 
     // TODO: remove `as Attributes`
-    const attributes = addAttributes() as Attributes
+    const attributes = addAttributes() as Attributes;
 
     Object.entries(attributes).forEach(([name, attribute]) => {
       const mergedAttr = {
         ...defaultAttribute,
         ...attribute,
-      }
+      };
 
       if (typeof mergedAttr?.default === 'function') {
-        mergedAttr.default = mergedAttr.default()
+        mergedAttr.default = mergedAttr.default();
       }
 
       if (mergedAttr?.isRequired && mergedAttr?.default === undefined) {
-        delete mergedAttr.default
+        delete mergedAttr.default;
       }
 
       extensionAttributes.push({
         type: extension.name,
         name,
         attribute: mergedAttr,
-      })
-    })
-  })
+      });
+    });
+  });
 
-  return extensionAttributes
+  return extensionAttributes;
 }

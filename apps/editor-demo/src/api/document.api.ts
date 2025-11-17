@@ -7,7 +7,7 @@ export interface Document {
   title: string;
   content_length: number;
   owner_uid: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   created_at: string;
   updated_at: string;
 }
@@ -15,7 +15,7 @@ export interface Document {
 export interface CreateDocumentRequest {
   title: string;
   content?: string; // Base64 编码的内容
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface UpdateDocumentRequest {
@@ -23,7 +23,7 @@ export interface UpdateDocumentRequest {
   content?: string; // Base64 编码的内容（Doc State）
   change_data?: string; // Base64 编码的增量更新（Yjs Update）
   snapshot?: string; // Base64 编码的 Snapshot（状态向量）
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   forceSnapshot?: boolean; // 是否强制创建快照
 }
 
@@ -35,7 +35,7 @@ export interface DocumentChange {
   change_type: 'auto_save' | 'manual_save';
   change_data: string; // Base64 编码的变更数据
   change_size: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   created_at: number;
 }
 
@@ -45,7 +45,7 @@ export interface DocumentSnapshot {
   workspace_id: string;
   version_type: 'major' | 'minor'; // 版本类型
   created_at: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface DocumentListResponse {
@@ -67,7 +67,11 @@ export const documentApi = {
     data: CreateDocumentRequest,
   ): Promise<{ object_id: string; workspace_id: string; created_at: string }> {
     // 过滤掉 undefined 值
-    const requestData: any = {
+    const requestData: {
+      title: string;
+      content?: string;
+      metadata?: Record<string, unknown>;
+    } = {
       title: data.title,
     };
     if (data.content !== undefined && data.content !== null) {
@@ -143,7 +147,14 @@ export const documentApi = {
     data: UpdateDocumentRequest,
   ): Promise<{ object_id: string; updated_at: string }> {
     // 过滤掉 undefined 值，但保留所有可能的字段
-    const requestData: any = {};
+    const requestData: {
+      title?: string;
+      content?: string;
+      change_data?: string;
+      snapshot?: string;
+      metadata?: Record<string, unknown>;
+      forceSnapshot?: boolean;
+    } = {};
     if (data.title !== undefined && data.title !== null) {
       requestData.title = data.title;
     }

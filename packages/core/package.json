@@ -52,7 +52,11 @@
     "jsx-dev-runtime"
   ],
   "devDependencies": {
-    "@pikun/pm": "workspace:^"
+    "@eslint/js": "^9.39.1",
+    "@pikun/pm": "workspace:^",
+    "@typescript-eslint/eslint-plugin": "^8.46.4",
+    "@typescript-eslint/parser": "^8.46.4",
+    "eslint": "^9.39.1"
   },
   "peerDependencies": {
     "@pikun/pm": "workspace:^"
@@ -65,6 +69,6 @@
   "sideEffects": false,
   "scripts": {
     "build": "tsup",
-    "lint": "prettier ./src/ --check && eslint --cache --quiet --no-error-on-unmatched-pattern ./src/"
+    "lint": "prettier ./src/ --check && eslint ./src/"
   }
 }

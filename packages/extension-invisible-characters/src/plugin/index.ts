@@ -1,1 +1,1 @@
-export * from './InvisibleCharactersPlugin.js'
+export * from './InvisibleCharactersPlugin.js';

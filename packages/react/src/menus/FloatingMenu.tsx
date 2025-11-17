@@ -75,7 +75,6 @@ export const FloatingMenu = React.forwardRef<HTMLDivElement, FloatingMenuProps>(
           }
         });
       };
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [editor, currentEditor, appendTo, pluginKey, shouldShow, options]);
 
     return createPortal(<div {...restProps}>{children}</div>, menuEl.current);

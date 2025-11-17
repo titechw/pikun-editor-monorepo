@@ -336,7 +336,7 @@ export class BubbleMenuView implements PluginView {
       const toDOM = this.view.nodeDOM(to);
 
       if (!fromDOM || !toDOM) {
-        return;
+        return undefined;
       }
 
       const clientRect =

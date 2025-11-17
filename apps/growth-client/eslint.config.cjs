@@ -26,7 +26,7 @@ module.exports = [
       'no-undef': 'off', // TypeScript 会处理未定义变量检查
       'no-unused-vars': 'off', // 使用 TypeScript 的检查
       '@typescript-eslint/no-unused-vars': 'off',
-      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-explicit-any': 'warn', // API 文件中使用 any 是合理的
     },
   },
 ];

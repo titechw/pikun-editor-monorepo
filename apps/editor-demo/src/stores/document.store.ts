@@ -1,5 +1,6 @@
 import { makeAutoObservable, runInAction } from 'mobx';
-import { documentApi, type Document, type DocumentSnapshot } from '../api/document.api';
+import * as Y from 'yjs';
+import { documentApi, type Document, type DocumentSnapshot, type DocumentChange } from '../api/document.api';
 
 export class DocumentStore {
   documents: Document[] = [];
@@ -52,9 +53,10 @@ export class DocumentStore {
         this.page = response.page;
         this.isLoading = false;
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load documents';
       runInAction(() => {
-        this.error = error.message || 'Failed to load documents';
+        this.error = errorMessage;
         this.isLoading = false;
       });
       throw error;
@@ -77,9 +79,10 @@ export class DocumentStore {
         this.currentDocument = document as Document;
         this.isLoading = false;
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load document';
       runInAction(() => {
-        this.error = error.message || 'Failed to load document';
+        this.error = errorMessage;
         this.isLoading = false;
       });
       throw error;
@@ -101,9 +104,10 @@ export class DocumentStore {
       // 重新加载文档列表
       await this.loadDocuments(workspaceId);
       return result.object_id;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create document';
       runInAction(() => {
-        this.error = error.message || 'Failed to create document';
+        this.error = errorMessage;
         this.isLoading = false;
       });
       throw error;
@@ -119,7 +123,7 @@ export class DocumentStore {
   async saveDocument(
     workspaceId: string,
     objectId: string,
-    ydoc: any, // Y.Doc
+    ydoc: Y.Doc,
     immediate: boolean = false,
     changeData?: Uint8Array
   ): Promise<void> {
@@ -140,10 +144,11 @@ export class DocumentStore {
                 this.lastSavedAt = new Date();
                 this.saveError = null;
               });
-            } catch (error: any) {
+            } catch (error: unknown) {
+              const errorMessage = error instanceof Error ? error.message : 'Failed to save document';
               runInAction(() => {
                 this.isSaving = false;
-                this.saveError = error.message || 'Failed to save document';
+                this.saveError = errorMessage;
               });
               throw error;
             }
@@ -159,10 +164,11 @@ export class DocumentStore {
                   this.lastSavedAt = new Date();
                   this.saveError = null;
                 });
-              } catch (error: any) {
+              } catch (error: unknown) {
+                const errorMessage = error instanceof Error ? error.message : 'Failed to save document';
                 runInAction(() => {
                   this.isSaving = false;
-                  this.saveError = error.message || 'Failed to save document';
+                  this.saveError = errorMessage;
                 });
                 throw error;
               }
@@ -195,9 +201,10 @@ export class DocumentStore {
         }
         this.isLoading = false;
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update document title';
       runInAction(() => {
-        this.error = error.message || 'Failed to update document title';
+        this.error = errorMessage;
         this.isLoading = false;
       });
       throw error;
@@ -220,9 +227,10 @@ export class DocumentStore {
         }
         this.isLoading = false;
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete document';
       runInAction(() => {
-        this.error = error.message || 'Failed to delete document';
+        this.error = errorMessage;
         this.isLoading = false;
       });
       throw error;
@@ -246,9 +254,10 @@ export class DocumentStore {
         this.snapshotsTotal = response.total;
         this.isLoadingSnapshots = false;
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load snapshots';
       runInAction(() => {
-        this.error = error.message || 'Failed to load snapshots';
+        this.error = errorMessage;
         this.isLoadingSnapshots = false;
       });
       throw error;
@@ -286,9 +295,10 @@ export class DocumentStore {
         this.changesTotal = response.total;
         this.isLoadingChanges = false;
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load changes';
       runInAction(() => {
-        this.error = error.message || 'Failed to load changes';
+        this.error = errorMessage;
         this.isLoadingChanges = false;
       });
       throw error;
@@ -321,9 +331,10 @@ export class DocumentStore {
         });
       });
       return changes;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to get changes between snapshots';
       runInAction(() => {
-        this.error = error.message || 'Failed to get changes between snapshots';
+        this.error = errorMessage;
       });
       throw error;
     }
@@ -345,9 +356,10 @@ export class DocumentStore {
   }>> {
     try {
       return await documentApi.searchDocuments(workspaceId, query, options);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to search documents';
       runInAction(() => {
-        this.error = error.message || 'Failed to search documents';
+        this.error = errorMessage;
       });
       throw error;
     }

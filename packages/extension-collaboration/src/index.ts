@@ -1,6 +1,6 @@
-import { Collaboration } from './collaboration.js'
+import { Collaboration } from './collaboration.js';
 
-export * from './collaboration.js'
-export * from './helpers/isChangeOrigin.js'
+export * from './collaboration.js';
+export * from './helpers/isChangeOrigin.js';
 
-export default Collaboration
+export default Collaboration;

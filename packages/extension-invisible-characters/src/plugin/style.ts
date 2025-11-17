@@ -38,6 +38,6 @@ export const style = `.tiptap-invisible-character {
 .is-empty[data-placeholder].has-focus > .tiptap-invisible-character {
   display: none;
 }
-`
+`;
 
-export default style
+export default style;

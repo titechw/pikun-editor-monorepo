@@ -1,5 +1,5 @@
-import { DragHandle } from './DragHandle.js'
+import { DragHandle } from './DragHandle.js';
 
-export * from './DragHandle.js'
+export * from './DragHandle.js';
 
-export default DragHandle
+export default DragHandle;

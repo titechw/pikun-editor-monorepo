@@ -4,27 +4,27 @@ import type {
   MarkdownParseResult,
   MarkdownToken,
   MarkdownTokenizer,
-} from '../../types.js'
+} from '../../types.js';
 import {
   parseAttributes as defaultParseAttributes,
   serializeAttributes as defaultSerializeAttributes,
-} from './attributeUtils.js'
+} from './attributeUtils.js';
 
 export interface AtomBlockMarkdownSpecOptions {
   /** The Tiptap node name this spec is for */
-  nodeName: string
+  nodeName: string;
   /** The markdown syntax name (defaults to nodeName if not provided) */
-  name?: string
+  name?: string;
   /** Function to parse attributes from token attribute string */
-  parseAttributes?: (attrString: string) => Record<string, any>
+  parseAttributes?: (attrString: string) => Record<string, any>;
   /** Function to serialize attributes back to string for rendering */
-  serializeAttributes?: (attrs: Record<string, any>) => string
+  serializeAttributes?: (attrs: Record<string, any>) => string;
   /** Default attributes to apply when parsing */
-  defaultAttributes?: Record<string, any>
+  defaultAttributes?: Record<string, any>;
   /** Required attributes that must be present for successful parsing */
-  requiredAttributes?: string[]
+  requiredAttributes?: string[];
   /** Attributes that are allowed to be rendered back to markdown (whitelist) */
-  allowedAttributes?: string[]
+  allowedAttributes?: string[];
 }
 
 /**
@@ -56,9 +56,9 @@ export interface AtomBlockMarkdownSpecOptions {
  * ```
  */
 export function createAtomBlockMarkdownSpec(options: AtomBlockMarkdownSpecOptions): {
-  parseMarkdown: (token: MarkdownToken, h: MarkdownParseHelpers) => MarkdownParseResult
-  markdownTokenizer: MarkdownTokenizer
-  renderMarkdown: (node: JSONContent) => string
+  parseMarkdown: (token: MarkdownToken, h: MarkdownParseHelpers) => MarkdownParseResult;
+  markdownTokenizer: MarkdownTokenizer;
+  renderMarkdown: (node: JSONContent) => string;
 } {
   const {
     nodeName,
@@ -68,74 +68,74 @@ export function createAtomBlockMarkdownSpec(options: AtomBlockMarkdownSpecOption
     defaultAttributes = {},
     requiredAttributes = [],
     allowedAttributes,
-  } = options
+  } = options;
 
   // Use markdownName for syntax, fallback to nodeName
-  const blockName = markdownName || nodeName
+  const blockName = markdownName || nodeName;
 
   // Helper function to filter attributes based on allowlist
   const filterAttributes = (attrs: Record<string, any>) => {
     if (!allowedAttributes) {
-      return attrs
+      return attrs;
     }
 
-    const filtered: Record<string, any> = {}
-    allowedAttributes.forEach(key => {
+    const filtered: Record<string, any> = {};
+    allowedAttributes.forEach((key) => {
       if (key in attrs) {
-        filtered[key] = attrs[key]
+        filtered[key] = attrs[key];
       }
-    })
-    return filtered
-  }
+    });
+    return filtered;
+  };
 
   return {
     parseMarkdown: (token: MarkdownToken, h: MarkdownParseHelpers) => {
-      const attrs = { ...defaultAttributes, ...token.attributes }
-      return h.createNode(nodeName, attrs, [])
+      const attrs = { ...defaultAttributes, ...token.attributes };
+      return h.createNode(nodeName, attrs, []);
     },
 
     markdownTokenizer: {
       name: nodeName,
       level: 'block' as const,
       start(src: string) {
-        const regex = new RegExp(`^:::${blockName}(?:\\s|$)`, 'm')
-        const index = src.match(regex)?.index
-        return index !== undefined ? index : -1
+        const regex = new RegExp(`^:::${blockName}(?:\\s|$)`, 'm');
+        const index = src.match(regex)?.index;
+        return index !== undefined ? index : -1;
       },
       tokenize(src, _tokens, _lexer) {
         // Use non-global regex to match from the start of the string
         // Include optional newline to ensure we consume the entire line
-        const regex = new RegExp(`^:::${blockName}(?:\\s+\\{([^}]*)\\})?\\s*:::(?:\\n|$)`)
-        const match = src.match(regex)
+        const regex = new RegExp(`^:::${blockName}(?:\\s+\\{([^}]*)\\})?\\s*:::(?:\\n|$)`);
+        const match = src.match(regex);
 
         if (!match) {
-          return undefined
+          return undefined;
         }
 
         // Parse attributes if present
-        const attrString = match[1] || ''
-        const attributes = parseAttributes(attrString)
+        const attrString = match[1] || '';
+        const attributes = parseAttributes(attrString);
 
         // Validate required attributes
-        const missingRequired = requiredAttributes.find(required => !(required in attributes))
+        const missingRequired = requiredAttributes.find((required) => !(required in attributes));
         if (missingRequired) {
-          return undefined
+          return undefined;
         }
 
         return {
           type: nodeName,
           raw: match[0],
           attributes,
-        }
+        };
       },
     },
 
-    renderMarkdown: node => {
-      const filteredAttrs = filterAttributes(node.attrs || {})
-      const attrs = serializeAttributes(filteredAttrs)
-      const attrString = attrs ? ` {${attrs}}` : ''
+    renderMarkdown: (node) => {
+      const filteredAttrs = filterAttributes(node.attrs || {});
+      const attrs = serializeAttributes(filteredAttrs);
+      const attrString = attrs ? ` {${attrs}}` : '';
 
-      return `:::${blockName}${attrString} :::`
+      return `:::${blockName}${attrString} :::`;
     },
-  }
+  };
 }

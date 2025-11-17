@@ -1,1 +1,1 @@
-export type ContentType = 'json' | 'html' | 'markdown'
+export type ContentType = 'json' | 'html' | 'markdown';

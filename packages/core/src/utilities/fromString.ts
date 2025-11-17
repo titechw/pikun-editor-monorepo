@@ -1,19 +1,19 @@
 export function fromString(value: any): any {
   if (typeof value !== 'string') {
-    return value
+    return value;
   }
 
   if (value.match(/^[+-]?(?:\d*\.)?\d+$/)) {
-    return Number(value)
+    return Number(value);
   }
 
   if (value === 'true') {
-    return true
+    return true;
   }
 
   if (value === 'false') {
-    return false
+    return false;
   }
 
-  return value
+  return value;
 }

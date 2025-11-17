@@ -1,2 +1,2 @@
-export * from './BlockMath.js'
-export * from './InlineMath.js'
+export * from './BlockMath.js';
+export * from './InlineMath.js';

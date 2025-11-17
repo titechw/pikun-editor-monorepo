@@ -25,7 +25,7 @@ export function InsertMenu({ editor }: { editor: Editor }) {
   // Handle arrow navigation within a menu bar container, and allow to escape to the editor
   const { getFocusableElements } = useMenubarNav({
     editor,
-    ref: containerRef,
+    ref: containerRef as React.RefObject<HTMLElement>,
     onEscape: (e) => {
       e.preventDefault();
       // On escape, focus the editor
@@ -42,8 +42,8 @@ export function InsertMenu({ editor }: { editor: Editor }) {
       aria-label="Insert Element menu"
       className="floating-menu"
       // Types are broken here, since we import jsx from vue-2
-      ref={containerRef as any}
-      onFocus={(e) => {
+      ref={containerRef}
+      onFocus={(e: React.FocusEvent<HTMLDivElement>) => {
         // The ref we have is to the container, not the menu itself
         if (containerRef.current === e.target?.parentNode) {
           // Focus the first enabled button-like when the menu bar is focused

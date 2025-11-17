@@ -1,7 +1,7 @@
-import { TableOfContents } from './tableOfContents.js'
+import { TableOfContents } from './tableOfContents.js';
 
-export * from './plugin.js'
-export * from './tableOfContents.js'
-export * from './utils.js'
+export * from './plugin.js';
+export * from './tableOfContents.js';
+export * from './utils.js';
 
-export default TableOfContents
+export default TableOfContents;

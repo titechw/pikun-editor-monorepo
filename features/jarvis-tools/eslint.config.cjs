@@ -5,6 +5,9 @@ const js = require('@eslint/js');
 const globals = require('globals');
 
 module.exports = [
+  {
+    ignores: ['dist', 'node_modules', '**/*.d.ts'],
+  },
   js.configs.recommended,
   {
     files: ['src/**/*.ts'],
@@ -24,8 +27,5 @@ module.exports = [
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     },
-  },
-  {
-    ignores: ['dist', 'node_modules'],
   },
 ];

@@ -1,2 +1,2 @@
-export * from '../extensionRenderer.js'
-export * from './markdown.js'
+export * from '../extensionRenderer.js';
+export * from './markdown.js';

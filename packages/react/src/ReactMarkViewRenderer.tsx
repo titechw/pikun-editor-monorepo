@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-shadow */
 import type { MarkViewProps, MarkViewRenderer, MarkViewRendererOptions } from '@pikun/core';
 import { MarkView } from '@pikun/core';
 import React from 'react';

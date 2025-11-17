@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { Table, Button, Input, Space, Popconfirm, message, Card, Tag } from 'antd';
+import { Table, Button, Input, Space, Popconfirm, message, Card } from 'antd';
 import {
   PlusOutlined,
   EditOutlined,
@@ -31,8 +31,9 @@ export const DocumentListPage = observer(() => {
       try {
         const id = await authStore.getDefaultWorkspaceId();
         setWorkspaceId(id);
-      } catch (error: any) {
-        message.error(error.message || '获取工作空间失败');
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : '获取工作空间失败';
+        message.error(errorMessage);
       }
     };
 
@@ -49,8 +50,9 @@ export const DocumentListPage = observer(() => {
     if (!workspaceId) return;
     try {
       await documentStore.loadDocuments(workspaceId);
-    } catch (error: any) {
-      message.error(error.message || '加载文档列表失败');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : '加载文档列表失败';
+      message.error(errorMessage);
     }
   };
 
@@ -62,8 +64,9 @@ export const DocumentListPage = observer(() => {
     try {
       const objectId = await documentStore.createDocument(workspaceId, '新文档');
       navigate(`/documents/${objectId}`);
-    } catch (error: any) {
-      message.error(error.message || '创建文档失败');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : '创建文档失败';
+      message.error(errorMessage);
     }
   };
 
@@ -79,8 +82,9 @@ export const DocumentListPage = observer(() => {
     try {
       await documentStore.deleteDocument(workspaceId, objectId);
       message.success('删除成功');
-    } catch (error: any) {
-      message.error(error.message || '删除失败');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : '删除失败';
+      message.error(errorMessage);
     }
   };
 
@@ -97,8 +101,9 @@ export const DocumentListPage = observer(() => {
       const results = await documentStore.searchDocuments(workspaceId, searchText);
       // 这里可以显示搜索结果
       message.info(`找到 ${results.length} 个结果`);
-    } catch (error: any) {
-      message.error(error.message || '搜索失败');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : '搜索失败';
+      message.error(errorMessage);
     }
   };
 
@@ -131,7 +136,7 @@ export const DocumentListPage = observer(() => {
       title: '操作',
       key: 'action',
       width: 200,
-      render: (_: any, record: Document) => (
+      render: (_: unknown, record: Document) => (
         <Space>
           <Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
             编辑

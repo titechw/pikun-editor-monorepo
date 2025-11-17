@@ -1,4 +1,4 @@
-import type { ExtensionAttribute } from '../types.js'
+import type { ExtensionAttribute } from '../types.js';
 
 /**
  * Return attributes of an extension that should be splitted by keepOnSplit flag
@@ -10,19 +10,19 @@ import type { ExtensionAttribute } from '../types.js'
 export function getSplittedAttributes(
   extensionAttributes: ExtensionAttribute[],
   typeName: string,
-  attributes: Record<string, any>,
+  attributes: Record<string, any>
 ): Record<string, any> {
   return Object.fromEntries(
     Object.entries(attributes).filter(([name]) => {
-      const extensionAttribute = extensionAttributes.find(item => {
-        return item.type === typeName && item.name === name
-      })
+      const extensionAttribute = extensionAttributes.find((item) => {
+        return item.type === typeName && item.name === name;
+      });
 
       if (!extensionAttribute) {
-        return false
+        return false;
       }
 
-      return extensionAttribute.attribute.keepOnSplit
-    }),
-  )
+      return extensionAttribute.attribute.keepOnSplit;
+    })
+  );
 }

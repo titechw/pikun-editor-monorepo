@@ -65,8 +65,9 @@ export class AuthStore {
         this.saveToStorage();
       });
       return workspace.workspace_id;
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to get default workspace');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to get default workspace';
+      throw new Error(errorMessage);
     }
   }
 
@@ -88,9 +89,10 @@ export class AuthStore {
         this.isLoading = false;
         this.saveToStorage();
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Registration failed';
       runInAction(() => {
-        this.error = error.message || 'Registration failed';
+        this.error = errorMessage;
         this.isLoading = false;
       });
       throw error;
@@ -119,9 +121,10 @@ export class AuthStore {
       if (!this.defaultWorkspaceId) {
         await this.getDefaultWorkspaceId();
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Login failed';
       runInAction(() => {
-        this.error = error.message || 'Login failed';
+        this.error = errorMessage;
         this.isLoading = false;
       });
       throw error;

@@ -431,7 +431,9 @@ export const DocumentHistoryPage = observer(() => {
                 </div>
                 <span style={{ fontSize: 13 }}>
                   {version.snapshot.metadata?.is_virtual
-                    ? version.snapshot.metadata.label || '初始版本'
+                    ? (typeof version.snapshot.metadata.label === 'string' 
+                        ? version.snapshot.metadata.label 
+                        : '初始版本')
                     : getVersionTypeLabel(version.snapshot.version_type)}
                 </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>

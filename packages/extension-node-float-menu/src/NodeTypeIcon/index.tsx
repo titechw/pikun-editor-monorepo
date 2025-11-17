@@ -14,7 +14,8 @@ import {
 
 export function NodeTypeIcon({ info }: { info: NodeTypeInfo }) {
   if (info.headingLevel) {
-    const HeadingIcon = info.headingLevel === 1 ? H1Icon : info.headingLevel === 2 ? H2Icon : H3Icon;
+    const HeadingIcon =
+      info.headingLevel === 1 ? H1Icon : info.headingLevel === 2 ? H2Icon : H3Icon;
     return <HeadingIcon />;
   }
 

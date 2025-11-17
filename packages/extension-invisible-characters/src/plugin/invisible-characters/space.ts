@@ -1,12 +1,12 @@
-import { InvisibleCharacter } from '../InvisibleCharacter.js'
+import { InvisibleCharacter } from '../InvisibleCharacter.js';
 
 export class SpaceCharacter extends InvisibleCharacter {
   constructor() {
     super({
       type: 'space',
       predicate: (char: string) => char === ' ',
-    })
+    });
   }
 }
 
-export default SpaceCharacter
+export default SpaceCharacter;

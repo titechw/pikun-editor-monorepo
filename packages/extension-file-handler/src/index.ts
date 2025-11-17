@@ -1,8 +1,8 @@
-import { FileHandler } from './fileHandler.js'
+import { FileHandler } from './fileHandler.js';
 
-export * from './FileHandlePlugin.js'
-export * from './types.js'
+export * from './FileHandlePlugin.js';
+export * from './types.js';
 
-export { FileHandler }
+export { FileHandler };
 
-export default FileHandler
+export default FileHandler;

@@ -1,11 +1,11 @@
-import type { PluginState } from '../types.js'
+import type { PluginState } from '../types.js';
 
 export const stateReducer = (state: PluginState, visible: boolean): PluginState => {
   if (visible === undefined) {
-    return state
+    return state;
   }
 
-  return { ...state, visible }
-}
+  return { ...state, visible };
+};
 
-export default stateReducer
+export default stateReducer;

@@ -52,7 +52,11 @@ export function createNodeFromContent(
       return node;
     } catch (error) {
       if (options.errorOnInvalidContent) {
-        throw new Error('[tiptap error]: Invalid JSON content', { cause: error as Error });
+        const err = new Error('[tiptap error]: Invalid JSON content');
+        if (error instanceof Error) {
+          (err as any).cause = error;
+        }
+        throw err;
       }
 
       console.warn('[tiptap warn]: Invalid content.', 'Passed value:', content, 'Error:', error);
@@ -106,9 +110,9 @@ export function createNodeFromContent(
       }
 
       if (options.errorOnInvalidContent && hasInvalidContent) {
-        throw new Error('[tiptap error]: Invalid HTML content', {
-          cause: new Error(`Invalid element found: ${invalidContent}`),
-        });
+        const err = new Error('[tiptap error]: Invalid HTML content');
+        (err as any).cause = new Error(`Invalid element found: ${invalidContent}`);
+        throw err;
       }
     }
 

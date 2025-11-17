@@ -19,8 +19,9 @@ export const LoginPage = observer(() => {
       }
       message.success(isLogin ? '登录成功' : '注册成功');
       navigate('/documents');
-    } catch (error: any) {
-      message.error(error.message || (isLogin ? '登录失败' : '注册失败'));
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : (isLogin ? '登录失败' : '注册失败');
+      message.error(errorMessage);
     }
   };
 

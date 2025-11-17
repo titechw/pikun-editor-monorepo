@@ -392,9 +392,9 @@ export class Editor extends EventEmitter<EditorEvents> {
     let plugins = prevPlugins;
 
     ([] as (string | PluginKey)[]).concat(nameOrPluginKeyToRemove).forEach((nameOrPluginKey) => {
-      // @ts-ignore
+      // @ts-ignore - PluginKey has a key property at runtime
       const name =
-        typeof nameOrPluginKey === 'string' ? `${nameOrPluginKey}$` : nameOrPluginKey.key;
+        typeof nameOrPluginKey === 'string' ? `${nameOrPluginKey}$` : (nameOrPluginKey as any).key;
 
       // @ts-ignore
       plugins = plugins.filter((plugin) => !plugin.key.startsWith(name));
@@ -646,9 +646,10 @@ export class Editor extends EventEmitter<EditorEvents> {
     }
 
     // Only emit the latest between focus and blur events
-    const mostRecentFocusTr = transactions.findLast(
-      (tr) => tr.getMeta('focus') || tr.getMeta('blur')
-    );
+    const mostRecentFocusTr =
+      transactions.length > 0
+        ? [...transactions].reverse().find((tr: any) => tr.getMeta('focus') || tr.getMeta('blur'))
+        : undefined;
     const focus = mostRecentFocusTr?.getMeta('focus');
     const blur = mostRecentFocusTr?.getMeta('blur');
 

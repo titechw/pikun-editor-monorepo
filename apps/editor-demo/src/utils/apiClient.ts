@@ -1,10 +1,10 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   message?: string;
-  errors?: any;
+  errors?: unknown;
 }
 
 export class ApiClient {
@@ -79,7 +79,7 @@ export class ApiClient {
   /**
    * GET 请求
    */
-  async get<T = any>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+  async get<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
     const response = await this.instance.get<ApiResponse<T>>(url, config);
     return response.data;
   }
@@ -87,9 +87,9 @@ export class ApiClient {
   /**
    * POST 请求
    */
-  async post<T = any>(
+  async post<T = unknown>(
     url: string,
-    data?: any,
+    data?: unknown,
     config?: AxiosRequestConfig,
   ): Promise<ApiResponse<T>> {
     const response = await this.instance.post<ApiResponse<T>>(url, data, config);
@@ -99,9 +99,9 @@ export class ApiClient {
   /**
    * PUT 请求
    */
-  async put<T = any>(
+  async put<T = unknown>(
     url: string,
-    data?: any,
+    data?: unknown,
     config?: AxiosRequestConfig,
   ): Promise<ApiResponse<T>> {
     const response = await this.instance.put<ApiResponse<T>>(url, data, config);
@@ -111,7 +111,7 @@ export class ApiClient {
   /**
    * DELETE 请求
    */
-  async delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+  async delete<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
     const response = await this.instance.delete<ApiResponse<T>>(url, config);
     return response.data;
   }

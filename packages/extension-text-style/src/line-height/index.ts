@@ -1,5 +1,5 @@
-import { LineHeight } from './line-height.js'
+import { LineHeight } from './line-height.js';
 
-export * from './line-height.js'
+export * from './line-height.js';
 
-export default LineHeight
+export default LineHeight;

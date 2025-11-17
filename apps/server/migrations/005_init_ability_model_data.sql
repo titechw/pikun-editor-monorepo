@@ -150,3 +150,4 @@ INSERT INTO pikun_db.ability_item_level_configs (
 ON CONFLICT (COALESCE(item_id::text, 'template'), level) DO NOTHING;
 
 
+

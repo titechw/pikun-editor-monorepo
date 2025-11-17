@@ -1,1 +1,1 @@
-export * from './drop-cursor.js'
+export * from './drop-cursor.js';

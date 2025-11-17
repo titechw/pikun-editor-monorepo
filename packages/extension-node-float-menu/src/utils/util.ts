@@ -28,7 +28,7 @@ export const getAbsolutePos = (state: EditorState, relativePos: unknown) => {
       ystate.doc,
       ystate.type,
       relativePos,
-      ystate.binding.mapping,
+      ystate.binding.mapping
     ) || 0
   );
 };

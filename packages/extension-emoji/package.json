@@ -46,15 +46,19 @@
     "is-emoji-supported": "^0.0.5"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.1",
     "@pikun/core": "workspace:^",
     "@pikun/pm": "workspace:^",
     "@pikun/suggestion": "workspace:^",
+    "@typescript-eslint/eslint-plugin": "^8.46.4",
+    "@typescript-eslint/parser": "^8.46.4",
     "emoji-datasource": "^7.0.2",
+    "eslint": "^9.39.1",
     "json5": "^2.2.3",
     "tsm": "^2.3.0"
   },
   "scripts": {
     "build": "tsup",
-    "lint": "prettier ./src/ --check && eslint --cache --quiet --no-error-on-unmatched-pattern ./src/"
+    "lint": "prettier ./src/ --check && eslint ./src/"
   }
 }

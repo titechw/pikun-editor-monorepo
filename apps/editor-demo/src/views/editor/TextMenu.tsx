@@ -32,7 +32,7 @@ export function TextMenu({ editor }: { editor: Editor }) {
   // Handle arrow navigation within a menu bar container, and allow to escape to the editor
   const { getFocusableElements } = useMenubarNav({
     editor,
-    ref: containerRef,
+    ref: containerRef as React.RefObject<HTMLElement>,
     onEscape: (e) => {
       e.preventDefault();
       // On escape, focus the editor & dismiss the menu by moving the selection to the end of the selection
@@ -56,8 +56,8 @@ export function TextMenu({ editor }: { editor: Editor }) {
       role="menubar"
       className="bubble-menu"
       // Types are broken here, since we import jsx from vue-2
-      ref={containerRef as any}
-      onFocus={(e) => {
+      ref={containerRef}
+      onFocus={(e: React.FocusEvent<HTMLDivElement>) => {
         // The ref we have is to the container, not the menu itself
         if (containerRef.current === e.target?.parentNode) {
           // Focus the first button when the menu bar is focused

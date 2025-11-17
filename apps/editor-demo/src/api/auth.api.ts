@@ -5,7 +5,7 @@ export interface User {
   uuid: string;
   email: string;
   name: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface LoginRequest {

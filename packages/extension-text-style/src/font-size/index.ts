@@ -1,5 +1,5 @@
-import { FontSize } from './font-size.js'
+import { FontSize } from './font-size.js';
 
-export * from './font-size.js'
+export * from './font-size.js';
 
-export default FontSize
+export default FontSize;

@@ -1,1 +1,1 @@
-export * from './gap-cursor.js'
+export * from './gap-cursor.js';

@@ -1,17 +1,17 @@
-import type { ComponentProps } from 'react'
-import React from 'react'
+import type { ComponentProps } from 'react';
+import React from 'react';
 
-import { useReactNodeView } from './useReactNodeView.js'
+import { useReactNodeView } from './useReactNodeView.js';
 
 export type NodeViewContentProps<T extends keyof React.JSX.IntrinsicElements = 'div'> = {
-  as?: NoInfer<T>
-} & ComponentProps<T>
+  as?: NoInfer<T>;
+} & ComponentProps<T>;
 
 export function NodeViewContent<T extends keyof React.JSX.IntrinsicElements = 'div'>({
   as: Tag = 'div' as T,
   ...props
 }: NodeViewContentProps<T>) {
-  const { nodeViewContentRef, nodeViewContentChildren } = useReactNodeView()
+  const { nodeViewContentRef, nodeViewContentChildren } = useReactNodeView();
 
   return (
     // @ts-ignore
@@ -26,5 +26,5 @@ export function NodeViewContent<T extends keyof React.JSX.IntrinsicElements = 'd
     >
       {nodeViewContentChildren}
     </Tag>
-  )
+  );
 }

@@ -270,7 +270,7 @@ export function MenuBar({ editor }: { editor: Editor }) {
   });
 
   useMenubarNav({
-    ref: containerRef,
+    ref: containerRef as React.RefObject<HTMLElement>,
     editor,
     onKeydown: (event) => {
       // Handle focus on alt + f10
