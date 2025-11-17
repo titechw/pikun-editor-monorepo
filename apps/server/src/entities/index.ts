@@ -227,6 +227,311 @@ export interface UserAbilityExperienceLog {
   created_at: Date;
 }
 
+/**
+ * 课程实体
+ */
+export interface Course {
+  course_id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  cover_image_url: string | null;
+  course_type: 'learning' | 'training' | 'mixed';
+  difficulty_level: number;
+  estimated_duration: number | null;
+  sort_order: number;
+  is_published: boolean;
+  metadata: Record<string, unknown>;
+  created_at: Date;
+  updated_at: Date;
+  deleted_at: Date | null;
+}
 
+/**
+ * 课程内容实体
+ */
+export interface CourseContent {
+  content_id: string;
+  course_id: string;
+  content_type: 'video' | 'article' | 'game' | 'training' | 'interactive';
+  title: string;
+  description: string | null;
+  content_url: string | null;
+  content_data: Record<string, unknown>;
+  duration: number | null;
+  sort_order: number;
+  is_required: boolean;
+  metadata: Record<string, unknown>;
+  created_at: Date;
+  updated_at: Date;
+  deleted_at: Date | null;
+}
 
+/**
+ * 考试实体
+ */
+export interface Assessment {
+  assessment_id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  assessment_type: 'exam' | 'project' | 'game' | 'performance';
+  item_id: string | null;
+  level_requirement: number | null;
+  passing_criteria: Record<string, unknown>;
+  assessment_config: Record<string, unknown>;
+  exp_reward: number;
+  sort_order: number;
+  is_published: boolean;
+  metadata: Record<string, unknown>;
+  created_at: Date;
+  updated_at: Date;
+  deleted_at: Date | null;
+}
+
+/**
+ * 课程能力绑定实体
+ */
+export interface CourseAbilityBinding {
+  binding_id: string;
+  course_id: string;
+  item_id: string;
+  exp_reward: number;
+  is_primary: boolean;
+  created_at: Date;
+}
+
+/**
+ * 用户课程学习记录实体
+ */
+export interface UserCourseProgress {
+  progress_id: string;
+  uid: number;
+  course_id: string;
+  status: 'not_started' | 'in_progress' | 'completed' | 'abandoned';
+  progress_percentage: number;
+  completed_contents: string[];
+  started_at: Date | null;
+  completed_at: Date | null;
+  last_accessed_at: Date | null;
+  metadata: Record<string, unknown>;
+  created_at: Date;
+  updated_at: Date;
+}
+
+/**
+ * 用户考试记录实体
+ */
+export interface UserAssessmentRecord {
+  record_id: string;
+  uid: number;
+  assessment_id: string;
+  item_id: string | null;
+  score: number | null;
+  result_data: Record<string, unknown>;
+  is_passed: boolean;
+  exp_earned: number;
+  duration_seconds: number | null;
+  metadata: Record<string, unknown>;
+  created_at: Date;
+}
+
+/**
+ * 用户训练记录实体
+ */
+export interface UserTrainingRecord {
+  record_id: string;
+  uid: number;
+  item_id: string;
+  course_content_id: string | null;
+  training_type: 'game' | 'practice' | 'exercise';
+  result_data: Record<string, unknown>;
+  exp_earned: number;
+  duration_seconds: number | null;
+  metadata: Record<string, unknown>;
+  created_at: Date;
+}
+
+/**
+ * 游戏场景实体
+ */
+export interface GameScenario {
+  scenario_id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  scenario_type: 'training' | 'assessment' | 'mixed' | 'story';
+  cover_image_url: string | null;
+  background_image_url: string | null;
+  difficulty_level: number;
+  estimated_duration: number | null;
+  sort_order: number;
+  is_published: boolean;
+  metadata: Record<string, unknown>;
+  created_at: Date;
+  updated_at: Date;
+  deleted_at: Date | null;
+}
+
+/**
+ * 场景课程绑定实体
+ */
+export interface ScenarioCourseBinding {
+  binding_id: string;
+  scenario_id: string;
+  course_id: string;
+  is_primary: boolean;
+  sort_order: number;
+  created_at: Date;
+}
+
+/**
+ * NPC 实体
+ */
+export interface NPC {
+  npc_id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  avatar_url: string | null;
+  scenario_id: string | null;
+  position_x: number | null;
+  position_y: number | null;
+  dialogue_data: Record<string, unknown>;
+  metadata: Record<string, unknown>;
+  created_at: Date;
+  updated_at: Date;
+  deleted_at: Date | null;
+}
+
+/**
+ * 任务实体
+ */
+export interface Quest {
+  quest_id: string;
+  npc_id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  quest_type: 'training' | 'assessment' | 'daily' | 'main';
+  course_id: string | null;
+  assessment_id: string | null;
+  prerequisite_quest_ids: string[];
+  exp_reward: number;
+  item_rewards: unknown[];
+  sort_order: number;
+  is_published: boolean;
+  metadata: Record<string, unknown>;
+  created_at: Date;
+  updated_at: Date;
+  deleted_at: Date | null;
+}
+
+/**
+ * 游戏会话实体
+ */
+export interface GameSession {
+  session_id: string;
+  uid: number;
+  scenario_id: string;
+  quest_id: string | null;
+  session_key: string;
+  status: 'active' | 'completed' | 'abandoned' | 'expired';
+  started_at: Date;
+  completed_at: Date | null;
+  expires_at: Date | null;
+  metadata: Record<string, unknown>;
+  created_at: Date;
+  updated_at: Date;
+}
+
+/**
+ * 用户任务记录实体
+ */
+export interface UserQuestRecord {
+  record_id: string;
+  uid: number;
+  quest_id: string;
+  session_id: string | null;
+  status: 'in_progress' | 'completed' | 'failed' | 'abandoned';
+  result_data: Record<string, unknown>;
+  exp_earned: number;
+  completed_at: Date | null;
+  metadata: Record<string, unknown>;
+  created_at: Date;
+  updated_at: Date;
+}
+
+/**
+ * 学科分类实体（支持树形结构）
+ */
+export interface SubjectCategory {
+  category_id: string;
+  parent_id: string | null;
+  code: string;
+  name: string;
+  description: string | null;
+  icon_url: string | null;
+  level: number;
+  path: string | null;
+  sort_order: number;
+  metadata: Record<string, unknown>;
+  created_at: Date;
+  updated_at: Date;
+  deleted_at: Date | null;
+}
+
+/**
+ * 学科实体
+ */
+export interface Subject {
+  subject_id: string;
+  category_id: string;
+  code: string;
+  name: string;
+  short_name: string | null;
+  icon_url: string | null;
+  cover_image_url: string | null;
+  sort_order: number;
+  is_published: boolean;
+  metadata: Record<string, unknown>;
+  created_at: Date;
+  updated_at: Date;
+  deleted_at: Date | null;
+}
+
+/**
+ * 学科详情实体
+ */
+export interface SubjectDetail {
+  detail_id: string;
+  subject_id: string;
+  definition: string | null;
+  description: string | null;
+  purpose: string | null;
+  value: string | null;
+  application_scenarios: string | null;
+  learning_objectives: string | null;
+  prerequisites: string | null;
+  related_subjects: string[];
+  metadata: Record<string, unknown>;
+  created_at: Date;
+  updated_at: Date;
+}
+
+/**
+ * 学科能力关联实体
+ */
+export interface SubjectAbilityBinding {
+  binding_id: string;
+  subject_id: string;
+  item_id: string;
+  required_level: number;
+  recommended_level: number | null;
+  is_primary: boolean;
+  importance_weight: number;
+  sort_order: number;
+  metadata: Record<string, unknown>;
+  created_at: Date;
+}
 

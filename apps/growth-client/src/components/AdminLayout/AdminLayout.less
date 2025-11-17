@@ -1,36 +1,334 @@
 .admin-layout {
   min-height: 100vh;
+  background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%) !important;
+
+  // 覆盖 Ant Design Layout 的默认样式
+  .ant-layout {
+    background: transparent !important;
+  }
+
+  .ant-layout-sider {
+    background: transparent !important;
+  }
 
   .admin-sider {
+    background: rgba(15, 12, 41, 0.6) !important;
+    backdrop-filter: blur(10px);
+
     .admin-logo {
       height: 64px;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #fff;
+      color: #fff !important;
       font-size: 16px;
+      font-weight: 600;
+
+      .ant-typography {
+        color: #fff !important;
+        margin: 0 !important;
+      }
+    }
+
+    // Menu 样式
+    .ant-menu {
+      background: transparent !important;
+      border-right: none !important;
+
+      .ant-menu-item {
+        color: rgba(255, 255, 255, 0.8) !important;
+
+        &:hover {
+          color: #fff !important;
+          background: rgba(255, 255, 255, 0.1) !important;
+        }
+
+        &.ant-menu-item-selected {
+          color: #fff !important;
+          background: rgba(102, 126, 234, 0.3) !important;
+
+          &::after {
+            display: none !important;
+          }
+        }
+      }
     }
   }
 
   .admin-header {
-    background: #fff;
+    background: rgba(15, 12, 41, 0.8) !important;
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
     padding: 0 24px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+    .ant-btn {
+      color: rgba(255, 255, 255, 0.8) !important;
+
+      &:hover {
+        color: #fff !important;
+        background: rgba(255, 255, 255, 0.1) !important;
+      }
+    }
 
     .admin-header-right {
       display: flex;
       align-items: center;
+
+      .ant-typography {
+        color: #fff !important;
+      }
+
+      .ant-btn {
+        color: rgba(255, 255, 255, 0.8) !important;
+
+        &:hover {
+          color: #fff !important;
+          background: rgba(255, 255, 255, 0.1) !important;
+        }
+      }
     }
   }
 
   .admin-content {
-    margin: 24px;
-    padding: 24px;
-    background: #fff;
-    min-height: calc(100vh - 112px);
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    min-height: calc(100vh - 64px);
+    overflow: hidden;
   }
 }
 
+// 全局 Drawer 样式（因为 Drawer 渲染在 body 下）
+.admin-drawer {
+  background: rgba(15, 12, 41, 0.98) !important;
+  backdrop-filter: blur(20px) !important;
+
+  .ant-drawer-header {
+    background: rgba(15, 12, 41, 0.95) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+
+    .ant-drawer-title {
+      color: #fff !important;
+      font-weight: 600 !important;
+    }
+
+    .ant-drawer-close {
+      color: rgba(255, 255, 255, 0.7) !important;
+
+      &:hover {
+        color: #fff !important;
+        background: rgba(255, 255, 255, 0.1) !important;
+      }
+    }
+  }
+
+  .ant-drawer-body {
+    background: rgba(15, 12, 41, 0.95) !important;
+    color: #fff !important;
+  }
+
+  .ant-drawer-footer {
+    background: rgba(15, 12, 41, 0.95) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+  }
+}
+
+.admin-drawer-root {
+  .ant-drawer-content-wrapper {
+    .ant-drawer-content {
+      background: rgba(15, 12, 41, 0.98) !important;
+      backdrop-filter: blur(20px) !important;
+    }
+  }
+
+  .ant-drawer-content {
+    background: rgba(15, 12, 41, 0.98) !important;
+    backdrop-filter: blur(20px) !important;
+  }
+
+  .ant-drawer-header {
+    background: rgba(15, 12, 41, 0.95) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+
+    .ant-drawer-title {
+      color: #fff !important;
+      font-weight: 600 !important;
+    }
+
+    .ant-drawer-close {
+      color: rgba(255, 255, 255, 0.7) !important;
+
+      &:hover {
+        color: #fff !important;
+        background: rgba(255, 255, 255, 0.1) !important;
+      }
+    }
+  }
+
+  .ant-drawer-body {
+    background: rgba(15, 12, 41, 0.95) !important;
+    color: #fff !important;
+  }
+
+  .ant-drawer-footer {
+    background: rgba(15, 12, 41, 0.95) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+  }
+}
+
+// Form 样式（在 Drawer 内）
+.admin-drawer,
+.admin-drawer-root {
+  .ant-form {
+    .ant-form-item-label > label {
+      color: rgba(255, 255, 255, 0.8) !important;
+    }
+
+    .ant-form-item-explain-error {
+      color: #ff4d4f !important;
+    }
+
+    .ant-input,
+    .ant-input-number,
+    .ant-input-number-input,
+    .ant-select-selector {
+      background: rgba(0, 0, 0, 0.4) !important;
+      border: 1.5px solid rgba(255, 255, 255, 0.3) !important;
+      color: #fff !important;
+
+      &::placeholder {
+        color: rgba(255, 255, 255, 0.4) !important;
+      }
+
+      &:hover {
+        border-color: rgba(102, 126, 234, 0.7) !important;
+      }
+
+      &:focus,
+      &.ant-input-focused,
+      &.ant-select-focused .ant-select-selector {
+        border-color: rgba(102, 126, 234, 0.9) !important;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2) !important;
+      }
+    }
+
+    textarea.ant-input {
+      background: rgba(0, 0, 0, 0.4) !important;
+      color: #fff !important;
+    }
+
+    .ant-select {
+      .ant-select-selector {
+        background: rgba(0, 0, 0, 0.4) !important;
+        border: 1.5px solid rgba(255, 255, 255, 0.3) !important;
+        color: #fff !important;
+
+        .ant-select-selection-item,
+        .ant-select-selection-placeholder {
+          color: #fff !important;
+        }
+      }
+
+      &.ant-select-focused .ant-select-selector {
+        border-color: rgba(102, 126, 234, 0.9) !important;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2) !important;
+      }
+    }
+
+    .ant-select-dropdown {
+      background: rgba(15, 12, 41, 0.98) !important;
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      backdrop-filter: blur(10px) !important;
+
+      .ant-select-item {
+        color: rgba(255, 255, 255, 0.8) !important;
+        background: transparent !important;
+
+        &:hover {
+          background: rgba(102, 126, 234, 0.2) !important;
+          color: #fff !important;
+        }
+
+        &.ant-select-item-option-selected {
+          background: rgba(102, 126, 234, 0.3) !important;
+          color: #fff !important;
+          font-weight: 600 !important;
+        }
+
+        &.ant-select-item-option-active {
+          background: rgba(102, 126, 234, 0.2) !important;
+          color: #fff !important;
+        }
+      }
+    }
+
+    .ant-input-number-handler-wrap {
+      background: rgba(255, 255, 255, 0.08) !important;
+      border-left: 1.5px solid rgba(255, 255, 255, 0.2) !important;
+
+      .ant-input-number-handler {
+        color: rgba(255, 255, 255, 0.8) !important;
+        border-top: 1.5px solid rgba(255, 255, 255, 0.2) !important;
+
+        &:hover {
+          color: #667eea !important;
+          background: rgba(102, 126, 234, 0.2) !important;
+  }
+}
+    }
+
+    .ant-switch {
+      background: rgba(255, 255, 255, 0.2) !important;
+
+      &.ant-switch-checked {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+      }
+    }
+  }
+
+  // 按钮样式
+  .ant-btn {
+    height: 32px !important;
+    padding: 0 14px !important;
+    font-size: 12px !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.3) !important;
+    color: #fff !important;
+    background: rgba(255, 255, 255, 0.12) !important;
+    border-radius: 8px !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    font-weight: 600 !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+
+    &:hover:not(:disabled) {
+      border-color: rgba(102, 126, 234, 0.8) !important;
+      background: rgba(102, 126, 234, 0.35) !important;
+      transform: translateY(-2px) !important;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4) !important;
+    }
+
+    &.ant-btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+      border-color: transparent !important;
+      box-shadow: 0 3px 8px rgba(102, 126, 234, 0.5) !important;
+
+      &:hover:not(:disabled) {
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%) !important;
+        box-shadow: 0 5px 16px rgba(102, 126, 234, 0.6) !important;
+      }
+    }
+
+    &.ant-btn-default {
+      background: rgba(255, 255, 255, 0.12) !important;
+      border-color: rgba(255, 255, 255, 0.3) !important;
+      color: #fff !important;
+
+      &:hover:not(:disabled) {
+        border-color: rgba(102, 126, 234, 0.8) !important;
+        background: rgba(102, 126, 234, 0.35) !important;
+      }
+    }
+  }
+}

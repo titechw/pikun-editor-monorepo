@@ -46,6 +46,16 @@ export const AdminLayout = observer(({ children }: AdminLayoutProps): React.JSX.
       icon: <SettingOutlined />,
       label: '等级配置',
     },
+    {
+      key: '/subject-categories',
+      icon: <AppstoreOutlined />,
+      label: '学科分类',
+    },
+    {
+      key: '/subjects',
+      icon: <FileTextOutlined />,
+      label: '学科管理',
+    },
   ];
 
   const handleMenuClick = ({ key }: { key: string }) => {
@@ -61,7 +71,7 @@ export const AdminLayout = observer(({ children }: AdminLayoutProps): React.JSX.
     <Layout className="admin-layout">
       <Sider trigger={null} collapsible collapsed={collapsed} className="admin-sider">
         <div className="admin-logo">
-          {!collapsed && <Text strong>能力模型管理</Text>}
+          {!collapsed && <Text strong style={{ color: '#fff' }}>能力模型管理</Text>}
         </div>
         <Menu
           theme="dark"

@@ -147,5 +147,5 @@ INSERT INTO pikun_db.ability_item_level_configs (
   (uuid_generate_v4(), NULL, 8, 20000, true, '专家+', true, 8),
   (uuid_generate_v4(), NULL, 9, 50000, false, '大师', true, 9),
   (uuid_generate_v4(), NULL, 10, 100000, true, '大师+', true, 10)
-ON CONFLICT DO NOTHING;
+ON CONFLICT (COALESCE(item_id::text, 'template'), level) DO NOTHING;
 

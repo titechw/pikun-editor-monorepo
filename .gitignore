@@ -43,3 +43,4 @@ apps/backend
 
 *.bak
 *storybook.log
+.next

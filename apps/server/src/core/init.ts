@@ -10,6 +10,8 @@ import { AbilityItemDAO } from '@/dao/ability-item.dao';
 import { AbilityItemLevelConfigDAO } from '@/dao/ability-item-level-config.dao';
 import { UserAbilityLevelDAO } from '@/dao/user-ability-level.dao';
 import { UserAbilityExperienceLogDAO } from '@/dao/user-ability-experience-log.dao';
+import { SubjectCategoryDAO } from '@/dao/subject-category.dao';
+import { SubjectDAO } from '@/dao/subject.dao';
 import { AuthService } from '@/services/auth.service';
 import { DocumentService } from '@/services/document.service';
 import { SnapshotService } from '@/services/snapshot.service';
@@ -23,6 +25,8 @@ import { DocumentController } from '@/api/documents/document.controller';
 import { WorkspaceController } from '@/api/workspace/workspace.controller';
 import { AbilityModelController } from '@/api/ability/ability-model.controller';
 import { AbilityLevelConfigController } from '@/api/ability/ability-level-config.controller';
+import { SubjectService } from '@/services/subject.service';
+import { SubjectController } from '@/api/subject/subject.controller';
 
 /**
  * 初始化依赖注入容器
@@ -40,6 +44,8 @@ export function initializeContainer() {
   Container.register('AbilityItemLevelConfigDAO', () => new AbilityItemLevelConfigDAO());
   Container.register('UserAbilityLevelDAO', () => new UserAbilityLevelDAO());
   Container.register('UserAbilityExperienceLogDAO', () => new UserAbilityExperienceLogDAO());
+  Container.register('SubjectCategoryDAO', () => new SubjectCategoryDAO());
+  Container.register('SubjectDAO', () => new SubjectDAO());
 
   // 注册 Service
   Container.register(AuthService, () => {
@@ -121,6 +127,19 @@ export function initializeContainer() {
       AbilityLevelConfigService
     );
     return new AbilityLevelConfigController(levelConfigService);
+  });
+
+  // 注册学科相关 Service
+  Container.register(SubjectService, () => {
+    const categoryDAO = Container.resolve<SubjectCategoryDAO>('SubjectCategoryDAO');
+    const subjectDAO = Container.resolve<SubjectDAO>('SubjectDAO');
+    return new SubjectService(categoryDAO, subjectDAO);
+  });
+
+  // 注册学科 Controller
+  Container.register(SubjectController, () => {
+    const subjectService = Container.resolve<SubjectService>(SubjectService);
+    return new SubjectController(subjectService);
   });
 }
 

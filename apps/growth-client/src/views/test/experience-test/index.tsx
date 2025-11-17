@@ -26,32 +26,17 @@ export const ExperienceTest = observer((): React.JSX.Element => {
     );
   }
 
-  // 准备 Tab 数据
-  const tabItems = store.categories
-    .map((category) => {
-      const categoryDimensions = store.dimensions.filter((d) => d.category_id === category.category_id);
-      const categoryItems = store.items.filter((item) =>
-        categoryDimensions.some((d) => d.dimension_id === item.dimension_id)
-      );
-
-      if (categoryItems.length === 0) return null;
-
-      return {
-        key: category.category_id,
-        label: category.name,
-        children: (
-          <div className="items-grid">
-            {categoryItems.map((item) => {
+  // 渲染能力卡片
+  const renderItemCard = (item: typeof store.items[0]) => {
               const userLevel = store.getUserLevel(item.item_id);
               const level = userLevel?.current_level || 1;
               const exp = userLevel?.current_exp || 0;
-              const nextExp = store.getNextLevelExp(item.item_id); // 从后端返回的数据中获取
-              const expNeeded = store.getExpToNextLevel(item.item_id); // 从后端返回的数据中获取
+    const nextExp = store.getNextLevelExp(item.item_id);
+    const expNeeded = store.getExpToNextLevel(item.item_id);
               const customExp = store.customExpInputs[item.item_id] || 0;
               
-              // 从后端返回的数据中获取是否需要考试
               const requiresExam = userLevel?.requires_assessment === true;
-              const canCompleteExam = requiresExam && (expNeeded <= 0); // 经验够了且需要考试
+    const canCompleteExam = requiresExam && (expNeeded <= 0);
 
               return (
                 <div key={item.item_id} className="item-card">
@@ -144,6 +129,40 @@ export const ExperienceTest = observer((): React.JSX.Element => {
                         </AsyncButton>
                       </div>
                     </div>
+        </div>
+      </div>
+    );
+  };
+
+  // 准备 Tab 数据
+  const tabItems = store.categories
+    .map((category) => {
+      const categoryDimensions = store.dimensions
+        .filter((d) => d.category_id === category.category_id)
+        .sort((a, b) => a.sort_order - b.sort_order);
+      
+      // 判断是否需要按维度分组（所有类别都按维度分组，如果维度数量大于1）
+      const needGrouping = categoryDimensions.length > 1;
+
+      if (needGrouping) {
+        // 按维度分组展示
+        return {
+          key: category.category_id,
+          label: category.name,
+          children: (
+            <div className="category-content">
+              {categoryDimensions.map((dimension) => {
+                const dimensionItems = store.items
+                  .filter((item) => item.dimension_id === dimension.dimension_id)
+                  .sort((a, b) => a.sort_order - b.sort_order);
+
+                if (dimensionItems.length === 0) return null;
+
+                return (
+                  <div key={dimension.dimension_id} className="dimension-section">
+                    <h3 className="dimension-title">{dimension.name}</h3>
+                    <div className="items-grid">
+                      {dimensionItems.map((item) => renderItemCard(item))}
                   </div>
                 </div>
               );
@@ -151,6 +170,24 @@ export const ExperienceTest = observer((): React.JSX.Element => {
           </div>
         ),
       };
+      } else {
+        // 其他类别直接平铺展示（如元系统层）
+        const categoryItems = store.items.filter((item) =>
+          categoryDimensions.some((d) => d.dimension_id === item.dimension_id)
+        );
+
+        if (categoryItems.length === 0) return null;
+
+        return {
+          key: category.category_id,
+          label: category.name,
+          children: (
+            <div className="items-grid">
+              {categoryItems.map((item) => renderItemCard(item))}
+            </div>
+          ),
+        };
+      }
     })
     .filter((item): item is NonNullable<typeof item> => item !== null);
 
