@@ -1,5 +1,8 @@
 #!/usr/bin/env sh
 . "$(dirname "$0")/_/husky.sh"
 
-pnpm -r lint
-pnpm -r typecheck
+# 使用 lint-staged 只检查改动的文件
+pnpm lint-staged
+
+# 只对改动的文件所在的工作区运行 typecheck
+sh "$(dirname "$0")/../scripts/typecheck-changed.sh"
