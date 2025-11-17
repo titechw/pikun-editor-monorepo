@@ -6,6 +6,8 @@ import 'antd/dist/reset.css';
 import './styles/index.css';
 import './styles/theme.less';
 
+console.log('growth-client');
+
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
     <App />
