@@ -9,6 +9,8 @@ import { AbilityCategories } from './ability-categories';
 import { AbilityDimensions } from './ability-dimensions';
 import { AbilityItems } from './ability-items';
 import { AbilityLevelConfigs } from './ability-level-configs';
+import { SubjectCategories } from './subject-categories';
+import { Subjects } from './subjects';
 // 导入全局 Drawer 样式
 import '@/components/AdminLayout/AdminLayout.less';
 
@@ -51,6 +53,8 @@ export const AdminApp = (): React.JSX.Element => {
                     <Route path="/dimensions" element={<AbilityDimensions />} />
                     <Route path="/items" element={<AbilityItems />} />
                     <Route path="/level-configs" element={<AbilityLevelConfigs />} />
+                    <Route path="/subject-categories" element={<SubjectCategories />} />
+                    <Route path="/subjects" element={<Subjects />} />
                   </Routes>
                 </AdminLayout>
               </ProtectedAdminRoute>

@@ -11,6 +11,11 @@ interface ServerResponse<T> {
   data?: T;
   message?: string;
   errors?: unknown;
+  pagination?: {
+    current: number;
+    pageSize: number;
+    total: number;
+  };
 }
 
 /**
@@ -56,6 +61,7 @@ export const adminApiClient = {
       return {
         ...response,
         data: serverResponse.data as T,
+        pagination: serverResponse.pagination,
       };
     } catch (error) {
       if (error instanceof ApiError) {
@@ -85,6 +91,7 @@ export const adminApiClient = {
       return {
         ...response,
         data: serverResponse.data as T,
+        pagination: serverResponse.pagination,
       };
     } catch (error) {
       if (error instanceof ApiError) {
@@ -119,6 +126,7 @@ export const adminApiClient = {
       return {
         ...response,
         data: serverResponse.data as T,
+        pagination: serverResponse.pagination,
       };
     } catch (error) {
       if (error instanceof ApiError) {
@@ -152,6 +160,7 @@ export const adminApiClient = {
       return {
         ...response,
         data: serverResponse.data as T,
+        pagination: serverResponse.pagination,
       };
     } catch (error) {
       if (error instanceof ApiError) {

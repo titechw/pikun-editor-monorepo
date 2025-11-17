@@ -125,10 +125,10 @@ export const AbilityLevelConfigs = observer((): React.JSX.Element => {
               onClick={() => handleEdit(config)}
               title="编辑"
             />
-            <Button
+          <Button
               type="text"
-              danger
-              icon={<DeleteOutlined />}
+            danger
+            icon={<DeleteOutlined />}
               onClick={() => handleDelete(config.config_id)}
               title="删除"
             />

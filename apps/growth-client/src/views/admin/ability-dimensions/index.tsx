@@ -94,10 +94,10 @@ export const AbilityDimensions = observer((): React.JSX.Element => {
               onClick={() => handleEdit(dimension)}
               title="编辑"
             />
-            <Button
+          <Button
               type="text"
-              danger
-              icon={<DeleteOutlined />}
+            danger
+            icon={<DeleteOutlined />}
               onClick={() => handleDelete(dimension.dimension_id)}
               title="删除"
             />

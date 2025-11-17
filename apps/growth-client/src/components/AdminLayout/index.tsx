@@ -46,6 +46,16 @@ export const AdminLayout = observer(({ children }: AdminLayoutProps): React.JSX.
       icon: <SettingOutlined />,
       label: '等级配置',
     },
+    {
+      key: '/subject-categories',
+      icon: <AppstoreOutlined />,
+      label: '学科分类',
+    },
+    {
+      key: '/subjects',
+      icon: <FileTextOutlined />,
+      label: '学科管理',
+    },
   ];
 
   const handleMenuClick = ({ key }: { key: string }) => {

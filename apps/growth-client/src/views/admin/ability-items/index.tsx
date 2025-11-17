@@ -121,10 +121,10 @@ export const AbilityItems = observer((): React.JSX.Element => {
               onClick={() => handleEdit(item)}
               title="编辑"
             />
-            <Button
+          <Button
               type="text"
-              danger
-              icon={<DeleteOutlined />}
+            danger
+            icon={<DeleteOutlined />}
               onClick={() => handleDelete(item.item_id)}
               title="删除"
             />
