@@ -108,7 +108,11 @@ export class SubjectCategoryDAO {
     if (parentId === null) {
       const baseCondition = 'parent_id IS NULL AND deleted_at IS NULL';
       countQuery = `SELECT COUNT(*) as count FROM pikun_db.subject_categories WHERE ${baseCondition}${keywordCondition}`;
-      listQuery = `SELECT * FROM pikun_db.subject_categories WHERE ${baseCondition}${keywordCondition} ORDER BY sort_order ASC, code ASC LIMIT $${paramIndex + (keyword ? 1 : 0)} OFFSET $${paramIndex + (keyword ? 2 : 1)}`;
+      listQuery = `SELECT 
+        sc.*,
+        (SELECT COUNT(*) FROM pikun_db.subject_categories WHERE parent_id = sc.category_id AND deleted_at IS NULL) as children_count
+      FROM pikun_db.subject_categories sc
+      WHERE ${baseCondition}${keywordCondition} ORDER BY sc.sort_order ASC, sc.code ASC LIMIT $${paramIndex + (keyword ? 1 : 0)} OFFSET $${paramIndex + (keyword ? 2 : 1)}`;
       if (keyword) {
         params.push(keywordParam, pageSize, offset);
       } else {
@@ -117,7 +121,11 @@ export class SubjectCategoryDAO {
     } else {
       const baseCondition = 'parent_id = $1 AND deleted_at IS NULL';
       countQuery = `SELECT COUNT(*) as count FROM pikun_db.subject_categories WHERE ${baseCondition}${keywordCondition.replace(/\$\d+/, `$${paramIndex + 1}`)}`;
-      listQuery = `SELECT * FROM pikun_db.subject_categories WHERE ${baseCondition}${keywordCondition.replace(/\$\d+/, `$${paramIndex + 1}`)} ORDER BY sort_order ASC, code ASC LIMIT $${paramIndex + (keyword ? 2 : 1)} OFFSET $${paramIndex + (keyword ? 3 : 2)}`;
+      listQuery = `SELECT 
+        sc.*,
+        (SELECT COUNT(*) FROM pikun_db.subject_categories WHERE parent_id = sc.category_id AND deleted_at IS NULL) as children_count
+      FROM pikun_db.subject_categories sc
+      WHERE ${baseCondition}${keywordCondition.replace(/\$\d+/, `$${paramIndex + 1}`)} ORDER BY sc.sort_order ASC, sc.code ASC LIMIT $${paramIndex + (keyword ? 2 : 1)} OFFSET $${paramIndex + (keyword ? 3 : 2)}`;
       params.push(parentId);
       if (keyword) {
         params.push(keywordParam, pageSize, offset);
@@ -130,7 +138,7 @@ export class SubjectCategoryDAO {
     const countResult = await this.db.query<{ count: string }>(countQuery, countParams);
     const total = parseInt(countResult.rows[0].count, 10);
 
-    const result = await this.db.query<SubjectCategory>(listQuery, params);
+    const result = await this.db.query<SubjectCategory & { children_count?: number }>(listQuery, params);
 
     return {
       categories: result.rows,
@@ -140,12 +148,26 @@ export class SubjectCategoryDAO {
 
   /**
    * 根据父分类 ID 查找直接子分类（不分页，用于树懒加载）
+   * 同时返回每个分类的子分类数量
    */
   async findChildrenByParentId(parentId: string | null): Promise<SubjectCategory[]> {
-    const result = await this.db.query<SubjectCategory>(
-      'SELECT * FROM pikun_db.subject_categories WHERE parent_id = $1 AND deleted_at IS NULL ORDER BY sort_order ASC, code ASC',
-      [parentId]
-    );
+    // 当 parentId 为 null 时，需要使用 IS NULL 查询
+    const query = parentId === null
+      ? `SELECT 
+          sc.*,
+          (SELECT COUNT(*) FROM pikun_db.subject_categories WHERE parent_id = sc.category_id AND deleted_at IS NULL) as children_count
+        FROM pikun_db.subject_categories sc
+        WHERE sc.parent_id IS NULL AND sc.deleted_at IS NULL 
+        ORDER BY sc.sort_order ASC, sc.code ASC`
+      : `SELECT 
+          sc.*,
+          (SELECT COUNT(*) FROM pikun_db.subject_categories WHERE parent_id = sc.category_id AND deleted_at IS NULL) as children_count
+        FROM pikun_db.subject_categories sc
+        WHERE sc.parent_id = $1 AND sc.deleted_at IS NULL 
+        ORDER BY sc.sort_order ASC, sc.code ASC`;
+    
+    const params = parentId === null ? [] : [parentId];
+    const result = await this.db.query<SubjectCategory & { children_count?: number }>(query, params);
     return result.rows;
   }
 

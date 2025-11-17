@@ -1,0 +1,61 @@
+.search-input-wrapper {
+  // 修复 Ant Design Input 的双重边框问题
+  .ant-input-affix-wrapper {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    box-shadow: none !important;
+
+    &:hover {
+      border-color: rgba(255, 255, 255, 0.3) !important;
+      box-shadow: none !important;
+    }
+
+    &:focus,
+    &.ant-input-affix-wrapper-focused {
+      border-color: rgba(102, 126, 234, 0.5) !important;
+      box-shadow: none !important;
+    }
+
+    // 确保内部的 input 没有额外的边框，并设置 placeholder 样式
+    .ant-input {
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      color: #fff !important;
+
+      &::placeholder {
+        color: rgba(255, 255, 255, 0.5) !important;
+        opacity: 1 !important;
+      }
+
+      &:-webkit-input-placeholder {
+        color: rgba(255, 255, 255, 0.5) !important;
+        opacity: 1 !important;
+      }
+
+      &:-moz-placeholder {
+        color: rgba(255, 255, 255, 0.5) !important;
+        opacity: 1 !important;
+      }
+
+      &::-moz-placeholder {
+        color: rgba(255, 255, 255, 0.5) !important;
+        opacity: 1 !important;
+      }
+
+      &:-ms-input-placeholder {
+        color: rgba(255, 255, 255, 0.5) !important;
+        opacity: 1 !important;
+      }
+
+      &:focus {
+        box-shadow: none !important;
+      }
+    }
+  }
+
+  .ant-input-prefix {
+    color: rgba(255, 255, 255, 0.5) !important;
+  }
+}
+

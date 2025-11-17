@@ -11,7 +11,7 @@ export const listItemHasSubList = (typeOrName: string, state: EditorState, node?
 
   let hasSubList = false;
 
-  node.descendants((child) => {
+  node.descendants((child: Node) => {
     if (child.type === nodeType) {
       hasSubList = true;
     }

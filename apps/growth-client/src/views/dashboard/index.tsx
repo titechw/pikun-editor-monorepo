@@ -8,6 +8,7 @@ import {
   FireOutlined,
 } from '@ant-design/icons';
 import { authStore } from '@/stores/auth';
+import { AbilityLevels } from './ability-levels';
 import './Dashboard.less';
 
 const { Title, Text } = Typography;

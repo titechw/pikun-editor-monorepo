@@ -24,145 +24,234 @@
   .content {
     flex: 1;
     display: flex;
-    flex-direction: column;
+    gap: 20px;
     overflow: hidden;
 
-    .header-actions {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-      gap: 16px;
-    }
-
-    .category-tabs {
-      margin-bottom: 20px;
+    // 左侧分类树
+    .tree-container {
+      width: 500px;
+      min-width: 500px;
       flex-shrink: 0;
-    }
+      display: flex;
+      flex-direction: column;
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 16px;
+      overflow: hidden;
+      max-height: calc(100vh - 160px);
 
-    .subjects-grid {
-      flex: 1;
-      overflow-y: auto;
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 16px;
-      padding-right: 8px;
-      margin-bottom: 16px;
-
-      &::-webkit-scrollbar {
-        width: 6px;
+      .tree-search {
+        margin-bottom: 12px;
+        flex-shrink: 0;
       }
 
-      &::-webkit-scrollbar-track {
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 3px;
+      .empty-state {
+        text-align: center;
+        color: rgba(255, 255, 255, 0.5);
+        padding: 40px 20px;
       }
 
-      &::-webkit-scrollbar-thumb {
-        background: rgba(102, 126, 234, 0.5);
-        border-radius: 3px;
+      .subject-category-tree {
+        flex: 1;
+        overflow-y: auto;
+        padding-right: 8px;
 
-        &:hover {
-          background: rgba(102, 126, 234, 0.7);
-        }
-      }
-
-      .subject-card {
-        background: rgba(255, 255, 255, 0.06);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 8px;
-        padding: 16px;
-        transition: all 0.2s ease;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        height: 160px;
-
-        &:hover {
-          background: rgba(255, 255, 255, 0.08);
-          border-color: rgba(102, 126, 234, 0.4);
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        &::-webkit-scrollbar {
+          width: 6px;
         }
 
-        .card-header {
+        &::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 3px;
+        }
+
+        &::-webkit-scrollbar-thumb {
+          background: rgba(102, 126, 234, 0.5);
+          border-radius: 3px;
+
+          &:hover {
+            background: rgba(102, 126, 234, 0.7);
+          }
+        }
+
+        .tree-node {
           display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          gap: 12px;
-          padding-bottom: 10px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-          flex-shrink: 0;
+          align-items: center;
+          gap: 8px;
+          width: 100%;
 
-          .subject-info {
+          .tree-node-name {
             flex: 1;
             min-width: 0;
-
-            .subject-name {
-              font-size: 18px;
-              font-weight: 600;
-              color: #fff;
-              margin: 0 0 6px 0;
-              white-space: nowrap;
-              overflow: hidden;
-              text-overflow: ellipsis;
-            }
-
-            .subject-code {
-              font-size: 12px;
-              color: rgba(255, 255, 255, 0.5);
-              font-family: 'Monaco', 'Courier New', monospace;
-            }
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
           }
 
-          .subject-actions {
-            display: flex;
-            gap: 6px;
-            flex-shrink: 0;
+          .tree-node-code {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 12px;
+            font-family: 'Monaco', 'Courier New', monospace;
+          }
+
+          .tree-node-count {
+            color: rgba(102, 126, 234, 0.8);
+            font-size: 12px;
+          }
+        }
+      }
+    }
+
+    // 右侧学科列表
+    .subjects-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 16px;
+
+      .panel-header {
+        margin-bottom: 16px;
+        flex-shrink: 0;
+      }
+
+      .subjects-grid {
+        flex: 1;
+        overflow-y: auto;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 16px;
+        padding-right: 8px;
+        margin-bottom: 16px;
+
+        &::-webkit-scrollbar {
+          width: 6px;
+        }
+
+        &::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 3px;
+        }
+
+        &::-webkit-scrollbar-thumb {
+          background: rgba(102, 126, 234, 0.5);
+          border-radius: 3px;
+
+          &:hover {
+            background: rgba(102, 126, 234, 0.7);
           }
         }
 
-        .card-body {
-          flex: 1;
+        .empty-state {
+          grid-column: 1 / -1;
+          text-align: center;
+          color: rgba(255, 255, 255, 0.5);
+          padding: 40px 20px;
+        }
+
+        .subject-card {
+          background: rgba(255, 255, 255, 0.06);
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 8px;
+          padding: 16px;
+          transition: all 0.2s ease;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
           display: flex;
           flex-direction: column;
-          gap: 8px;
-          min-height: 0;
+          gap: 10px;
+          height: 160px;
 
-          .subject-short-name {
-            font-size: 13px;
-            color: rgba(255, 255, 255, 0.7);
-            flex-shrink: 0;
+          &:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(102, 126, 234, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
           }
 
-          .subject-stats {
+          .card-header {
             display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
             gap: 12px;
-            margin-top: auto;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             flex-shrink: 0;
 
-            .stat-item {
-              display: flex;
-              align-items: center;
-              gap: 4px;
-              font-size: 12px;
+            .subject-info {
+              flex: 1;
+              min-width: 0;
 
-              .stat-label {
-                color: rgba(255, 255, 255, 0.5);
+              .subject-name {
+                font-size: 18px;
+                font-weight: 600;
+                color: #fff;
+                margin: 0 0 6px 0;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
               }
 
-              .stat-value {
-                color: rgba(102, 126, 234, 1);
-                font-weight: 500;
+              .subject-code {
+                font-size: 12px;
+                color: rgba(255, 255, 255, 0.5);
+                font-family: 'Monaco', 'Courier New', monospace;
+              }
+            }
 
-                &.published {
-                  color: rgba(82, 196, 26, 1);
+            .subject-actions {
+              display: flex;
+              gap: 6px;
+              flex-shrink: 0;
+            }
+          }
+
+          .card-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-height: 0;
+
+            .subject-short-name {
+              font-size: 13px;
+              color: rgba(255, 255, 255, 0.7);
+              flex-shrink: 0;
+            }
+
+            .subject-stats {
+              display: flex;
+              gap: 12px;
+              margin-top: auto;
+              flex-shrink: 0;
+
+              .stat-item {
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                font-size: 12px;
+
+                .stat-label {
+                  color: rgba(255, 255, 255, 0.5);
                 }
 
-                &.draft {
-                  color: rgba(255, 193, 7, 1);
+                .stat-value {
+                  color: rgba(102, 126, 234, 1);
+                  font-weight: 500;
+
+                  &.published {
+                    color: rgba(82, 196, 26, 1);
+                  }
+
+                  &.draft {
+                    color: rgba(255, 193, 7, 1);
+                  }
                 }
               }
             }
@@ -246,4 +335,3 @@
     }
   }
 }
-

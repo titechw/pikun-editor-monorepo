@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
   Button,
@@ -7,20 +7,22 @@ import {
   Form,
   Input,
   InputNumber,
-  Select,
   Space,
   Spin,
-  Tabs,
   Tooltip,
   Switch,
   Pagination,
 } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import {
   subjectListStore,
   SubjectOperationType,
   type SubjectListItem,
 } from '@/stores/admin-subjects';
+import { CustomTree, type TreeNodeData } from '@/components/CustomTree';
+import { SearchInput } from '@/components/SearchInput';
+import { CategoryTreeSelect } from '@/components/CategoryTreeSelect';
+import type { SubjectCategoryListItem } from '@/stores/admin-subject-categories';
 import './Subjects.less';
 
 /**
@@ -30,9 +32,32 @@ export const Subjects = observer((): React.JSX.Element => {
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [editingSubject, setEditingSubject] = useState<SubjectListItem | null>(null);
   const [form] = Form.useForm();
+  const [selectedKeys, setSelectedKeys] = useState<React.Key[]>([]);
+  const [searchValue, setSearchValue] = useState(''); // 学科搜索关键词
 
   useEffect(() => {
-    subjectListStore.loadCategories();
+    const loadData = async () => {
+      await subjectListStore.loadCategoryTree();
+      await subjectListStore.fetchData();
+    };
+    loadData();
+  }, []);
+
+  // 处理树节点展开
+  const handleTreeExpand = useCallback((_expandedKeys: React.Key[], _info: { node: TreeNodeData<SubjectCategoryListItem>; expanded: boolean }): void => {
+    // CustomTree 会自动处理懒加载
+  }, []);
+
+  // 处理分类树搜索（搜索左侧分类树）
+  const [categorySearchValue, setCategorySearchValue] = useState('');
+  
+  const handleCategorySearch = useCallback((value: string): void => {
+    subjectListStore.setCategorySearchKeyword(value);
+  }, []);
+
+  // 处理学科搜索（搜索右侧学科列表）
+  const handleSubjectSearch = useCallback((value: string): void => {
+    subjectListStore.setSubjectSearchKeyword(value);
     subjectListStore.fetchData();
   }, []);
 
@@ -46,9 +71,15 @@ export const Subjects = observer((): React.JSX.Element => {
     setDrawerVisible(true);
   };
 
-  const handleEdit = (subject: SubjectListItem): void => {
+  const handleEdit = async (subject: SubjectListItem): Promise<void> => {
     setEditingSubject(subject);
     form.setFieldsValue(subject);
+    
+    // 如果有关联的分类，加载完整的分类路径以便正确显示
+    if (subject.category_id) {
+      await loadCategoryPath(subject.category_id);
+    }
+    
     setDrawerVisible(true);
   };
 
@@ -81,31 +112,63 @@ export const Subjects = observer((): React.JSX.Element => {
     }
   };
 
-  const handleTabChange = (categoryId: string): void => {
-    subjectListStore.setSelectedCategoryId(categoryId);
-    subjectListStore.fetchData();
-  };
-
-  // 处理搜索
-  const handleSearch = (value: string): void => {
-    subjectListStore.setSearchKeyword(value);
-    subjectListStore.fetchData();
-  };
-
-  // 按分类分组学科
-  const categories = subjectListStore.categories.slice().sort((a, b) => a.sort_order - b.sort_order);
-  const categoryGroups = categories.reduce((acc, category) => {
-    const subjects = subjectListStore.data.filter((s) => s.category_id === category.category_id);
-    if (subjects.length > 0 || category.category_id === subjectListStore.selectedCategoryId) {
-      acc.push({ category, subjects });
+  const handleTreeSelect = (selectedKeys: React.Key[]): void => {
+    setSelectedKeys(selectedKeys);
+    if (selectedKeys.length > 0) {
+      const categoryId = selectedKeys[0] as string;
+      subjectListStore.setSelectedCategoryId(categoryId);
+      subjectListStore.fetchData();
+    } else {
+      subjectListStore.setSelectedCategoryId(null);
+      subjectListStore.fetchData();
     }
-    return acc;
-  }, [] as Array<{ category: typeof categories[0]; subjects: SubjectListItem[] }>);
+  };
 
-  const tabItems = categories.map((category) => ({
-    key: category.category_id,
-    label: category.name,
-  }));
+  // 构建树形数据
+  const treeData = useMemo((): TreeNodeData<SubjectCategoryListItem>[] => {
+    const categories = subjectListStore.filteredCategoryTree || subjectListStore.categoryTree || [];
+    
+    const buildTreeData = (cats: SubjectCategoryListItem[]): TreeNodeData<SubjectCategoryListItem>[] => {
+      return cats.map((cat) => {
+        const hasLoadedChildren = cat.children && cat.children.length > 0;
+        const hasChildrenCount = cat.children_count && cat.children_count > 0;
+        const children = hasLoadedChildren && cat.children
+          ? buildTreeData(cat.children) 
+          : undefined;
+        const isLeaf = !hasLoadedChildren && !hasChildrenCount;
+        
+        return {
+          key: cat.category_id,
+          title: (
+            <div className="tree-node">
+              <Tooltip title={cat.name} placement="right">
+                <span className="tree-node-name">{cat.name}</span>
+              </Tooltip>
+              <span className="tree-node-code">({cat.code})</span>
+              {cat.children_count !== undefined && cat.children_count > 0 && (
+                <span className="tree-node-count">({cat.children_count})</span>
+              )}
+            </div>
+          ),
+          children,
+          isLeaf,
+          data: cat,
+        };
+      });
+    };
+    
+    return buildTreeData(categories);
+  }, [subjectListStore.filteredCategoryTree, subjectListStore.categoryTree]);
+
+  // 处理分类树懒加载（用于 CategoryTreeSelect）
+  const handleLoadCategoryData = useCallback(async (categoryId: string): Promise<void> => {
+    await subjectListStore.loadCategoryChildren(categoryId);
+  }, []);
+
+  // 根据 category_id 加载完整的分类路径（用于编辑时回填）
+  const loadCategoryPath = useCallback(async (categoryId: string): Promise<void> => {
+    await subjectListStore.loadCategoryPath(categoryId);
+  }, []);
 
   return (
     <div className="subjects">
@@ -117,90 +180,125 @@ export const Subjects = observer((): React.JSX.Element => {
       </div>
 
       <div className="content">
-        <div className="header-actions">
-          <Tabs
-            activeKey={subjectListStore.selectedCategoryId || undefined}
-            onChange={handleTabChange}
-            items={tabItems}
-            className="category-tabs"
-          />
-          <Input
-            placeholder="搜索学科名称..."
-            prefix={<SearchOutlined />}
-            allowClear
-            onChange={(e) => handleSearch(e.target.value)}
-            style={{ width: 300, background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.2)', color: '#fff' }}
-          />
-        </div>
-
-        <Spin spinning={subjectListStore.loading}>
-          <div className="subjects-grid">
-            {subjectListStore.data.map((subject) => (
-              <div key={subject.subject_id} className="subject-card">
-                <div className="card-header">
-                  <div className="subject-info">
-                    <h3 className="subject-name">{subject.name}</h3>
-                    <span className="subject-code">{subject.code}</span>
-                  </div>
-                  <Space className="subject-actions">
-                    <Button
-                      type="link"
-                      size="small"
-                      icon={<EditOutlined />}
-                      onClick={() => handleEdit(subject)}
-                    >
-                      编辑
-                    </Button>
-                    <Button
-                      type="link"
-                      size="small"
-                      danger
-                      icon={<DeleteOutlined />}
-                      onClick={() => handleDelete(subject.subject_id)}
-                    >
-                      删除
-                    </Button>
-                  </Space>
-                </div>
-                <div className="card-body">
-                  {subject.short_name && (
-                    <div className="subject-short-name">简称: {subject.short_name}</div>
-                  )}
-                  <div className="subject-stats">
-                    <div className="stat-item">
-                      <span className="stat-label">排序:</span>
-                      <span className="stat-value">{subject.sort_order}</span>
-                    </div>
-                    <div className="stat-item">
-                      <span className="stat-label">状态:</span>
-                      <span className={`stat-value ${subject.is_published ? 'published' : 'draft'}`}>
-                        {subject.is_published ? '已发布' : '草稿'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="pagination-container">
-            <Pagination
-              current={subjectListStore.pagination.current}
-              pageSize={subjectListStore.pagination.pageSize}
-              total={subjectListStore.pagination.total}
-              showSizeChanger
-              showQuickJumper
-              showTotal={(total) => `共 ${total} 条`}
-              onChange={(page, pageSize) => {
-                subjectListStore.setPagination({ current: page, pageSize });
-                subjectListStore.fetchData();
-              }}
-              onShowSizeChange={(current, size) => {
-                subjectListStore.setPagination({ current: 1, pageSize: size });
-                subjectListStore.fetchData();
-              }}
+        {/* 左侧分类树 */}
+        <div className="tree-container">
+          <div className="tree-search">
+            <SearchInput
+              placeholder="搜索分类..."
+              value={categorySearchValue}
+              onChange={setCategorySearchValue}
+              onSearch={handleCategorySearch}
             />
           </div>
-        </Spin>
+          <Spin spinning={subjectListStore.loading}>
+            {!subjectListStore.loading && treeData.length === 0 ? (
+              <div className="empty-state">暂无数据</div>
+            ) : (
+              <CustomTree
+                treeData={treeData}
+                selectedKeys={selectedKeys}
+                onSelect={handleTreeSelect}
+                onExpand={handleTreeExpand}
+                loadData={async (node) => {
+                  const nodeKey = node.key as string;
+                  if (!subjectListStore.loadedNodes.has(nodeKey)) {
+                    await subjectListStore.loadCategoryChildren(nodeKey);
+                  }
+                }}
+                loadingKeys={subjectListStore.loadingChildren}
+                showLine
+                blockNode
+                className="subject-category-tree"
+              />
+            )}
+          </Spin>
+        </div>
+
+        {/* 右侧学科列表 */}
+        <div className="subjects-panel">
+          <div className="panel-header">
+            <SearchInput
+              placeholder="搜索学科名称..."
+              value={searchValue}
+              onChange={setSearchValue}
+              onSearch={handleSubjectSearch}
+              style={{ width: 300 }}
+            />
+          </div>
+
+          <Spin spinning={subjectListStore.loading}>
+            <div className="subjects-grid">
+              {subjectListStore.data.length === 0 ? (
+                <div className="empty-state">暂无学科数据</div>
+              ) : (
+                subjectListStore.data.map((subject) => (
+                  <div key={subject.subject_id} className="subject-card">
+                    <div className="card-header">
+                      <div className="subject-info">
+                        <h3 className="subject-name">{subject.name}</h3>
+                        <span className="subject-code">{subject.code}</span>
+                      </div>
+                      <Space className="subject-actions">
+                        <Button
+                          type="link"
+                          size="small"
+                          icon={<EditOutlined />}
+                          onClick={() => handleEdit(subject)}
+                        >
+                          编辑
+                        </Button>
+                        <Button
+                          type="link"
+                          size="small"
+                          danger
+                          icon={<DeleteOutlined />}
+                          onClick={() => handleDelete(subject.subject_id)}
+                        >
+                          删除
+                        </Button>
+                      </Space>
+                    </div>
+                    <div className="card-body">
+                      {subject.short_name && (
+                        <div className="subject-short-name">简称: {subject.short_name}</div>
+                      )}
+                      <div className="subject-stats">
+                        <div className="stat-item">
+                          <span className="stat-label">排序:</span>
+                          <span className="stat-value">{subject.sort_order}</span>
+                        </div>
+                        <div className="stat-item">
+                          <span className="stat-label">状态:</span>
+                          <span className={`stat-value ${subject.is_published ? 'published' : 'draft'}`}>
+                            {subject.is_published ? '已发布' : '草稿'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="pagination-container">
+              <Pagination
+                current={subjectListStore.pagination.current}
+                pageSize={subjectListStore.pagination.pageSize}
+                total={subjectListStore.pagination.total}
+                showSizeChanger
+                showQuickJumper
+                showTotal={(total) => `共 ${total} 条`}
+                onChange={(page, pageSize) => {
+                  subjectListStore.setPagination({ current: page, pageSize });
+                  subjectListStore.fetchData();
+                }}
+                onShowSizeChange={(_current, size) => {
+                  subjectListStore.setPagination({ current: 1, pageSize: size });
+                  subjectListStore.fetchData();
+                }}
+              />
+            </div>
+          </Spin>
+        </div>
       </div>
 
       <Drawer
@@ -221,13 +319,12 @@ export const Subjects = observer((): React.JSX.Element => {
             label="所属分类"
             rules={[{ required: true, message: '请选择所属分类' }]}
           >
-            <Select placeholder="请选择分类">
-              {categories.map((cat) => (
-                <Select.Option key={cat.category_id} value={cat.category_id}>
-                  {cat.name}
-                </Select.Option>
-              ))}
-            </Select>
+            <CategoryTreeSelect
+              placeholder="请选择分类"
+              treeData={subjectListStore.categoryTree}
+              loadData={handleLoadCategoryData}
+              loadCategoryPath={loadCategoryPath}
+            />
           </Form.Item>
           <Form.Item name="code" label="代码" rules={[{ required: true, message: '请输入代码' }]}>
             <Input placeholder="如：subject_1101410" />
@@ -271,4 +368,3 @@ export const Subjects = observer((): React.JSX.Element => {
     </div>
   );
 });
-

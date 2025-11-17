@@ -149,3 +149,4 @@ INSERT INTO pikun_db.ability_item_level_configs (
   (uuid_generate_v4(), NULL, 10, 100000, true, '大师+', true, 10)
 ON CONFLICT (COALESCE(item_id::text, 'template'), level) DO NOTHING;
 
+

@@ -107,7 +107,10 @@ export class AbilityLevelConfigStore {
     is_template?: boolean;
   }): Promise<void> {
     try {
-      await adminAbilityApi.createLevelConfig(data);
+      await adminAbilityApi.createLevelConfig({
+        ...data,
+        requires_assessment: data.requires_assessment ?? false,
+      });
       message.success('创建成功');
       if (this.activeTab === 'template') {
         await this.loadTemplateConfigs();

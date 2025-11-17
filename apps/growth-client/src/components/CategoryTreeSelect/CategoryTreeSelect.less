@@ -1,0 +1,138 @@
+.category-tree-select {
+  width: 100%;
+
+  .ant-select-selector {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    color: #fff !important;
+
+    &:hover {
+      border-color: rgba(255, 255, 255, 0.3) !important;
+    }
+  }
+
+  &.ant-select-focused .ant-select-selector {
+    border-color: rgba(102, 126, 234, 0.5) !important;
+    box-shadow: none !important;
+  }
+
+  .ant-select-selection-item {
+    color: #fff !important;
+  }
+
+  .ant-select-selection-placeholder {
+    color: rgba(255, 255, 255, 0.5) !important;
+  }
+
+  .ant-select-arrow {
+    color: rgba(255, 255, 255, 0.5) !important;
+  }
+
+  // 下拉框样式
+  .ant-select-dropdown {
+    background: rgba(30, 30, 50, 0.95) !important;
+    backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 8px !important;
+  }
+
+  // 树节点样式
+  .ant-select-tree {
+    background: transparent !important;
+    color: #fff !important;
+
+    .ant-select-tree-node-content-wrapper {
+      color: #fff !important;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.1) !important;
+      }
+
+      &.ant-select-tree-node-selected {
+        background: rgba(102, 126, 234, 0.3) !important;
+      }
+    }
+
+    .ant-select-tree-switcher {
+      color: rgba(255, 255, 255, 0.5) !important;
+      
+      // Loading 状态样式
+      .ant-select-tree-switcher-loading-icon {
+        color: rgba(102, 126, 234, 1) !important;
+      }
+    }
+
+    .ant-select-tree-title {
+      color: #fff !important;
+    }
+
+    .ant-select-tree-search-icon {
+      color: rgba(255, 255, 255, 0.5) !important;
+    }
+
+    // Loading 节点样式
+    .ant-select-tree-node-content-wrapper {
+      &.ant-select-tree-node-loading {
+        .ant-select-tree-switcher {
+          .ant-select-tree-switcher-loading-icon {
+            color: rgba(102, 126, 234, 1) !important;
+          }
+        }
+      }
+    }
+  }
+}
+
+// 全局下拉框样式（因为 TreeSelect 的下拉框是渲染到 body 的）
+.ant-select-dropdown.category-tree-select-dropdown {
+  background: rgba(30, 30, 50, 0.95) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 8px !important;
+
+  .ant-select-tree {
+    background: transparent !important;
+    color: #fff !important;
+
+    .ant-select-tree-node-content-wrapper {
+      color: #fff !important;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.1) !important;
+      }
+
+      &.ant-select-tree-node-selected {
+        background: rgba(102, 126, 234, 0.3) !important;
+      }
+    }
+
+    .ant-select-tree-switcher {
+      color: rgba(255, 255, 255, 0.5) !important;
+      
+      // Loading 状态样式
+      .ant-select-tree-switcher-loading-icon {
+        color: rgba(102, 126, 234, 1) !important;
+      }
+    }
+
+    .ant-select-tree-title {
+      color: #fff !important;
+    }
+
+    .ant-select-tree-search-icon {
+      color: rgba(255, 255, 255, 0.5) !important;
+    }
+
+    // Loading 节点样式
+    .ant-select-tree-node-content-wrapper {
+      &.ant-select-tree-node-loading {
+        .ant-select-tree-switcher {
+          .ant-select-tree-switcher-loading-icon {
+            color: rgba(102, 126, 234, 1) !important;
+          }
+        }
+      }
+    }
+  }
+}
+

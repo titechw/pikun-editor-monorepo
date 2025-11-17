@@ -143,14 +143,14 @@ export class ExperienceService {
       item_id: itemId,
       exp_amount: expAmount,
       exp_type: options?.expType || 'unknown',
-      source_id: options?.sourceId || null,
-      source_type: options?.sourceType || null,
+      source_id: options?.sourceId || undefined,
+      source_type: options?.sourceType || undefined,
       before_level: beforeLevel,
       after_level: afterLevel,
       before_exp: beforeExp,
       after_exp: finalExp, // 如果升级了，这里是升级后的经验值（0）
       is_level_up: levelUp,
-      notes: options?.notes || null,
+      notes: options?.notes || undefined,
       metadata: options?.metadata || {},
     });
     logs.push(expLog);

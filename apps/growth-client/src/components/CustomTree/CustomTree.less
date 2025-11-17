@@ -1,0 +1,210 @@
+.custom-tree {
+  width: 100%;
+  color: #fff;
+  font-size: 14px;
+  user-select: none;
+
+  .custom-tree-node {
+    width: 100%;
+
+    .custom-tree-node-content {
+      display: flex;
+      align-items: center;
+      padding: 4px 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border-radius: 4px;
+      min-height: 32px;
+      position: relative;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      &.custom-tree-node-selected,
+      &:active {
+        background: rgba(102, 126, 234, 0.4);
+        color: #fff;
+        font-weight: 500;
+
+        &:hover {
+          background: rgba(102, 126, 234, 0.5);
+        }
+      }
+    }
+
+    &.custom-tree-node-selected {
+      .custom-tree-node-content {
+        background: rgba(102, 126, 234, 0.4);
+        color: #fff;
+        font-weight: 500;
+
+        &:hover {
+          background: rgba(102, 126, 234, 0.5);
+        }
+      }
+    }
+  }
+
+  .custom-tree-switcher {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    margin-right: 4px;
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+    }
+
+    &.custom-tree-switcher-noop {
+      cursor: default;
+      width: 20px;
+
+      &:hover {
+        background: transparent;
+      }
+    }
+
+    .custom-tree-switcher-icon {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.6);
+      transition: transform 0.2s;
+    }
+
+    .custom-tree-switcher-line {
+      width: 1px;
+      height: 12px;
+      background: rgba(255, 255, 255, 0.2);
+      margin: 0 auto;
+    }
+  }
+
+  // Loading 动画
+  .custom-tree-loading {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    position: relative;
+
+    .custom-tree-loading-spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(102, 126, 234, 0.3);
+      border-top-color: rgba(102, 126, 234, 0.8);
+      border-radius: 50%;
+      animation: custom-tree-spin 0.8s linear infinite;
+    }
+  }
+
+  .custom-tree-node-title {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .custom-tree-child-nodes {
+    width: 100%;
+  }
+
+  // 显示连接线
+  &.custom-tree-show-line {
+    .custom-tree-node {
+      position: relative;
+
+      // 子节点容器
+      .custom-tree-child-nodes {
+        position: relative;
+        margin-left: 0;
+        padding-left: 0;
+        
+        // 子节点左侧的竖线（连接所有子节点）
+        // 使用 CSS 变量动态设置位置
+        &::before {
+          content: '';
+          position: absolute;
+          left: var(--line-left, 10px);
+          top: 0;
+          bottom: 0;
+          width: 1px;
+          background: rgba(255, 255, 255, 0.08);
+        }
+
+        // 子节点包装器
+        .custom-tree-child-wrapper {
+          position: relative;
+          
+          // 最后一个子节点，竖线只到节点中间（通过覆盖父容器的竖线）
+          &[data-is-last="true"]::before {
+            content: '';
+            position: absolute;
+            left: var(--line-left, 10px);
+            top: 0;
+            height: 16px;
+            width: 1px;
+            background: rgba(255, 255, 255, 0.08);
+            z-index: 2;
+          }
+        }
+      }
+
+      // 有子节点的节点，在展开图标和内容之间画横线
+      &:not(.custom-tree-node-leaf) .custom-tree-node-content {
+        position: relative;
+
+        // 横线：从展开图标中心到内容开始位置
+        &::after {
+          content: '';
+          position: absolute;
+          left: 20px;
+          top: 16px;
+          width: 8px;
+          height: 1px;
+          background: rgba(255, 255, 255, 0.08);
+          pointer-events: none;
+        }
+      }
+      
+      // 叶子节点，如果有连接线模式，显示一个小竖线
+      &.custom-tree-node-leaf .custom-tree-node-content {
+        position: relative;
+        
+        &::after {
+          content: '';
+          position: absolute;
+          left: var(--line-left, 10px);
+          top: 0;
+          height: 16px;
+          width: 1px;
+          background: rgba(255, 255, 255, 0.08);
+          pointer-events: none;
+        }
+      }
+    }
+  }
+
+  // 块级节点
+  &.custom-tree-block-node {
+    .custom-tree-node-content {
+      width: 100%;
+    }
+  }
+}
+
+// 旋转动画
+@keyframes custom-tree-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+

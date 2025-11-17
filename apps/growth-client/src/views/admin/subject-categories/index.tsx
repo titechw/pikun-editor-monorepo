@@ -1,12 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
-import { Button, Modal, Drawer, Form, Input, InputNumber, Space, Spin, Tree, Tooltip, Select, Pagination } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons';
+import { Button, Modal, Drawer, Form, Input, InputNumber, Space, Spin, Tooltip, Select, Pagination } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import {
   subjectCategoryListStore,
   SubjectCategoryOperationType,
   type SubjectCategoryListItem,
 } from '@/stores/admin-subject-categories';
+import { CustomTree, type TreeNodeData } from '@/components/CustomTree';
+import { SearchInput } from '@/components/SearchInput';
 import './SubjectCategories.less';
 
 /**
@@ -19,26 +21,25 @@ export const SubjectCategories = observer((): React.JSX.Element => {
   const [selectedKeys, setSelectedKeys] = useState<React.Key[]>([]);
 
   useEffect(() => {
-    subjectCategoryListStore.loadCategoryTree();
-    subjectCategoryListStore.fetchData();
+    const loadData = async () => {
+      await subjectCategoryListStore.loadCategoryTree();
+      await subjectCategoryListStore.fetchData();
+    };
+    loadData();
   }, []);
 
-  // 处理树节点展开（懒加载）
-  const handleTreeExpand = async (expandedKeys: React.Key[], info: any) => {
-    if (info.expanded) {
-      const nodeKey = info.node.key as string;
-      // 如果节点还没有加载过子节点，则加载
-      if (!subjectCategoryListStore.loadedNodes.has(nodeKey)) {
-        await subjectCategoryListStore.loadCategoryChildren(nodeKey);
-      }
-    }
-  };
+  // 处理树节点展开
+  const handleTreeExpand = useCallback((_expandedKeys: React.Key[], _info: { node: TreeNodeData<SubjectCategoryListItem>; expanded: boolean }): void => {
+    // CustomTree 会自动处理懒加载
+  }, []);
 
-  // 处理搜索
-  const handleSearch = (value: string): void => {
+  // 处理搜索（搜索左侧树）- 只在失焦或按 Enter 时搜索
+  const [searchValue, setSearchValue] = useState('');
+  
+  const handleSearch = useCallback((value: string): void => {
     subjectCategoryListStore.setSearchKeyword(value);
-    subjectCategoryListStore.fetchData();
-  };
+    // 搜索只影响左侧树，不影响右侧列表
+  }, []);
 
   const handleCreate = (parentId?: string | null): void => {
     setEditingCategory(null);
@@ -80,7 +81,7 @@ export const SubjectCategories = observer((): React.JSX.Element => {
       setDrawerVisible(false);
       setEditingCategory(null);
       form.resetFields();
-    } catch (error) {
+    } catch {
       // 错误已在 Store 中处理
     }
   };
@@ -99,59 +100,82 @@ export const SubjectCategories = observer((): React.JSX.Element => {
     }
   };
 
-  // 构建树形数据
-  const buildTreeData = (categories: SubjectCategoryListItem[]): any[] => {
-    return categories.map((cat) => ({
-      title: (
-        <div className="tree-node">
-          <Tooltip title={cat.name} placement="right">
-            <span className="tree-node-name">{cat.name}</span>
-          </Tooltip>
-          <span className="tree-node-code">({cat.code})</span>
-          <div className="tree-node-actions">
-            <Tooltip title="添加子分类">
-              <Button
-                type="text"
-                size="small"
-                icon={<PlusOutlined />}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleCreate(cat.category_id);
-                }}
-              />
-            </Tooltip>
-            <Tooltip title="编辑">
-              <Button
-                type="text"
-                size="small"
-                icon={<EditOutlined />}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleEdit(cat);
-                }}
-              />
-            </Tooltip>
-            <Tooltip title="删除">
-              <Button
-                type="text"
-                size="small"
-                danger
-                icon={<DeleteOutlined />}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDelete(cat.category_id);
-                }}
-              />
-            </Tooltip>
-          </div>
-        </div>
-      ),
-      key: cat.category_id,
-      children: cat.children ? buildTreeData(cat.children) : undefined,
-    }));
-  };
-
-  const treeData = buildTreeData(subjectCategoryListStore.categoryTree);
+  // 构建树形数据（使用 useMemo 缓存，避免每次渲染都重新构建）
+  const treeData = useMemo((): TreeNodeData<SubjectCategoryListItem>[] => {
+    const categories = subjectCategoryListStore.filteredCategoryTree || subjectCategoryListStore.categoryTree || [];
+    
+    const buildTreeData = (cats: SubjectCategoryListItem[]): TreeNodeData<SubjectCategoryListItem>[] => {
+      return cats.map((cat) => {
+        // 如果已经有子节点数据，直接使用
+        const hasLoadedChildren = cat.children && cat.children.length > 0;
+        // 如果有子节点数量，则认为有子节点（用于懒加载）
+        const hasChildrenCount = cat.children_count && cat.children_count > 0;
+        // 如果已经有子节点数据，直接使用；否则根据 children_count 判断是否需要懒加载
+        const children = hasLoadedChildren && cat.children
+          ? buildTreeData(cat.children) 
+          : undefined; // 不设置 children，让 Tree 组件通过 loadData 懒加载
+        
+        // 判断是否是叶子节点：没有已加载的子节点，也没有子节点数量
+        const isLeaf = !hasLoadedChildren && !hasChildrenCount;
+        
+        return {
+          key: cat.category_id,
+          title: (
+            <div className="tree-node">
+              <Tooltip title={cat.name} placement="right">
+                <span className="tree-node-name">{cat.name}</span>
+              </Tooltip>
+              <span className="tree-node-code">({cat.code})</span>
+              {cat.children_count !== undefined && cat.children_count > 0 && (
+                <span className="tree-node-count">({cat.children_count})</span>
+              )}
+              <div className="tree-node-actions">
+                <Tooltip title="添加子分类">
+                  <Button
+                    type="text"
+                    size="small"
+                    icon={<PlusOutlined />}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCreate(cat.category_id);
+                    }}
+                  />
+                </Tooltip>
+                <Tooltip title="编辑">
+                  <Button
+                    type="text"
+                    size="small"
+                    icon={<EditOutlined />}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEdit(cat);
+                    }}
+                  />
+                </Tooltip>
+                <Tooltip title="删除">
+                  <Button
+                    type="text"
+                    size="small"
+                    danger
+                    icon={<DeleteOutlined />}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(cat.category_id);
+                    }}
+                  />
+                </Tooltip>
+              </div>
+            </div>
+          ),
+          children,
+          isLeaf,
+          data: cat,
+        };
+      });
+    };
+    
+    return buildTreeData(categories);
+  }, [subjectCategoryListStore.filteredCategoryTree, subjectCategoryListStore.categoryTree]);
 
   return (
     <div className="subject-categories">
@@ -165,30 +189,36 @@ export const SubjectCategories = observer((): React.JSX.Element => {
       <div className="content">
         <div className="tree-container">
           <div className="tree-search">
-            <Input
+            <SearchInput
               placeholder="搜索分类..."
-              prefix={<SearchOutlined />}
-              allowClear
-              onChange={(e) => handleSearch(e.target.value)}
-              style={{ background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.2)', color: '#fff' }}
+              value={searchValue}
+              onChange={setSearchValue}
+              onSearch={handleSearch}
             />
           </div>
           <div className="tree-content">
             <Spin spinning={subjectCategoryListStore.loading}>
-              <Tree
-                treeData={treeData}
-                selectedKeys={selectedKeys}
-                onSelect={handleTreeSelect}
-                onExpand={handleTreeExpand}
-                showLine
-                blockNode
-                loadData={async (node: any) => {
-                  const nodeKey = node.key as string;
-                  if (!subjectCategoryListStore.loadedNodes.has(nodeKey)) {
-                    await subjectCategoryListStore.loadCategoryChildren(nodeKey);
-                  }
-                }}
-              />
+              {!subjectCategoryListStore.loading && treeData.length === 0 ? (
+                <div style={{ padding: '20px', textAlign: 'center', color: 'rgba(255, 255, 255, 0.5)' }}>
+                  暂无数据
+                </div>
+              ) : (
+                <CustomTree<SubjectCategoryListItem>
+                  treeData={treeData}
+                  selectedKeys={selectedKeys}
+                  onSelect={handleTreeSelect}
+                  onExpand={handleTreeExpand}
+                  showLine
+                  blockNode
+                  loadingKeys={subjectCategoryListStore.loadingChildren}
+                  loadData={async (node) => {
+                    const nodeKey = node.key as string;
+                    if (!subjectCategoryListStore.loadedNodes.has(nodeKey)) {
+                      await subjectCategoryListStore.loadCategoryChildren(nodeKey);
+                    }
+                  }}
+                />
+              )}
             </Spin>
           </div>
         </div>

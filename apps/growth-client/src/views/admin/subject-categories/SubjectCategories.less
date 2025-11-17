@@ -39,10 +39,12 @@
       border-radius: 8px;
       padding: 16px;
       overflow: hidden;
+      max-height: calc(100vh - 160px); // 限制最大高度为视口高度减去头部和padding
 
       .tree-search {
         margin-bottom: 12px;
         flex-shrink: 0;
+        // 样式已由 SearchInput 组件统一管理，这里不需要额外样式
       }
 
       .tree-content {
@@ -94,6 +96,14 @@
           font-size: 12px;
           color: rgba(255, 255, 255, 0.5);
           font-family: 'Monaco', 'Courier New', monospace;
+          flex-shrink: 0;
+          white-space: nowrap;
+        }
+
+        .tree-node-count {
+          font-size: 12px;
+          color: rgba(102, 126, 234, 0.8);
+          font-weight: 500;
           flex-shrink: 0;
           white-space: nowrap;
         }
@@ -353,6 +363,13 @@
   }
 }
 
+// 旋转动画
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 // 树形组件样式覆盖
 .subject-categories {
   .ant-tree {
@@ -405,6 +422,38 @@
     .ant-tree-switcher {
       color: rgba(255, 255, 255, 0.5);
       flex-shrink: 0;
+      
+      // Loading 图标样式
+      .anticon-loading {
+        color: rgba(102, 126, 234, 0.8);
+      }
+    }
+
+    // 节点加载中的样式 - 使用 data 属性选择器
+    .ant-tree-treenode[data-loading="true"] {
+      .ant-tree-switcher {
+        position: relative;
+        
+        .anticon {
+          display: none !important;
+        }
+        
+        &::after {
+          content: '';
+          display: inline-block;
+          width: 14px;
+          height: 14px;
+          border: 2px solid rgba(102, 126, 234, 0.3);
+          border-top-color: rgba(102, 126, 234, 0.8);
+          border-radius: 50%;
+          animation: spin 0.8s linear infinite;
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          transform: translate(-50%, -50%);
+          margin-left: 0;
+        }
+      }
     }
 
     .ant-tree-title {

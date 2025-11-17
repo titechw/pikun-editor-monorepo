@@ -27,6 +27,7 @@ export class SubjectDAO {
 
   /**
    * 根据分类 ID 查找学科（支持分页和搜索）
+   * 当 categoryId 不为 null 时，会查询该分类及其所有子分类下的学科
    */
   async findByCategoryId(
     categoryId: string | null,
@@ -43,16 +44,59 @@ export class SubjectDAO {
     let paramIndex = 1;
 
     if (categoryId) {
-      const keywordCondition = keyword ? ` AND (name ILIKE $${paramIndex + 1} OR code ILIKE $${paramIndex + 1})` : '';
+      // 先获取该分类的 path，用于查询所有子分类
+      const categoryResult = await this.db.query<{ path: string }>(
+        'SELECT path FROM pikun_db.subject_categories WHERE category_id = $1 AND deleted_at IS NULL',
+        [categoryId]
+      );
+
+      if (categoryResult.rows.length === 0) {
+        // 分类不存在，返回空结果
+        return { subjects: [], total: 0 };
+      }
+
+      const categoryPath = categoryResult.rows[0].path;
+      // 使用 path 字段查询该分类及其所有子分类
+      // path LIKE '/category_id%' 会匹配 '/category_id' 和 '/category_id/...'
+      const categoryPathPattern = `${categoryPath}%`;
+      const keywordCondition = keyword ? ` AND (s.name ILIKE $${paramIndex + 1} OR s.code ILIKE $${paramIndex + 1})` : '';
       const keywordParam = keyword ? `%${keyword}%` : null;
-      countQuery = `SELECT COUNT(*) as count FROM pikun_db.subjects WHERE category_id = $1 AND deleted_at IS NULL${keywordCondition}`;
-      listQuery = `SELECT * FROM pikun_db.subjects WHERE category_id = $1 AND deleted_at IS NULL${keywordCondition} ORDER BY sort_order ASC, created_at ASC LIMIT $${paramIndex + (keyword ? 2 : 1)} OFFSET $${paramIndex + (keyword ? 3 : 2)}`;
-      params.push(categoryId);
+
+      // 使用 JOIN 优化查询，直接通过 path 匹配分类
+      // 使用 path LIKE 来匹配该分类及其所有子分类
+      countQuery = `SELECT COUNT(*) as count 
+        FROM pikun_db.subjects s
+        INNER JOIN pikun_db.subject_categories sc ON s.category_id = sc.category_id
+        WHERE sc.path LIKE $${paramIndex}
+          AND s.deleted_at IS NULL
+          AND sc.deleted_at IS NULL${keywordCondition}`;
+
+      listQuery = `SELECT s.* 
+        FROM pikun_db.subjects s
+        INNER JOIN pikun_db.subject_categories sc ON s.category_id = sc.category_id
+        WHERE sc.path LIKE $${paramIndex}
+          AND s.deleted_at IS NULL
+          AND sc.deleted_at IS NULL${keywordCondition}
+        ORDER BY s.sort_order ASC, s.created_at ASC 
+        LIMIT $${paramIndex + (keyword ? 2 : 1)} OFFSET $${paramIndex + (keyword ? 3 : 2)}`;
+
+      params.push(categoryPathPattern);
       if (keyword) {
         params.push(keywordParam, pageSize, offset);
       } else {
         params.push(pageSize, offset);
       }
+
+      const countParams = keyword ? [categoryPathPattern, keywordParam] : [categoryPathPattern];
+      const countResult = await this.db.query<{ count: string }>(countQuery, countParams);
+      const total = parseInt(countResult.rows[0].count, 10);
+
+      const result = await this.db.query<Subject>(listQuery, params);
+
+      return {
+        subjects: result.rows,
+        total,
+      };
     } else {
       // 查询所有学科（不分分类）
       const keywordCondition = keyword ? ` AND (name ILIKE $${paramIndex} OR code ILIKE $${paramIndex})` : '';
@@ -64,18 +108,18 @@ export class SubjectDAO {
       } else {
         params.push(pageSize, offset);
       }
+
+      const countParams = keyword ? [keywordParam] : [];
+      const countResult = await this.db.query<{ count: string }>(countQuery, countParams);
+      const total = parseInt(countResult.rows[0].count, 10);
+
+      const result = await this.db.query<Subject>(listQuery, params);
+
+      return {
+        subjects: result.rows,
+        total,
+      };
     }
-
-    const countParams = categoryId ? (keyword ? [categoryId, keywordParam] : [categoryId]) : (keyword ? [keywordParam] : []);
-    const countResult = await this.db.query<{ count: string }>(countQuery, countParams);
-    const total = parseInt(countResult.rows[0].count, 10);
-
-    const result = await this.db.query<Subject>(listQuery, params);
-
-    return {
-      subjects: result.rows,
-      total,
-    };
   }
 
   /**

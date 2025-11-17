@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { container, DependencyContainer } from 'tsyringe';
+import { container, DependencyContainer, InjectionToken } from 'tsyringe';
 
 /**
  * 依赖注入容器单例
@@ -18,7 +18,7 @@ export class Container {
    * 注册服务
    */
   public static register<T>(
-    token: string | symbol | Function,
+    token: InjectionToken<T>,
     factory: () => T
   ): void {
     container.register(token, { useFactory: factory });
@@ -27,7 +27,7 @@ export class Container {
   /**
    * 解析服务
    */
-  public static resolve<T>(token: string | symbol | Function): T {
+  public static resolve<T>(token: InjectionToken<T>): T {
     return container.resolve<T>(token);
   }
 }

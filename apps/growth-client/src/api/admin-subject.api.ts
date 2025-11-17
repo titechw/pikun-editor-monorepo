@@ -18,6 +18,7 @@ export interface SubjectCategory {
   updated_at: string;
   deleted_at: string | null;
   children?: SubjectCategory[];
+  children_count?: number; // 子分类数量
 }
 
 /**
@@ -107,6 +108,17 @@ export const adminSubjectApi = {
     }
     const response = await adminApiClient.get<SubjectCategory[]>('/admin/subject/categories/children', params);
     return response.data || [];
+  },
+
+  /**
+   * 根据 ID 获取分类详情（管理员）
+   */
+  async getCategoryById(categoryId: string): Promise<SubjectCategory> {
+    const response = await adminApiClient.get<SubjectCategory>(`/admin/subject/categories/${categoryId}`);
+    if (!response.data) {
+      throw new Error('获取分类失败');
+    }
+    return response.data;
   },
 
   /**

@@ -32,3 +32,4 @@ export async function DELETE(
   return controller.deleteCategory(req, params.category_id);
 }
 
+

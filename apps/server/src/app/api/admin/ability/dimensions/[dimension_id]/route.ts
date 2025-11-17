@@ -32,3 +32,4 @@ export async function DELETE(
   return controller.deleteDimension(req, params.dimension_id);
 }
 
+
