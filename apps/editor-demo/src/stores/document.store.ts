@@ -106,6 +106,18 @@ export class DocumentStore {
       return result.object_id;
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to create document';
+      
+      // 如果是 workspace 不存在的错误，清除缓存并重新获取
+      if (errorMessage.includes('Workspace not found') || errorMessage.includes('404')) {
+        // 清除无效的 workspace_id 缓存，强制从服务器重新获取
+        const { authStore } = await import('./auth.store');
+        try {
+          await authStore.getDefaultWorkspaceId(true); // 强制刷新
+        } catch {
+          // 如果重新获取也失败，忽略错误（会在下次操作时重试）
+        }
+      }
+      
       runInAction(() => {
         this.error = errorMessage;
         this.isLoading = false;

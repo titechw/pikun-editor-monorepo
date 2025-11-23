@@ -2,7 +2,6 @@ import React from 'react';
 import { Layout, Button, Space, Dropdown, Avatar, Typography } from 'antd';
 import { observer } from 'mobx-react-lite';
 import {
-  MenuOutlined,
   MoonOutlined,
   SunOutlined,
   LogoutOutlined,
@@ -56,7 +55,6 @@ export const AppLayout = observer(({ children }: AppLayoutProps): React.JSX.Elem
     <Layout className="app-layout">
       <Header className="app-header">
         <div className="app-header-left">
-          <Button type="text" icon={<MenuOutlined />} className="app-menu-button" />
           <Typography.Title level={4} className="app-title">
             成长规划平台
           </Typography.Title>

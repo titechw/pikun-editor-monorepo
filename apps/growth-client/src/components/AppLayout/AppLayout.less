@@ -1,6 +1,24 @@
 .app-layout {
   min-height: 100vh;
-  background: var(--app-bg);
+  background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+
+  .ant-layout {
+    background: transparent;
+  }
+
+  // 全局覆盖 Typography 组件颜色（确保在深色背景下可见）
+  .ant-typography {
+    color: #fff !important;
+
+    &.ant-typography-h1,
+    &.ant-typography-h2,
+    &.ant-typography-h3,
+    &.ant-typography-h4,
+    &.ant-typography-h5,
+    &.ant-typography-h6 {
+      color: #fff !important;
+    }
+  }
 }
 
 .app-header {
@@ -8,17 +26,12 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 24px;
-  background: var(--app-bg);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  background: rgba(15, 12, 41, 0.8);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   position: sticky;
   top: 0;
   z-index: 100;
-
-  .dark & {
-    border-bottom-color: rgba(255, 255, 255, 0.08);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  }
 }
 
 .app-header-left {
@@ -27,28 +40,11 @@
   gap: 16px;
 }
 
-.app-menu-button {
-  display: none;
-
-  @media (max-width: 768px) {
-    display: inline-flex;
-  }
-}
-
 .app-title {
   margin: 0 !important;
   font-weight: 600;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-
-  .dark & {
-    background: linear-gradient(135deg, #a78bfa 0%, #c084fc 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
+  color: #fff;
+  font-size: 20px;
 }
 
 .app-header-right {
@@ -57,7 +53,12 @@
 }
 
 .app-theme-button {
-  color: var(--app-fg);
+  color: rgba(255, 255, 255, 0.8);
+
+  &:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+  }
 }
 
 .app-user-info {
@@ -66,24 +67,21 @@
   transition: background-color 0.2s;
 
   &:hover {
-    background-color: rgba(0, 0, 0, 0.04);
-
-    .dark & {
-      background-color: rgba(255, 255, 255, 0.08);
-    }
+    background-color: rgba(255, 255, 255, 0.1);
   }
 }
 
 .app-user-name {
   font-size: 14px;
   font-weight: 500;
-  color: var(--app-fg);
+  color: #fff;
 }
 
 .app-content {
-  padding: 24px;
-  background: var(--app-bg);
+  padding: 0;
+  background: transparent;
   min-height: calc(100vh - 64px);
+  overflow: hidden;
 }
 
 

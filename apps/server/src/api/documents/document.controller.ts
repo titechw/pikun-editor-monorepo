@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { injectable, inject } from 'tsyringe';
 import { DocumentService } from '@/services/document.service';
 import { AuthService } from '@/services/auth.service';
+import { WorkspaceDAO } from '@/dao/workspace.dao';
 
 /**
  * 文档控制器
@@ -11,7 +12,8 @@ import { AuthService } from '@/services/auth.service';
 export class DocumentController {
   constructor(
     @inject(DocumentService) private documentService: DocumentService,
-    @inject(AuthService) private authService: AuthService
+    @inject(AuthService) private authService: AuthService,
+    @inject('WorkspaceDAO') private workspaceDAO: WorkspaceDAO
   ) {}
 
   /**
@@ -37,6 +39,29 @@ export class DocumentController {
     try {
       const user = await this.getCurrentUser(req);
       const body = await req.json();
+
+      // 验证 workspace 是否存在且用户有权限访问
+      const workspace = await this.workspaceDAO.findById(context.params.workspace_id);
+      if (!workspace) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: 'Workspace not found',
+          },
+          { status: 404 }
+        );
+      }
+
+      // 验证用户是否有权限访问该 workspace（检查 owner_uid）
+      if (workspace.owner_uid !== user.uid) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: 'You do not have permission to access this workspace',
+          },
+          { status: 403 }
+        );
+      }
 
       const createSchema = z.object({
         title: z.string().min(1),

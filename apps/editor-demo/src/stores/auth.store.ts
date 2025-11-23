@@ -52,9 +52,10 @@ export class AuthStore {
 
   /**
    * 获取默认工作空间 ID（如果不存在则从服务器获取）
+   * @param forceRefresh 是否强制从服务器获取（忽略 localStorage 缓存）
    */
-  async getDefaultWorkspaceId(): Promise<string> {
-    if (this.defaultWorkspaceId) {
+  async getDefaultWorkspaceId(forceRefresh: boolean = false): Promise<string> {
+    if (this.defaultWorkspaceId && !forceRefresh) {
       return this.defaultWorkspaceId;
     }
 
@@ -66,6 +67,11 @@ export class AuthStore {
       });
       return workspace.workspace_id;
     } catch (error: unknown) {
+      // 如果获取失败，清除缓存
+      runInAction(() => {
+        this.defaultWorkspaceId = null;
+        localStorage.removeItem('default_workspace_id');
+      });
       const errorMessage = error instanceof Error ? error.message : 'Failed to get default workspace';
       throw new Error(errorMessage);
     }

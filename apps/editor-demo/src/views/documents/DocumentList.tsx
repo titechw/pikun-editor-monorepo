@@ -57,16 +57,44 @@ export const DocumentListPage = observer(() => {
   };
 
   const handleCreate = async () => {
-    if (!workspaceId) {
-      message.error('工作空间未初始化');
-      return;
+    let currentWorkspaceId = workspaceId;
+    
+    if (!currentWorkspaceId) {
+      try {
+        // 如果没有 workspaceId，尝试获取
+        currentWorkspaceId = await authStore.getDefaultWorkspaceId();
+        setWorkspaceId(currentWorkspaceId);
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : '获取工作空间失败';
+        message.error(errorMessage);
+        return;
+      }
     }
+    
     try {
-      const objectId = await documentStore.createDocument(workspaceId, '新文档');
+      const objectId = await documentStore.createDocument(currentWorkspaceId, '新文档');
       navigate(`/documents/${objectId}`);
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : '创建文档失败';
-      message.error(errorMessage);
+      
+      // 如果是 workspace 不存在的错误，重新获取 workspace_id 并重试
+      if (errorMessage.includes('Workspace not found') || errorMessage.includes('404')) {
+        try {
+          message.warning('工作空间不存在，正在重新获取...');
+          const newWorkspaceId = await authStore.getDefaultWorkspaceId(true); // 强制刷新
+          setWorkspaceId(newWorkspaceId);
+          
+          // 重试创建文档
+          const objectId = await documentStore.createDocument(newWorkspaceId, '新文档');
+          navigate(`/documents/${objectId}`);
+          message.success('文档创建成功');
+        } catch (retryError: unknown) {
+          const retryErrorMessage = retryError instanceof Error ? retryError.message : '重试失败';
+          message.error(`创建文档失败: ${retryErrorMessage}`);
+        }
+      } else {
+        message.error(errorMessage);
+      }
     }
   };
 

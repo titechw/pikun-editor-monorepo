@@ -1,0 +1,167 @@
+.knowledge {
+  min-height: calc(100vh - 64px);
+  padding: 24px;
+  background: transparent;
+
+  // 全局覆盖 Typography 组件颜色
+  .ant-typography {
+    color: #fff !important;
+
+    &.ant-typography-h1,
+    &.ant-typography-h2,
+    &.ant-typography-h3,
+    &.ant-typography-h4,
+    &.ant-typography-h5 {
+      color: #fff !important;
+    }
+  }
+
+  .knowledge-container {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .knowledge-header {
+    margin-bottom: 32px;
+
+    .back-button {
+      color: rgba(255, 255, 255, 0.8);
+      margin-bottom: 16px;
+      padding: 0;
+
+      &:hover {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.1);
+      }
+    }
+
+    .header-content {
+      .page-title {
+        color: #fff !important;
+        margin-bottom: 8px !important;
+        font-weight: 600;
+      }
+
+      .page-subtitle {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 16px;
+      }
+    }
+  }
+
+  .knowledge-grid {
+    margin-bottom: 24px;
+
+    .knowledge-card {
+      background: rgba(15, 12, 41, 0.6) !important;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      border-radius: 16px !important;
+      transition: all 0.3s ease;
+      height: 100%;
+
+      &:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 32px rgba(102, 126, 234, 0.4);
+        border-color: rgba(102, 126, 234, 0.6) !important;
+      }
+
+      .knowledge-card-content {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+
+        .knowledge-icon-wrapper {
+          display: flex;
+          justify-content: center;
+          margin-bottom: 8px;
+
+          .knowledge-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+          }
+        }
+
+        .knowledge-name {
+          color: #fff !important;
+          text-align: center;
+          margin: 0 !important;
+          font-weight: 600;
+
+          .ant-typography {
+            color: #fff !important;
+          }
+        }
+
+        .knowledge-description {
+          color: rgba(255, 255, 255, 0.7);
+          text-align: center;
+          line-height: 1.6;
+          min-height: 48px;
+        }
+
+        .subject-tags {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+          justify-content: center;
+          padding: 12px;
+          background: rgba(0, 0, 0, 0.2);
+          border-radius: 8px;
+
+          .subject-tag {
+            background: rgba(255, 255, 255, 0.1) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            color: rgba(255, 255, 255, 0.9) !important;
+            border-radius: 6px;
+            font-size: 11px;
+            padding: 2px 8px;
+            margin: 0;
+          }
+        }
+
+        .start-learning-button {
+          height: 40px;
+          font-weight: 600;
+          border-radius: 8px;
+          margin-top: auto;
+        }
+      }
+    }
+  }
+
+  .knowledge-tips-card {
+    background: rgba(15, 12, 41, 0.6) !important;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 16px !important;
+
+    .ant-card-body {
+      color: #fff;
+    }
+
+    .tips-title {
+      color: #fff !important;
+      margin-bottom: 16px !important;
+      font-weight: 600;
+    }
+
+    .tips-list {
+      margin: 0;
+      padding-left: 20px;
+      color: rgba(255, 255, 255, 0.8);
+      line-height: 2;
+
+      li {
+        margin-bottom: 8px;
+      }
+    }
+  }
+}
+

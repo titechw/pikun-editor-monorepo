@@ -1,0 +1,320 @@
+.dashboard {
+  min-height: calc(100vh - 64px);
+  padding: 24px;
+  background: transparent;
+
+  // 全局覆盖 Typography 组件颜色
+  .ant-typography {
+    color: #fff !important;
+
+    &.ant-typography-h1,
+    &.ant-typography-h2,
+    &.ant-typography-h3,
+    &.ant-typography-h4,
+    &.ant-typography-h5 {
+      color: #fff !important;
+    }
+  }
+
+  .dashboard-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: calc(100vh - 64px);
+  }
+
+  .dashboard-container {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .dashboard-header {
+    margin-bottom: 32px;
+
+    .welcome-section {
+      .welcome-title {
+        color: #fff !important;
+        margin-bottom: 8px !important;
+        font-weight: 600;
+      }
+
+      .welcome-subtitle {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 16px;
+      }
+    }
+  }
+
+  .stats-row {
+    margin-bottom: 24px;
+
+    .stat-card {
+      background: rgba(15, 12, 41, 0.6) !important;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      border-radius: 12px !important;
+      transition: all 0.3s ease;
+
+      &:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+        border-color: rgba(102, 126, 234, 0.5) !important;
+      }
+
+      .ant-statistic-title {
+        color: rgba(255, 255, 255, 0.7) !important;
+        font-size: 14px;
+        margin-bottom: 8px;
+      }
+
+      .ant-statistic-content {
+        color: #fff !important;
+        font-size: 24px;
+        font-weight: 600;
+      }
+    }
+  }
+
+  .quick-actions-row {
+    margin-bottom: 24px;
+
+    .action-card {
+      background: rgba(15, 12, 41, 0.6) !important;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      border-radius: 16px !important;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      height: 100%;
+
+      &:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 32px rgba(102, 126, 234, 0.4);
+        border-color: rgba(102, 126, 234, 0.6) !important;
+      }
+
+      .action-card-content {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        padding: 8px;
+
+        .action-icon {
+          width: 80px;
+          height: 80px;
+          border-radius: 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 40px;
+          flex-shrink: 0;
+
+          &.training-icon {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          }
+
+          &.knowledge-icon {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+          }
+        }
+
+        .action-info {
+          flex: 1;
+
+          .action-title {
+            color: #fff !important;
+            margin-bottom: 8px !important;
+            font-weight: 600;
+          }
+
+          .action-description {
+            color: rgba(255, 255, 255, 0.7);
+            display: block;
+            margin-bottom: 16px;
+            line-height: 1.6;
+          }
+
+          .action-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            border: none !important;
+            height: 36px;
+            font-weight: 600;
+            border-radius: 8px;
+          }
+        }
+      }
+    }
+  }
+
+  .ability-overview-card {
+    background: rgba(15, 12, 41, 0.6) !important;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 16px !important;
+    margin-bottom: 24px;
+
+    .ant-card-head {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+
+      .ant-card-head-title {
+        color: #fff !important;
+        font-weight: 600;
+        font-size: 18px;
+      }
+    }
+
+    .ant-card-body {
+      color: #fff;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .ability-categories {
+      .category-card {
+        background: rgba(0, 0, 0, 0.2) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 12px !important;
+        margin-bottom: 16px;
+
+        .category-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 16px;
+
+          .category-title {
+            color: #fff !important;
+            margin: 0 !important;
+            font-weight: 600;
+          }
+
+          .category-stat {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 12px;
+          }
+        }
+
+        .category-items {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+          gap: 12px;
+
+          .ability-item {
+            .ability-item-header {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 8px;
+
+              .ability-item-name {
+                color: rgba(255, 255, 255, 0.9);
+                font-size: 14px;
+                font-weight: 500;
+              }
+
+              .ability-item-level {
+                color: rgba(255, 255, 255, 0.7);
+                font-size: 12px;
+              }
+            }
+
+            .ability-progress {
+              .ant-progress-bg {
+                background: linear-gradient(90deg, #667eea 0%, #764ba2 100%) !important;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .top-abilities-card {
+    background: rgba(15, 12, 41, 0.6) !important;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 16px !important;
+
+    .ant-card-head {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+
+      .ant-card-head-title {
+        color: #fff !important;
+        font-weight: 600;
+        font-size: 18px;
+      }
+    }
+
+    .ant-card-body {
+      color: #fff;
+    }
+
+    .top-ability-card {
+      background: rgba(0, 0, 0, 0.2) !important;
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      border-radius: 12px !important;
+      transition: all 0.3s ease;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        border-color: rgba(102, 126, 234, 0.5) !important;
+      }
+
+      .top-ability-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+
+        .rank-badge {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #fff;
+          font-weight: 600;
+          font-size: 14px;
+          flex-shrink: 0;
+        }
+
+        .top-ability-info {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+
+          .top-ability-name {
+            color: #fff;
+            font-weight: 500;
+            font-size: 14px;
+          }
+
+          .top-ability-level {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 12px;
+          }
+        }
+      }
+
+      .ant-progress {
+        .ant-progress-bg {
+          background: linear-gradient(90deg, #667eea 0%, #764ba2 100%) !important;
+        }
+
+        .ant-progress-text {
+          color: rgba(255, 255, 255, 0.7) !important;
+          font-size: 11px;
+        }
+      }
+    }
+  }
+}
+

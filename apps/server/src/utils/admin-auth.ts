@@ -3,6 +3,19 @@ import { Container } from '@/core/container';
 import { AuthService } from '@/services/auth.service';
 
 /**
+ * 从请求中获取当前管理员ID（验证管理员权限）
+ */
+export async function getCurrentAdminId(req: NextRequest): Promise<number> {
+  try {
+    const authService = Container.resolve<AuthService>(AuthService);
+    const user = await authService.checkAdminRole(req);
+    return user.uid;
+  } catch (error: any) {
+    throw new Error(error.message || 'Unauthorized: Admin access required');
+  }
+}
+
+/**
  * 管理端权限检查中间件
  * 包装 API 路由处理函数，自动检查管理员权限
  */

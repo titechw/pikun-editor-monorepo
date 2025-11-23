@@ -27,6 +27,15 @@ import { AbilityModelController } from '@/api/ability/ability-model.controller';
 import { AbilityLevelConfigController } from '@/api/ability/ability-level-config.controller';
 import { SubjectService } from '@/services/subject.service';
 import { SubjectController } from '@/api/subject/subject.controller';
+import { MemoryTrainingGameDAO } from '@/dao/memory-training-game.dao';
+import { MemoryTrainingLevelDAO } from '@/dao/memory-training-level.dao';
+import { UserMemoryLevelProgressDAO } from '@/dao/user-memory-level-progress.dao';
+import { CourseDAO } from '@/dao/course.dao';
+import { MemoryTrainingService } from '@/services/memory-training.service';
+import { CourseService } from '@/services/course.service';
+import { MemoryTrainingController } from '@/api/memory-training/memory-training.controller';
+import { CourseController } from '@/api/course/course.controller';
+import { Redis } from '@/core/redis';
 
 /**
  * 初始化依赖注入容器
@@ -46,12 +55,17 @@ export function initializeContainer() {
   Container.register('UserAbilityExperienceLogDAO', () => new UserAbilityExperienceLogDAO());
   Container.register('SubjectCategoryDAO', () => new SubjectCategoryDAO());
   Container.register('SubjectDAO', () => new SubjectDAO());
+  Container.register('MemoryTrainingGameDAO', () => new MemoryTrainingGameDAO());
+  Container.register('MemoryTrainingLevelDAO', () => new MemoryTrainingLevelDAO());
+  Container.register('UserMemoryLevelProgressDAO', () => new UserMemoryLevelProgressDAO());
+  Container.register('CourseDAO', () => new CourseDAO());
 
   // 注册 Service
   Container.register(AuthService, () => {
     const userDAO = Container.resolve<UserDAO>('UserDAO');
     const workspaceDAO = Container.resolve<WorkspaceDAO>('WorkspaceDAO');
-    return new AuthService(userDAO, workspaceDAO, null as any);
+    const redis = Redis.getInstance();
+    return new AuthService(userDAO, workspaceDAO, redis);
   });
 
   // 注册 SnapshotService
@@ -80,7 +94,8 @@ export function initializeContainer() {
   Container.register(DocumentController, () => {
     const documentService = Container.resolve<DocumentService>(DocumentService);
     const authService = Container.resolve<AuthService>(AuthService);
-    return new DocumentController(documentService, authService);
+    const workspaceDAO = Container.resolve<WorkspaceDAO>('WorkspaceDAO');
+    return new DocumentController(documentService, authService, workspaceDAO);
   });
 
   Container.register(WorkspaceController, () => {
@@ -140,6 +155,41 @@ export function initializeContainer() {
   Container.register(SubjectController, () => {
     const subjectService = Container.resolve<SubjectService>(SubjectService);
     return new SubjectController(subjectService);
+  });
+
+  // 注册记忆训练相关 Service
+  Container.register(MemoryTrainingService, () => {
+    const gameDAO = Container.resolve<MemoryTrainingGameDAO>('MemoryTrainingGameDAO');
+    const levelDAO = Container.resolve<MemoryTrainingLevelDAO>('MemoryTrainingLevelDAO');
+    const progressDAO = Container.resolve<UserMemoryLevelProgressDAO>('UserMemoryLevelProgressDAO');
+    const experienceService = Container.resolve<ExperienceService>(ExperienceService);
+    const userAbilityService = Container.resolve<UserAbilityService>(UserAbilityService);
+    return new MemoryTrainingService(
+      gameDAO,
+      levelDAO,
+      progressDAO,
+      experienceService,
+      userAbilityService
+    );
+  });
+
+  // 注册记忆训练 Controller
+  Container.register(MemoryTrainingController, () => {
+    const memoryTrainingService = Container.resolve<MemoryTrainingService>(MemoryTrainingService);
+    return new MemoryTrainingController(memoryTrainingService);
+  });
+
+  // 注册课程相关 Service
+  Container.register(CourseService, () => {
+    const courseDAO = Container.resolve<CourseDAO>('CourseDAO');
+    const experienceService = Container.resolve<ExperienceService>(ExperienceService);
+    return new CourseService(courseDAO, experienceService);
+  });
+
+  // 注册课程 Controller
+  Container.register(CourseController, () => {
+    const courseService = Container.resolve<CourseService>(CourseService);
+    return new CourseController(courseService);
   });
 }
 

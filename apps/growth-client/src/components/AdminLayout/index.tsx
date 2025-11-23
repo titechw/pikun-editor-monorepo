@@ -8,6 +8,7 @@ import {
   SettingOutlined,
   LogoutOutlined,
   UserOutlined,
+  BookOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { adminAuthStore } from '@/stores/admin-auth';
@@ -55,6 +56,11 @@ export const AdminLayout = observer(({ children }: AdminLayoutProps): React.JSX.
       key: '/subjects',
       icon: <FileTextOutlined />,
       label: '学科管理',
+    },
+    {
+      key: '/courses',
+      icon: <BookOutlined />,
+      label: '课程管理',
     },
   ];
 

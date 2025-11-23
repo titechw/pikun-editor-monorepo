@@ -7,8 +7,11 @@ import { authStore } from '@/stores/auth';
 import { themeStore, ThemeMode } from '@/stores/theme';
 import { Login } from '@/views/auth/Login';
 import { Register } from '@/views/auth/Register';
-import { Dashboard } from '@/views/dashboard';
 import { AppLayout } from '@/components/AppLayout';
+import { Dashboard } from '@/views/app/dashboard';
+import { Training } from '@/views/app/training';
+import { Knowledge } from '@/views/app/knowledge';
+import { MemoryTraining } from '@/views/app/training/memory';
 
 /**
  * 受保护的路由组件
@@ -96,6 +99,36 @@ export const AppRouter = observer((): React.JSX.Element => {
               <ProtectedRoute>
                 <AppLayout>
                   <Dashboard />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/training"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Training />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/knowledge"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Knowledge />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/training/memory/*"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <MemoryTraining />
                 </AppLayout>
               </ProtectedRoute>
             }

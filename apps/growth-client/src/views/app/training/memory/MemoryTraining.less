@@ -1,0 +1,383 @@
+.memory-training {
+  min-height: calc(100vh - 64px);
+  padding: 24px;
+  background: transparent;
+
+  .memory-training-container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .memory-training-header {
+    margin-bottom: 24px;
+
+    .back-button {
+      color: rgba(255, 255, 255, 0.8);
+      margin-bottom: 16px;
+      padding: 0;
+
+      &:hover {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.1);
+      }
+    }
+
+    .header-content {
+      .page-title {
+        color: #fff !important;
+        margin-bottom: 8px !important;
+        font-weight: 600;
+      }
+
+      .level-info {
+        .level-text {
+          color: rgba(255, 255, 255, 0.7);
+          font-size: 14px;
+        }
+      }
+    }
+  }
+
+  .stats-card {
+    background: rgba(15, 12, 41, 0.6) !important;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 12px !important;
+    margin-bottom: 24px;
+
+    .ant-card-body {
+      color: #fff;
+    }
+
+    .stat-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+
+      .stat-label {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 14px;
+      }
+
+      .stat-value {
+        color: #fff;
+        font-size: 16px;
+        font-weight: 600;
+      }
+    }
+  }
+
+  .game-area {
+    min-height: 500px;
+  }
+
+  .game-list-loading,
+  .level-list-loading,
+  .game-loading {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 500px;
+    gap: 16px;
+
+    .loading-text {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 16px;
+    }
+  }
+
+  .game-list-grid {
+    .game-card {
+      background: rgba(15, 12, 41, 0.6) !important;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      border-radius: 16px !important;
+      transition: all 0.3s ease;
+      height: 100%;
+
+      &.locked {
+        opacity: 0.6;
+        cursor: not-allowed;
+
+        .game-locked-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.5);
+          border-radius: 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 10;
+
+          .locked-text {
+            color: #fff;
+            font-size: 14px;
+            font-weight: 600;
+          }
+        }
+      }
+
+      &:hover:not(.locked) {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 32px rgba(102, 126, 234, 0.4);
+        border-color: rgba(102, 126, 234, 0.6) !important;
+      }
+
+      .game-card-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 8px;
+        position: relative;
+
+        .game-icon {
+          font-size: 64px;
+          margin-bottom: 16px;
+        }
+
+        .game-name {
+          color: #fff !important;
+          margin-bottom: 12px !important;
+          font-weight: 600;
+        }
+
+        .game-description {
+          color: rgba(255, 255, 255, 0.7);
+          margin-bottom: 16px;
+          line-height: 1.6;
+          min-height: 48px;
+        }
+
+        .game-info {
+          margin-bottom: 16px;
+
+          .game-level-range {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 12px;
+          }
+        }
+
+        .play-button {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+          border: none !important;
+          height: 40px;
+          font-weight: 600;
+          border-radius: 8px;
+          margin-top: auto;
+        }
+      }
+    }
+  }
+
+  .level-list-grid {
+    .level-card {
+      background: rgba(15, 12, 41, 0.6) !important;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      border-radius: 16px !important;
+      transition: all 0.3s ease;
+      height: 100%;
+
+      &.locked {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      &.completed {
+        border-color: rgba(82, 196, 26, 0.5) !important;
+      }
+
+      &:hover:not(.locked) {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+        border-color: rgba(102, 126, 234, 0.6) !important;
+      }
+
+      .level-card-content {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+
+        .level-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+
+          .level-number {
+            color: rgba(102, 126, 234, 0.8);
+            font-size: 14px;
+            font-weight: 600;
+          }
+        }
+
+        .level-name {
+          color: #fff !important;
+          margin: 0 !important;
+          font-weight: 600;
+        }
+
+        .level-description {
+          color: rgba(255, 255, 255, 0.7);
+          font-size: 13px;
+          line-height: 1.5;
+        }
+
+        .level-difficulty {
+          padding: 8px;
+          background: rgba(0, 0, 0, 0.2);
+          border-radius: 6px;
+
+          .difficulty-label {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 12px;
+            margin-right: 4px;
+          }
+
+          .difficulty-value {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 12px;
+          }
+        }
+
+        .level-stats {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          padding: 8px;
+          background: rgba(0, 0, 0, 0.2);
+          border-radius: 6px;
+
+          .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+
+            .stat-icon {
+              color: rgba(102, 126, 234, 0.8);
+              font-size: 12px;
+            }
+
+            .stat-text {
+              color: rgba(255, 255, 255, 0.7);
+              font-size: 11px;
+            }
+          }
+        }
+
+        .level-reward {
+          .reward-text {
+            color: rgba(82, 196, 26, 0.8);
+            font-size: 12px;
+            font-weight: 500;
+          }
+        }
+
+        .play-level-button {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+          border: none !important;
+          height: 36px;
+          font-weight: 600;
+          border-radius: 8px;
+          margin-top: auto;
+        }
+      }
+    }
+  }
+
+  .empty-card {
+    background: rgba(15, 12, 41, 0.6) !important;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 16px !important;
+    text-align: center;
+    padding: 40px;
+
+    .empty-text {
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 16px;
+    }
+  }
+
+  .game-selection {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 500px;
+
+    .selection-card {
+      background: rgba(15, 12, 41, 0.6) !important;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      border-radius: 16px !important;
+      max-width: 500px;
+      width: 100%;
+
+      .ant-card-body {
+        color: #fff;
+        text-align: center;
+      }
+
+      .selection-title {
+        color: #fff !important;
+        margin-bottom: 24px !important;
+      }
+
+      .level-selector {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        margin-bottom: 24px;
+
+        .selector-label {
+          color: rgba(255, 255, 255, 0.8);
+          font-size: 16px;
+        }
+
+        .level-select {
+          .ant-select-selector {
+            background: rgba(0, 0, 0, 0.4) !important;
+            border: 1.5px solid rgba(255, 255, 255, 0.3) !important;
+            color: #fff !important;
+          }
+        }
+      }
+
+      .difficulty-info {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 24px;
+        text-align: left;
+
+        .info-label {
+          color: rgba(255, 255, 255, 0.7);
+          font-size: 14px;
+          display: inline-block;
+          margin-right: 8px;
+        }
+
+        .info-value {
+          color: #fff;
+          font-size: 14px;
+        }
+      }
+
+      .start-button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        border: none !important;
+        height: 48px;
+        font-size: 16px;
+        font-weight: 600;
+        border-radius: 8px;
+        width: 100%;
+      }
+    }
+  }
+}
+

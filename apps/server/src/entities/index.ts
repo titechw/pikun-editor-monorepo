@@ -236,11 +236,16 @@ export interface Course {
   name: string;
   description: string | null;
   cover_image_url: string | null;
-  course_type: 'learning' | 'training' | 'mixed';
+  course_type: 'learning' | 'training' | 'mixed' | 'ability_training' | 'skill_knowledge';
   difficulty_level: number;
   estimated_duration: number | null;
   sort_order: number;
   is_published: boolean;
+  course_url: string | null; // 课程 URL（游戏 URL 等）
+  course_source: 'official' | 'third_party'; // 课程来源
+  author_name: string | null; // 作者名
+  secret_id: string | null; // secretId（用于游戏调用升级接口的验证）
+  primary_item_id: string | null; // 主要关联的能力项
   metadata: Record<string, unknown>;
   created_at: Date;
   updated_at: Date;
@@ -520,8 +525,68 @@ export interface SubjectDetail {
 }
 
 /**
- * 学科能力关联实体
+ * 记忆训练游戏实体
  */
+export interface MemoryTrainingGame {
+  game_id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  icon: string | null;
+  game_type: string;
+  ability_item_id: string | null;
+  min_ability_level: number;
+  max_ability_level: number;
+  sort_order: number;
+  is_published: boolean;
+  metadata: Record<string, unknown>;
+  created_at: Date;
+  updated_at: Date;
+  deleted_at: Date | null;
+}
+
+/**
+ * 记忆训练关卡实体
+ */
+export interface MemoryTrainingLevel {
+  level_id: string;
+  game_id: string;
+  level_number: number;
+  name: string | null;
+  description: string | null;
+  difficulty_config: Record<string, unknown>;
+  required_ability_level: number;
+  base_exp_reward: number;
+  unlock_condition: Record<string, unknown>;
+  sort_order: number;
+  is_published: boolean;
+  metadata: Record<string, unknown>;
+  created_at: Date;
+  updated_at: Date;
+  deleted_at: Date | null;
+}
+
+/**
+ * 用户关卡进度实体
+ */
+export interface UserMemoryLevelProgress {
+  progress_id: string;
+  uid: number;
+  level_id: string;
+  is_unlocked: boolean;
+  is_completed: boolean;
+  best_score: number;
+  best_correct_rate: number;
+  best_time_spent: number | null;
+  completion_count: number;
+  total_exp_earned: number;
+  first_completed_at: Date | null;
+  last_played_at: Date | null;
+  metadata: Record<string, unknown>;
+  created_at: Date;
+  updated_at: Date;
+}
+
 export interface SubjectAbilityBinding {
   binding_id: string;
   subject_id: string;
