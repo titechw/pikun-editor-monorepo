@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Card, Spin, message } from 'antd';
+import { message } from 'antd';
 import type { Course } from '@/api/admin-course.api';
 import './CourseGame.less';
 
@@ -47,18 +47,7 @@ export const CourseGame: React.FC<CourseGameProps> = ({ course }) => {
     };
   }, []);
 
-  if (!course.course_url) {
-    return (
-      <Card>
-        <div style={{ textAlign: 'center', padding: '40px' }}>
-          <p>该课程暂无游戏内容</p>
-        </div>
-      </Card>
-    );
-  }
-
   // 构建游戏 URL
-  // 如果 course_url 已经包含参数，直接使用；否则添加 secretId 和 courseId
   const buildGameUrl = (): string => {
     if (!course.course_url) return '';
     
@@ -73,6 +62,14 @@ export const CourseGame: React.FC<CourseGameProps> = ({ course }) => {
 
   const gameUrl = buildGameUrl();
 
+  if (!course.course_url) {
+    return (
+      <div className="course-game-empty">
+        <p>该课程暂无游戏内容</p>
+      </div>
+    );
+  }
+
   return (
     <div className="course-game">
       <iframe
@@ -82,7 +79,6 @@ export const CourseGame: React.FC<CourseGameProps> = ({ course }) => {
         height="600px"
         frameBorder="0"
         allow="fullscreen"
-        style={{ border: 'none', borderRadius: '8px' }}
       />
     </div>
   );

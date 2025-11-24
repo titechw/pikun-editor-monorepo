@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
-import { Card, Row, Col, Spin, Typography, Button, Tag, Progress } from 'antd';
+import { Spin, Typography, Button, Tag } from 'antd';
 import {
   PlayCircleOutlined,
   ArrowLeftOutlined,
@@ -11,7 +11,8 @@ import {
 import { useNavigate, useParams } from 'react-router-dom';
 import { memoryTrainingGameStore } from '@/stores/memory-training-game';
 import { growthStore } from '@/stores/growth';
-import './MemoryTraining.less';
+import '../MemoryTraining.less';
+import './LevelList.less';
 
 const { Title, Text } = Typography;
 
@@ -45,7 +46,7 @@ export const LevelList = observer((): React.JSX.Element => {
   }, [gameId]);
 
   const handleLevelClick = (levelId: string): void => {
-    navigate(`/training/memory/${gameId}/${levelId}`);
+    navigate(`/training/memory/game/${gameId}/${levelId}`);
   };
 
   const handleBack = (): void => {
@@ -84,9 +85,9 @@ export const LevelList = observer((): React.JSX.Element => {
           >
             返回
           </Button>
-          <Card>
+          <div className="game-not-found">
             <Text>游戏不存在</Text>
-          </Card>
+          </div>
         </div>
       </div>
     );
@@ -119,7 +120,7 @@ export const LevelList = observer((): React.JSX.Element => {
         </div>
 
         {/* 关卡列表 */}
-        <Row gutter={[16, 16]} className="level-list-grid">
+        <div className="level-list-grid">
           {levels.map((level) => {
             const progress = memoryTrainingGameStore.getLevelProgress(level.level_id);
             const isUnlocked = memoryTrainingGameStore.isLevelUnlocked(level, memoryLevel);
@@ -129,88 +130,86 @@ export const LevelList = observer((): React.JSX.Element => {
             const difficultyDesc = getDifficultyDescription(level.difficulty_config);
 
             return (
-              <Col xs={24} sm={12} lg={8} key={level.level_id}>
-                <Card
-                  className={`level-card ${!isUnlocked ? 'locked' : ''} ${isCompleted ? 'completed' : ''}`}
-                  hoverable={isUnlocked}
-                  onClick={() => isUnlocked && handleLevelClick(level.level_id)}
-                >
-                  <div className="level-card-content">
-                    <div className="level-header">
-                      <div className="level-number">关卡 {level.level_number}</div>
-                      {isCompleted && (
-                        <Tag icon={<CheckCircleOutlined />} color="success">
-                          已完成
-                        </Tag>
-                      )}
-                      {!isUnlocked && (
-                        <Tag icon={<LockOutlined />} color="default">
-                          未解锁
-                        </Tag>
-                      )}
-                    </div>
-                    {level.name && (
-                      <Title level={5} className="level-name">
-                        {level.name}
-                      </Title>
+              <div
+                key={level.level_id}
+                className={`level-card ${!isUnlocked ? 'locked' : ''} ${isCompleted ? 'completed' : ''}`}
+                onClick={() => isUnlocked && handleLevelClick(level.level_id)}
+              >
+                <div className="level-card-content">
+                  <div className="level-header">
+                    <div className="level-number">关卡 {level.level_number}</div>
+                    {isCompleted && (
+                      <Tag icon={<CheckCircleOutlined />} color="success">
+                        已完成
+                      </Tag>
                     )}
-                    {level.description && (
-                      <Text className="level-description">{level.description}</Text>
-                    )}
-                    <div className="level-difficulty">
-                      <Text className="difficulty-label">难度参数：</Text>
-                      <Text className="difficulty-value">{difficultyDesc}</Text>
-                    </div>
-                    {progress && (
-                      <div className="level-stats">
-                        {progress.best_score > 0 && (
-                          <div className="stat-item">
-                            <TrophyOutlined className="stat-icon" />
-                            <Text className="stat-text">最佳得分：{progress.best_score}</Text>
-                          </div>
-                        )}
-                        {progress.best_correct_rate > 0 && (
-                          <div className="stat-item">
-                            <Text className="stat-text">
-                              最佳正确率：{Math.round(progress.best_correct_rate)}%
-                            </Text>
-                          </div>
-                        )}
-                        {progress.completion_count > 0 && (
-                          <div className="stat-item">
-                            <Text className="stat-text">完成次数：{progress.completion_count}</Text>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    <div className="level-reward">
-                      <Text className="reward-text">基础经验：{level.base_exp_reward} EXP</Text>
-                    </div>
-                    {isUnlocked && (
-                      <Button
-                        type="primary"
-                        icon={<PlayCircleOutlined />}
-                        className="play-level-button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleLevelClick(level.level_id);
-                        }}
-                        block
-                      >
-                        {isCompleted ? '再次挑战' : '开始挑战'}
-                      </Button>
+                    {!isUnlocked && (
+                      <Tag icon={<LockOutlined />} color="default">
+                        未解锁
+                      </Tag>
                     )}
                   </div>
-                </Card>
-              </Col>
+                  {level.name && (
+                    <Title level={5} className="level-name">
+                      {level.name}
+                    </Title>
+                  )}
+                  {level.description && (
+                    <Text className="level-description">{level.description}</Text>
+                  )}
+                  <div className="level-difficulty">
+                    <Text className="difficulty-label">难度参数：</Text>
+                    <Text className="difficulty-value">{difficultyDesc}</Text>
+                  </div>
+                  {progress && (
+                    <div className="level-stats">
+                      {progress.best_score > 0 && (
+                        <div className="stat-item">
+                          <TrophyOutlined className="stat-icon" />
+                          <Text className="stat-text">最佳得分：{progress.best_score}</Text>
+                        </div>
+                      )}
+                      {progress.best_correct_rate > 0 && (
+                        <div className="stat-item">
+                          <Text className="stat-text">
+                            最佳正确率：{Math.round(progress.best_correct_rate)}%
+                          </Text>
+                        </div>
+                      )}
+                      {progress.completion_count > 0 && (
+                        <div className="stat-item">
+                          <Text className="stat-text">完成次数：{progress.completion_count}</Text>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  <div className="level-reward">
+                    <Text className="reward-text">基础经验：{level.base_exp_reward} EXP</Text>
+                  </div>
+                  {isUnlocked && (
+                    <Button
+                      type="primary"
+                      icon={<PlayCircleOutlined />}
+                      className="play-level-button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleLevelClick(level.level_id);
+                      }}
+                      block
+                    >
+                      {isCompleted ? '再次挑战' : '开始挑战'}
+                    </Button>
+                  )}
+                </div>
+              </div>
             );
           })}
-        </Row>
+        </div>
 
         {levels.length === 0 && (
-          <Card className="empty-card">
+          <div className="empty-card">
             <Text className="empty-text">暂无可用关卡</Text>
-          </Card>
+          </div>
         )}
       </div>
     </div>
@@ -242,8 +241,4 @@ function getDifficultyDescription(config: Record<string, any>): string {
   }
   return parts.join('，') || '标准难度';
 }
-
-
-
-
 

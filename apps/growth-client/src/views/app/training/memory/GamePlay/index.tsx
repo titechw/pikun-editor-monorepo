@@ -1,16 +1,15 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { Card, Button, Typography, Space, Spin, message } from 'antd';
-import { ArrowLeftOutlined, ReloadOutlined } from '@ant-design/icons';
+import { Button, Typography, Spin, message } from 'antd';
+import { ArrowLeftOutlined } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import { memoryTrainingGameStore } from '@/stores/memory-training-game';
 import { growthStore } from '@/stores/growth';
-import { NumberSequenceGame } from './games/NumberSequenceGame';
-import { ColorMemoryGame } from './games/ColorMemoryGame';
-import { ShapePositionGame } from './games/ShapePositionGame';
-import { Space3DGame } from './games/Space3DGame';
-import type { MemoryTrainingLevel } from '@/api/memory-training.api';
-import './MemoryTraining.less';
+import { NumberSequenceGame } from '../games/NumberSequenceGame';
+import { ColorMemoryGame } from '../games/ColorMemoryGame';
+import { ShapePositionGame } from '../games/ShapePositionGame';
+import { Space3DGame } from '../games/Space3DGame';
+import '../MemoryTraining.less';
 
 const { Title, Text } = Typography;
 
@@ -47,7 +46,7 @@ export const GamePlay = observer((): React.JSX.Element => {
               memoryTrainingGameStore.setCurrentLevel(level);
             } else {
               message.error('关卡不存在');
-              navigate(`/training/memory/${gameId}`);
+              navigate(`/training/memory/game/${gameId}`);
             }
           } else {
             message.error('游戏不存在');
@@ -67,7 +66,7 @@ export const GamePlay = observer((): React.JSX.Element => {
 
   const handleBack = (): void => {
     if (gameId) {
-      navigate(`/training/memory/${gameId}`);
+      navigate(`/training/memory/game/${gameId}`);
     } else {
       navigate('/training/memory');
     }
@@ -78,9 +77,9 @@ export const GamePlay = observer((): React.JSX.Element => {
 
     if (!currentGame || !currentLevel) {
       return (
-        <Card>
+        <div className="game-loading-placeholder">
           <Text>加载中...</Text>
-        </Card>
+        </div>
       );
     }
 
@@ -96,9 +95,9 @@ export const GamePlay = observer((): React.JSX.Element => {
         return <Space3DGame level={currentLevel} />;
       default:
         return (
-          <Card>
+          <div className="game-unsupported">
             <Text>暂不支持此游戏类型：{currentGame.code}</Text>
-          </Card>
+          </div>
         );
     }
   };
@@ -149,8 +148,4 @@ export const GamePlay = observer((): React.JSX.Element => {
     </div>
   );
 });
-
-
-
-
 

@@ -11,8 +11,9 @@ export const MemoryTraining = (): React.JSX.Element => {
   return (
     <Routes>
       <Route path="/" element={<GameList />} />
-      <Route path="/:gameId" element={<LevelList />} />
-      <Route path="/:gameId/:levelId" element={<GamePlay />} />
+      <Route path="/:abilityId" element={<GameList />} />
+      <Route path="/game/:gameId" element={<LevelList />} />
+      <Route path="/game/:gameId/:levelId" element={<GamePlay />} />
       <Route path="*" element={<Navigate to="/training/memory" replace />} />
     </Routes>
   );

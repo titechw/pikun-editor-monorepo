@@ -1,0 +1,161 @@
+.level-list-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  width: 100%;
+}
+
+.level-card {
+  background: rgba(15, 12, 41, 0.6);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  height: 100%;
+
+  &:hover:not(.locked) {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+    border-color: rgba(102, 126, 234, 0.5);
+  }
+
+  &.locked {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  &.completed {
+    border-color: rgba(82, 196, 26, 0.5);
+  }
+
+  .level-card-content {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    height: 100%;
+
+    .level-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      .level-number {
+        color: #fff;
+        font-weight: 600;
+        font-size: 16px;
+      }
+    }
+
+    .level-name {
+      color: #fff !important;
+      margin: 0 !important;
+      font-weight: 600;
+    }
+
+    .level-description {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .level-difficulty {
+      padding: 8px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 6px;
+
+      .difficulty-label {
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 11px;
+        margin-right: 4px;
+      }
+
+      .difficulty-value {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 11px;
+      }
+    }
+
+    .level-stats {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 8px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 6px;
+
+      .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+
+        .stat-icon {
+          color: rgba(102, 126, 234, 0.8);
+          font-size: 14px;
+        }
+
+        .stat-text {
+          color: rgba(255, 255, 255, 0.8);
+          font-size: 12px;
+        }
+      }
+    }
+
+    .level-reward {
+      padding: 8px;
+      background: rgba(102, 126, 234, 0.1);
+      border-radius: 6px;
+
+      .reward-text {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 12px;
+        font-weight: 500;
+      }
+    }
+
+    .play-level-button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      height: 36px;
+      font-weight: 500;
+      border-radius: 6px;
+      margin-top: auto;
+    }
+  }
+}
+
+.empty-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  background: rgba(15, 12, 41, 0.6);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 40px;
+
+  .empty-text {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 16px;
+  }
+}
+
+.game-not-found {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  background: rgba(15, 12, 41, 0.6);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 40px;
+
+  .ant-typography {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 16px;
+  }
+}
+

@@ -40,12 +40,18 @@ export const courseApi = {
     pageSize?: number;
     keyword?: string;
     courseType?: string;
+    difficultyLevel?: number;
+    abilityItemId?: string;
+    courseSource?: string;
   }): Promise<CourseListResponse> {
     const searchParams = new URLSearchParams();
     if (params?.current) searchParams.set('current', params.current.toString());
     if (params?.pageSize) searchParams.set('pageSize', params.pageSize.toString());
     if (params?.keyword) searchParams.set('keyword', params.keyword);
     if (params?.courseType) searchParams.set('courseType', params.courseType);
+    if (params?.difficultyLevel) searchParams.set('difficultyLevel', params.difficultyLevel.toString());
+    if (params?.abilityItemId) searchParams.set('abilityItemId', params.abilityItemId);
+    if (params?.courseSource) searchParams.set('courseSource', params.courseSource);
 
     const response = await apiClient.get<CourseListResponse>(
       `/course/courses?${searchParams.toString()}`
@@ -61,6 +67,7 @@ export const courseApi = {
     return response.data || null;
   },
 };
+
 
 
 

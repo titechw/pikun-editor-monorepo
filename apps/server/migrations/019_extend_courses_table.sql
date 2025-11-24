@@ -31,3 +31,4 @@ COMMENT ON COLUMN pikun_db.courses.primary_item_id IS '主要关联的能力项'
 
 
 
+

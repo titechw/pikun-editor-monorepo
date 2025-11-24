@@ -91,7 +91,7 @@ export const ShapePositionGame = observer(({ level }: ShapePositionGameProps): R
 
   if (gameState === GameState.Ready) {
     return (
-      <Card className="game-card">
+      <Card className="game-content-card">
         <div className="game-ready">
           <Title level={3} className="ready-title">
             准备开始
@@ -104,7 +104,7 @@ export const ShapePositionGame = observer(({ level }: ShapePositionGameProps): R
 
   if (gameState === GameState.Memorizing) {
     return (
-      <Card className="game-card">
+      <Card className="game-content-card">
         <div className="game-memorizing">
           <Title level={4} className="memorize-title">
             记住图形的位置
@@ -134,7 +134,7 @@ export const ShapePositionGame = observer(({ level }: ShapePositionGameProps): R
 
   if (gameState === GameState.Recalling) {
     return (
-      <Card className="game-card">
+      <Card className="game-content-card">
         <div className="game-recalling">
           <Title level={4} className="recall-title">
             请点击刚才显示图形的位置
@@ -183,7 +183,7 @@ export const ShapePositionGame = observer(({ level }: ShapePositionGameProps): R
     const actualPositions = (memoryTrainingStore.userAnswer?.positions || []).sort((a, b) => a - b);
 
     return (
-      <Card className="game-card">
+      <Card className="game-content-card">
         <div className="game-result">
           <div className={`result-icon ${isCorrect ? 'correct' : 'incorrect'}`}>
             {isCorrect ? <CheckOutlined /> : <CloseOutlined />}

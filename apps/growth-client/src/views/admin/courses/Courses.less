@@ -1,5 +1,9 @@
 .courses-page {
   padding: 24px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  color: #fff;
 
   .page-header {
     display: flex;
@@ -11,11 +15,227 @@
       margin: 0;
       font-size: 24px;
       font-weight: 600;
+      color: #fff;
+    }
+  }
+
+  // 表格样式覆盖
+  .ant-table-wrapper {
+    flex: 1;
+    overflow: hidden;
+    
+    .ant-spin-nested-loading,
+    .ant-spin-container,
+    .ant-table,
+    .ant-table-container,
+    .ant-table-content {
+      height: 100%;
+    }
+
+    .ant-table {
+      background: transparent;
+      color: rgba(255, 255, 255, 0.85);
+
+      .ant-table-thead > tr > th {
+        background: rgba(102, 126, 234, 0.1);
+        color: rgba(255, 255, 255, 0.85);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        font-weight: 600;
+      }
+
+      .ant-table-tbody > tr > td {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        color: rgba(255, 255, 255, 0.85);
+        
+        &.ant-table-cell-row-hover {
+          background: rgba(255, 255, 255, 0.04) !important;
+        }
+      }
+
+      .ant-table-tbody > tr:hover > td {
+        background: rgba(255, 255, 255, 0.04) !important;
+      }
+      
+      .ant-empty-description {
+        color: rgba(255, 255, 255, 0.5);
+      }
+
+      // 固定列样式
+      .ant-table-cell-fix-right {
+        background: #1f1f2e !important; // 确保固定列有不透明背景
+      }
+    }
+
+    // 分页样式
+    .ant-pagination {
+      margin-top: 16px;
+      
+      .ant-pagination-item {
+        background: transparent;
+        border-color: rgba(255, 255, 255, 0.2);
+        
+        a {
+          color: rgba(255, 255, 255, 0.85);
+        }
+        
+        &-active {
+          border-color: #667eea;
+          background: rgba(102, 126, 234, 0.2);
+          
+          a {
+            color: #667eea;
+          }
+        }
+      }
+      
+      .ant-pagination-prev,
+      .ant-pagination-next {
+        .ant-pagination-item-link {
+          background: transparent;
+          border-color: rgba(255, 255, 255, 0.2);
+          color: rgba(255, 255, 255, 0.85);
+        }
+      }
+      
+      .ant-pagination-total-text {
+        color: rgba(255, 255, 255, 0.6);
+      }
+    }
+  }
+
+  // 按钮样式覆盖 (与 AbilityCategories 保持一致)
+  .ant-btn {
+    border-radius: 6px;
+    
+    &.ant-btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      box-shadow: 0 2px 6px rgba(102, 126, 234, 0.3);
+      
+      &:hover {
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+      }
+    }
+    
+    &.ant-btn-default {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+      color: #fff;
+      
+      &:hover {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: rgba(255, 255, 255, 0.3);
+      }
+    }
+
+    &.ant-btn-link {
+      color: #667eea;
+      
+      &:hover {
+        color: #764ba2;
+      }
+      
+      &.ant-btn-dangerous {
+        color: #ff4d4f;
+        
+        &:hover {
+          color: #ff7875;
+        }
+      }
+    }
+  }
+  
+  // 搜索输入框样式
+  .ant-input-affix-wrapper {
+    background: rgba(0, 0, 0, 0.2);
+    border-color: rgba(255, 255, 255, 0.2);
+    
+    input {
+      background: transparent;
+      color: #fff;
+      
+      &::placeholder {
+        color: rgba(255, 255, 255, 0.4);
+      }
+    }
+    
+    &:hover, &:focus, &-focused {
+      background: rgba(0, 0, 0, 0.3);
+      border-color: #667eea;
+    }
+    
+    .anticon {
+      color: rgba(255, 255, 255, 0.5);
     }
   }
 }
 
+// 全局 Drawer 样式覆盖 (必须在 global scope 或 root 类名下)
+.admin-drawer-root {
+  .ant-drawer-content-wrapper {
+    box-shadow: -6px 0 16px rgba(0, 0, 0, 0.3);
+  }
 
+  .ant-drawer-header {
+    background: #1f1f2e; // 深色背景
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 
+    .ant-drawer-title {
+      color: #fff;
+    }
 
+    .ant-drawer-close {
+      color: rgba(255, 255, 255, 0.6);
+      
+      &:hover {
+        color: #fff;
+      }
+    }
+  }
 
+  .ant-drawer-body {
+    background: #161621; // 更深的背景
+    color: #fff;
+  }
+  
+  .ant-drawer-footer {
+    background: #1f1f2e;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  // 表单样式适配
+  .ant-form {
+    .ant-form-item-label > label {
+      color: rgba(255, 255, 255, 0.85);
+    }
+    
+    .ant-input,
+    .ant-input-number,
+    .ant-select-selector,
+    .ant-tree-select-selector {
+      background: rgba(255, 255, 255, 0.06) !important;
+      border-color: rgba(255, 255, 255, 0.15) !important;
+      color: #fff !important;
+      
+      &:hover, &:focus {
+        border-color: #667eea !important;
+      }
+      
+      &::placeholder {
+        color: rgba(255, 255, 255, 0.3);
+      }
+    }
+    
+    .ant-select-arrow, 
+    .ant-tree-select-arrow {
+      color: rgba(255, 255, 255, 0.5);
+    }
+    
+    .ant-input-disabled,
+    .ant-select-disabled .ant-select-selector {
+      background: rgba(255, 255, 255, 0.03) !important;
+      color: rgba(255, 255, 255, 0.3) !important;
+    }
+  }
+}

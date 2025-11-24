@@ -1,0 +1,119 @@
+.game-list {
+  min-height: calc(100vh - 64px);
+  padding: 24px;
+  background: transparent;
+
+  .game-list-container {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .game-list-header {
+    margin-bottom: 20px;
+
+    .back-button {
+      color: rgba(255, 255, 255, 0.8);
+      margin-bottom: 16px;
+      padding: 0;
+
+      &:hover {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.1);
+      }
+    }
+
+    .header-content {
+      .page-title {
+        color: #fff !important;
+        margin-bottom: 8px !important;
+        font-weight: 600;
+      }
+
+      .page-subtitle {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 14px;
+      }
+    }
+  }
+
+  .filter-section {
+    margin-bottom: 20px;
+    
+    .ant-space {
+      .ant-typography {
+        color: rgba(255, 255, 255, 0.9);
+      }
+      
+      .anticon-filter {
+        color: #667eea;
+      }
+    }
+
+    .filter-select {
+      .ant-select-selector {
+        background: rgba(15, 12, 41, 0.6) !important;
+        border-color: rgba(255, 255, 255, 0.2) !important;
+        color: #fff !important;
+        border-radius: 8px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+
+        .ant-select-selection-placeholder {
+          color: rgba(255, 255, 255, 0.4);
+        }
+      }
+
+      .ant-select-arrow {
+        color: rgba(255, 255, 255, 0.6);
+      }
+      
+      .ant-select-clear {
+        background: rgba(255, 255, 255, 0.2);
+        color: #fff;
+        border-radius: 50%;
+      }
+
+      &:hover .ant-select-selector {
+        border-color: #667eea !important;
+      }
+
+      &.ant-select-focused .ant-select-selector {
+        border-color: #667eea !important;
+        box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2) !important;
+      }
+    }
+  }
+
+  .game-list-loading {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 400px;
+    gap: 16px;
+
+    .loading-text {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 16px;
+    }
+  }
+
+  .game-list-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+    width: 100%;
+
+    @media (min-width: 768px) {
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 20px;
+    }
+
+    @media (min-width: 1200px) {
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 24px;
+    }
+  }
+}
+

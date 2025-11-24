@@ -105,7 +105,7 @@ export const ColorMemoryGame = observer(({ level }: ColorMemoryGameProps): React
 
   if (gameState === GameState.Ready) {
     return (
-      <Card className="game-card">
+      <Card className="game-content-card">
         <div className="game-ready">
           <Title level={3} className="ready-title">
             准备开始
@@ -121,7 +121,7 @@ export const ColorMemoryGame = observer(({ level }: ColorMemoryGameProps): React
     const colorInfo = COLOR_MAP[currentColor] || COLOR_MAP.red;
 
     return (
-      <Card className="game-card">
+      <Card className="game-content-card">
         <div className="game-memorizing">
           <div
             className="color-display"
@@ -144,7 +144,7 @@ export const ColorMemoryGame = observer(({ level }: ColorMemoryGameProps): React
     const availableColors = Object.keys(COLOR_MAP);
 
     return (
-      <Card className="game-card">
+      <Card className="game-content-card">
         <div className="game-recalling">
           <Title level={4} className="recall-title">
             请按顺序点击刚才看到的颜色
@@ -209,7 +209,7 @@ export const ColorMemoryGame = observer(({ level }: ColorMemoryGameProps): React
     const actualSequence = memoryTrainingStore.userAnswer?.sequence || [];
 
     return (
-      <Card className="game-card">
+      <Card className="game-content-card">
         <div className="game-result">
           <div className={`result-icon ${isCorrect ? 'correct' : 'incorrect'}`}>
             {isCorrect ? <CheckOutlined /> : <CloseOutlined />}

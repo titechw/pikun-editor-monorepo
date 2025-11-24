@@ -1,0 +1,113 @@
+.training-card {
+  background: rgba(15, 12, 41, 0.6);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+    border-color: rgba(102, 126, 234, 0.6);
+  }
+
+  .training-card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px;
+
+    .training-icon-wrapper {
+      height: 80px;
+      width: 100%;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 4px;
+      flex-shrink: 0;
+
+      .training-icon {
+        font-size: 36px;
+      }
+    }
+
+    .training-name {
+      color: #fff !important;
+      margin: 0 !important;
+      font-weight: 600;
+      font-size: 15px !important;
+      line-height: 1.4;
+      text-align: center;
+    }
+
+    .category-info {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 6px;
+
+      .category-text {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 10px;
+      }
+
+      .dimension-text {
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 10px;
+      }
+    }
+
+    .training-stats {
+      display: flex;
+      gap: 8px;
+      padding: 8px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 6px;
+
+      .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        flex: 1;
+        justify-content: center;
+
+        .stat-icon {
+          color: rgba(102, 126, 234, 0.8);
+          font-size: 12px;
+        }
+
+        .stat-text {
+          color: rgba(255, 255, 255, 0.8);
+          font-size: 11px;
+        }
+      }
+
+      .stat-text-new {
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 11px;
+        text-align: center;
+        width: 100%;
+      }
+    }
+
+    .start-training-button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+      border: none !important;
+      height: 32px;
+      font-weight: 500;
+      font-size: 12px;
+      border-radius: 6px;
+      margin-top: 4px;
+    }
+  }
+}
+

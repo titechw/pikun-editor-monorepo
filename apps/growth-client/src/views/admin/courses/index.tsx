@@ -7,6 +7,7 @@ import {
   Form,
   Input,
   InputNumber,
+  TreeSelect,
   Select,
   Space,
   Spin,
@@ -38,6 +39,25 @@ export const Courses = observer((): React.JSX.Element => {
       growthStore.loadData();
     }
   }, []);
+
+  // 构建能力项树形数据
+  const abilityTreeData = growthStore.getAbilityTree().map((categoryData) => ({
+    title: categoryData.category.name,
+    value: categoryData.category.category_id,
+    key: categoryData.category.category_id,
+    disabled: true, // 分类不可选
+    children: categoryData.dimensions.map((dimData) => ({
+      title: dimData.dimension.name,
+      value: dimData.dimension.dimension_id,
+      key: dimData.dimension.dimension_id,
+      disabled: true, // 维度不可选
+      children: dimData.items.map((itemData) => ({
+        title: itemData.item.name,
+        value: itemData.item.item_id,
+        key: itemData.item.item_id,
+      })),
+    })),
+  }));
 
   const handleCreate = (): void => {
     setEditingCourse(null);
@@ -168,12 +188,14 @@ export const Courses = observer((): React.JSX.Element => {
       title: '操作',
       key: 'action',
       width: 150,
+      fixed: 'right',
       render: (_: any, record: CourseListItem) => (
-        <Space>
+        <Space size="middle">
           <Button
             type="link"
             icon={<EditOutlined />}
             onClick={() => handleEdit(record)}
+            style={{ padding: 0 }}
           >
             编辑
           </Button>
@@ -182,6 +204,7 @@ export const Courses = observer((): React.JSX.Element => {
             danger
             icon={<DeleteOutlined />}
             onClick={() => handleDelete(record.course_id)}
+            style={{ padding: 0 }}
           >
             删除
           </Button>
@@ -211,6 +234,7 @@ export const Courses = observer((): React.JSX.Element => {
         dataSource={courseListStore.data}
         loading={courseListStore.loading}
         rowKey="course_id"
+        scroll={{ x: 1200 }}
         pagination={{
           current: courseListStore.pagination.current,
           pageSize: courseListStore.pagination.pageSize,
@@ -230,6 +254,8 @@ export const Courses = observer((): React.JSX.Element => {
           form.resetFields();
         }}
         width={600}
+        className="admin-drawer"
+        rootClassName="admin-drawer-root"
         footer={
           <Space>
             <Button onClick={() => setDrawerVisible(false)}>取消</Button>
@@ -265,9 +291,6 @@ export const Courses = observer((): React.JSX.Element => {
             <Select>
               <Option value="ability_training">能力训练</Option>
               <Option value="skill_knowledge">技能知识</Option>
-              <Option value="learning">学习型</Option>
-              <Option value="training">训练型</Option>
-              <Option value="mixed">混合型</Option>
             </Select>
           </Form.Item>
           <Form.Item
@@ -313,20 +336,16 @@ export const Courses = observer((): React.JSX.Element => {
             label="关联能力项"
             tooltip="选择该课程主要训练的能力"
           >
-            <Select
+            <TreeSelect
               showSearch
+              style={{ width: '100%' }}
+              dropdownStyle={{ maxHeight: 400, overflow: 'auto' }}
               placeholder="选择能力项"
-              optionFilterProp="children"
-              filterOption={(input, option) =>
-                (option?.children as string)?.toLowerCase().includes(input.toLowerCase())
-              }
-            >
-              {growthStore.items.map((item) => (
-                <Option key={item.item_id} value={item.item_id}>
-                  {item.name}
-                </Option>
-              ))}
-            </Select>
+              allowClear
+              treeDefaultExpandAll
+              treeData={abilityTreeData}
+              treeNodeFilterProp="title"
+            />
           </Form.Item>
           <Form.Item name="difficulty_level" label="难度等级">
             <InputNumber min={1} max={10} />

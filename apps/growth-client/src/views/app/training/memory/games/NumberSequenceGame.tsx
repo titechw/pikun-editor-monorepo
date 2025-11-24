@@ -147,7 +147,7 @@ export const NumberSequenceGame = observer(({ level }: NumberSequenceGameProps):
 
   if (gameState === 'ready') {
     return (
-      <Card className="game-card">
+      <Card className="game-content-card">
         <div className="game-ready">
           <Title level={3} className="ready-title">
             准备开始
@@ -161,7 +161,7 @@ export const NumberSequenceGame = observer(({ level }: NumberSequenceGameProps):
   if (gameState === 'memorizing' && gameData?.sequence) {
     const currentNumber = gameData.sequence[displayIndex];
     return (
-      <Card className="game-card">
+      <Card className="game-content-card">
         <div className="game-memorizing">
           <Title level={1} className="number-display">
             {currentNumber}
@@ -176,7 +176,7 @@ export const NumberSequenceGame = observer(({ level }: NumberSequenceGameProps):
 
   if (gameState === 'recalling') {
     return (
-      <Card className="game-card">
+      <Card className="game-content-card">
         <div className="game-recalling">
           <Title level={4} className="recall-title">
             请按顺序输入刚才看到的数字
@@ -210,7 +210,7 @@ export const NumberSequenceGame = observer(({ level }: NumberSequenceGameProps):
     const actualSequence = userAnswer?.sequence || [];
 
     return (
-      <Card className="game-card">
+      <Card className="game-content-card">
         <div className="game-result">
           <div className={`result-icon ${isCorrect ? 'correct' : 'incorrect'}`}>
             {isCorrect ? <CheckOutlined /> : <CloseOutlined />}

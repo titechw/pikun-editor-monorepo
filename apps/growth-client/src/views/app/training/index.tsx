@@ -1,25 +1,23 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { Card, Row, Col, Spin, Typography, Button, Tag, Progress, Space } from 'antd';
-import {
-  PlayCircleOutlined,
-  TrophyOutlined,
-  FireOutlined,
-  ArrowLeftOutlined,
-} from '@ant-design/icons';
+import { Spin, Typography, Button, Tabs, Empty } from 'antd';
+import { ArrowLeftOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { growthStore, TrainingType } from '@/stores/growth';
+import { growthStore } from '@/stores/growth';
 import { authStore } from '@/stores/auth';
+import { type AbilityItem } from '@/api/ability.api';
+import { TrainingCard } from './TrainingCard';
 import './Training.less';
 
 const { Title, Text } = Typography;
 
 /**
  * 能力训练页面
- * 展示各种训练场入口
+ * 展示能力项列表（Tab 方式：按分类展示，每个分类下按维度分组）
  */
 export const Training = observer((): React.JSX.Element => {
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<string>('');
 
   useEffect(() => {
     if (authStore.isAuthenticated) {
@@ -27,38 +25,71 @@ export const Training = observer((): React.JSX.Element => {
     }
   }, [authStore.isAuthenticated]);
 
-  const handleStartTraining = (type: TrainingType): void => {
-    if (type === TrainingType.Memory) {
-      navigate('/training/memory');
+  // 设置默认激活的 Tab
+  useEffect(() => {
+    if (growthStore.categories.length > 0 && !activeTab) {
+      setActiveTab(growthStore.categories[0].category_id);
+    }
+  }, [growthStore.categories, activeTab]);
+
+  const handleStartTraining = (item: AbilityItem): void => {
+    // 根据能力项的 code 或名称判断跳转路径
+    const itemCode = item.code?.toLowerCase() || '';
+    const itemName = item.name.toLowerCase();
+
+    if (itemCode.includes('memory') || itemName.includes('记忆')) {
+      navigate(`/training/memory/${item.item_id}`);
     } else {
-      // TODO: 其他训练类型的页面
-      console.log('开始训练:', type);
+      // 默认跳转到记忆力训练，并传递能力项ID
+      navigate(`/training/memory/${item.item_id}`);
     }
   };
 
-  const getTrainingStats = (relatedItems: string[]) => {
-    const levels = relatedItems
-      .map((itemId) => growthStore.getUserLevel(itemId))
-      .filter((level): level is NonNullable<typeof level> => level !== null);
+  // 准备 Tab 数据
+  const tabItems = growthStore.categories
+    .slice()
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .map((category) => {
+      const categoryDimensions = growthStore.dimensions
+        .filter((d) => d.category_id === category.category_id)
+        .slice()
+        .sort((a, b) => a.sort_order - b.sort_order);
 
-    if (levels.length === 0) {
       return {
-        avgLevel: 0,
-        totalExp: 0,
-        maxLevel: 0,
+        key: category.category_id,
+        label: category.name,
+        children: (
+          <div className="category-content">
+            {categoryDimensions.map((dimension) => {
+              const dimensionItems = growthStore.items
+                .filter((item) => item.dimension_id === dimension.dimension_id)
+                .slice()
+                .sort((a, b) => a.sort_order - b.sort_order);
+
+              if (dimensionItems.length === 0) return null;
+
+              return (
+                <div key={dimension.dimension_id} className="dimension-section">
+                  <h3 className="dimension-title">{dimension.name}</h3>
+                  <div className="training-grid">
+                    {dimensionItems.map((item) => (
+                      <TrainingCard
+                        key={item.item_id}
+                        item={item}
+                        onStart={handleStartTraining}
+                      />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+            {categoryDimensions.length === 0 && (
+              <Empty description="该分类下暂无能力项" />
+            )}
+          </div>
+        ),
       };
-    }
-
-    const avgLevel = levels.reduce((sum, level) => sum + level.current_level, 0) / levels.length;
-    const totalExp = levels.reduce((sum, level) => sum + level.total_exp, 0);
-    const maxLevel = Math.max(...levels.map((level) => level.current_level));
-
-    return {
-      avgLevel,
-      totalExp,
-      maxLevel,
-    };
-  };
+    });
 
   if (growthStore.loading) {
     return (
@@ -91,80 +122,18 @@ export const Training = observer((): React.JSX.Element => {
           </div>
         </div>
 
-        {/* 训练场列表 */}
-        <Row gutter={[24, 24]} className="training-grid">
-          {growthStore.trainingConfigs.map((config) => {
-            const stats = getTrainingStats(config.relatedAbilityItems);
-            const relatedItems = config.relatedAbilityItems
-              .map((itemId) => {
-                const item = growthStore.items.find((i) => i.item_id === itemId);
-                const level = growthStore.getUserLevel(itemId);
-                return { item, level };
-              })
-              .filter(({ item }) => item !== undefined);
-
-            return (
-              <Col xs={24} sm={12} lg={8} key={config.type}>
-                <Card className="training-card" hoverable>
-                  <div className="training-card-content">
-                    <div className="training-icon-wrapper">
-                      <div className="training-icon">{config.icon}</div>
-                    </div>
-                    <Title level={4} className="training-name">
-                      {config.name}
-                    </Title>
-                    <Text className="training-description">{config.description}</Text>
-
-                    {/* 关联能力 */}
-                    {relatedItems.length > 0 && (
-                      <div className="related-abilities">
-                        <Text className="related-abilities-label">提升能力：</Text>
-                        <div className="ability-tags">
-                          {relatedItems.slice(0, 3).map(({ item, level }) => (
-                            <Tag key={item?.item_id} className="ability-tag">
-                              {item?.name} Lv.{level?.current_level || 0}
-                            </Tag>
-                          ))}
-                          {relatedItems.length > 3 && (
-                            <Tag className="ability-tag">+{relatedItems.length - 3}</Tag>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* 统计数据 */}
-                    {stats.avgLevel > 0 && (
-                      <div className="training-stats">
-                        <div className="stat-item">
-                          <TrophyOutlined className="stat-icon" />
-                          <Text className="stat-text">平均等级: {stats.avgLevel.toFixed(1)}</Text>
-                        </div>
-                        <div className="stat-item">
-                          <FireOutlined className="stat-icon" />
-                          <Text className="stat-text">总经验: {stats.totalExp.toLocaleString()}</Text>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* 开始训练按钮 */}
-                    <Button
-                      type="primary"
-                      icon={<PlayCircleOutlined />}
-                      className="start-training-button"
-                      onClick={() => handleStartTraining(config.type)}
-                      block
-                    >
-                      开始训练
-                    </Button>
-                  </div>
-                </Card>
-              </Col>
-            );
-          })}
-        </Row>
+        {/* Tab 分类展示 */}
+        <div className="category-tabs">
+          <Tabs
+            activeKey={activeTab}
+            onChange={setActiveTab}
+            items={tabItems}
+            className="training-tabs"
+          />
+        </div>
 
         {/* 提示信息 */}
-        <Card className="training-tips-card">
+        <div className="training-tips-card">
           <Title level={5} className="tips-title">
             💡 训练提示
           </Title>
@@ -174,7 +143,7 @@ export const Training = observer((): React.JSX.Element => {
             <li>建议每天进行 15-30 分钟的训练</li>
             <li>训练难度会随着能力等级提升而增加</li>
           </ul>
-        </Card>
+        </div>
       </div>
     </div>
   );

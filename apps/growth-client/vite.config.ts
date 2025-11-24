@@ -49,6 +49,10 @@ function pathBasedEntryPlugin(): Plugin {
           else if (url === '/test' || url === '/test/' || url.startsWith('/test/')) {
               req.url = '/test.html';
           }
+          // 其他路径默认为 index.html（单页应用路由 fallback）
+          else {
+              req.url = '/index.html';
+          }
           
           next();
         });

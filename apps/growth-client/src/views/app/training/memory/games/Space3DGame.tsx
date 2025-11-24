@@ -15,7 +15,7 @@ interface Space3DGameProps {
  */
 export const Space3DGame = observer(({ level }: Space3DGameProps): React.JSX.Element => {
   return (
-    <Card className="game-card">
+    <Card className="game-content-card">
       <div className="game-ready">
         <Title level={3} className="ready-title">
           3D空间记忆游戏
