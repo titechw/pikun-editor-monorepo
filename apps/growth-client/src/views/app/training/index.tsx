@@ -88,7 +88,7 @@ export const Training = observer((): React.JSX.Element => {
             )}
           </div>
         ),
-      };
+    };
     });
 
   if (growthStore.loading) {
@@ -130,7 +130,7 @@ export const Training = observer((): React.JSX.Element => {
             items={tabItems}
             className="training-tabs"
           />
-        </div>
+                  </div>
 
         {/* 提示信息 */}
         <div className="training-tips-card">

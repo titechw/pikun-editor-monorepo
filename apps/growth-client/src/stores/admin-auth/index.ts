@@ -25,20 +25,25 @@ export class AdminAuthStore {
       runInAction(() => {
         this.isAuthenticated = false;
         this.user = null;
+        this.loading = false;
       });
       return;
     }
 
+    this.loading = true;
     try {
-      // 暂时简单处理：如果有token就认为已登录
-      // 后续可以添加API验证token并获取用户信息的逻辑
+      // 调用 API 验证 token 并获取用户信息
+      const user = await adminAuthApi.getMe();
       runInAction(() => {
+        this.user = user;
         this.isAuthenticated = true;
+        this.loading = false;
       });
     } catch (error) {
       runInAction(() => {
         this.isAuthenticated = false;
         this.user = null;
+        this.loading = false;
       });
       localStorage.removeItem(ADMIN_AUTH_TOKEN_KEY);
     }

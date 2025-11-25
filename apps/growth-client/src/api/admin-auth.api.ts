@@ -18,6 +18,17 @@ export const adminAuthApi = {
   },
 
   /**
+   * 获取当前管理员信息（验证 token）
+   */
+  async getMe(): Promise<User> {
+    const response = await adminApiClient.get<User>('/admin/auth/me');
+    if (!response.data) {
+      throw new Error('获取用户信息失败');
+    }
+    return response.data;
+  },
+
+  /**
    * 登出
    */
   logout(): void {

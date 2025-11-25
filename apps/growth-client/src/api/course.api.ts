@@ -16,6 +16,7 @@ export interface Course {
   course_source: 'official' | 'third_party';
   author_name: string | null;
   primary_item_id: string | null;
+  secret_id?: string | null; // 用于拼接游戏 URL，C 端可选
   created_at: string;
   updated_at: string;
 }

@@ -66,11 +66,26 @@ export const GameList = observer((): React.JSX.Element => {
 
   const handleGameClick = (course: Course): void => {
     if (course.course_url) {
-      // 如果有 URL，判断是内部还是外部
+      // 构建完整的游戏 URL（自动拼接参数）
+      const buildGameUrl = (): string => {
+        if (!course.course_url) return '';
+        
+        // 如果 URL 已经包含参数，追加参数
+        if (course.course_url.includes('?')) {
+          return `${course.course_url}&secretId=${course.secret_id || ''}&courseId=${course.course_id}`;
+        }
+        
+        // 否则添加参数
+        return `${course.course_url}?secretId=${course.secret_id || ''}&courseId=${course.course_id}`;
+      };
+      
+      const gameUrl = buildGameUrl();
+      
+      // 判断是内部还是外部
       if (course.course_url.startsWith('http')) {
-        window.open(course.course_url, '_blank');
+        window.open(gameUrl, '_blank');
       } else {
-        navigate(course.course_url);
+        navigate(gameUrl);
       }
     } else {
       // 默认逻辑：尝试进入 /training/memory/game/:code

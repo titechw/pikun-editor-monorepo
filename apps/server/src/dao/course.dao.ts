@@ -147,8 +147,10 @@ export class CourseDAO {
     primary_item_id?: string | null;
     metadata?: Record<string, any>;
   }): Promise<Course> {
-    // 生成 secretId（如果没有提供则自动生成）
-    const secretId = course.secret_id || randomBytes(32).toString('hex');
+    // 生成 secretId（如果没有提供或为空则自动生成）
+    const secretId = (course.secret_id && course.secret_id.trim() !== '') 
+      ? course.secret_id 
+      : randomBytes(32).toString('hex');
 
     const result = await this.db.query<Course>(
       `INSERT INTO pikun_db.courses (

@@ -183,12 +183,16 @@ export class CourseController {
         course_url: z.string().url().optional().nullable(),
         course_source: z.enum(['official', 'third_party']).optional(),
         author_name: z.string().optional().nullable(),
-        secret_id: z.string().min(1).optional().nullable(), // 允许手动设置 secretId（私钥），如果没有则自动生成
+        secret_id: z.string().min(32).optional().nullable(), // 允许手动设置 secretId（私钥），如果没有则自动生成
         primary_item_id: z.string().uuid().optional().nullable(),
         metadata: z.record(z.any()).optional(),
       });
 
       const validatedData = schema.parse(body);
+      // 如果 secret_id 为空字符串、null 或 undefined，删除该字段，让后端自动生成
+      if (!validatedData.secret_id || (typeof validatedData.secret_id === 'string' && validatedData.secret_id.trim() === '')) {
+        delete validatedData.secret_id;
+      }
       const course = await this.courseService.createCourse(validatedData);
 
       return NextResponse.json({
@@ -321,7 +325,7 @@ export class CourseController {
       let uid: number;
       try {
         uid = await getCurrentUserId(req);
-      } catch (error) {
+      } catch {
         // 如果无法获取用户 ID，尝试从请求体或其他方式获取
         // 这里可以根据实际需求调整
         throw new Error('无法获取用户信息，请先登录');

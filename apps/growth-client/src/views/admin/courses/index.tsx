@@ -74,7 +74,11 @@ export const Courses = observer((): React.JSX.Element => {
 
   const handleEdit = (course: CourseListItem): void => {
     setEditingCourse(course);
-    form.setFieldsValue(course);
+    // 确保 secret_id 能正确回填（即使是 null 也要显示）
+    form.setFieldsValue({
+      ...course,
+      secret_id: course.secret_id || '', // 将 null 转换为空字符串以便显示
+    });
     setDrawerVisible(true);
   };
 
@@ -95,21 +99,21 @@ export const Courses = observer((): React.JSX.Element => {
     try {
       const values = await form.validateFields();
       
-      // 处理 secret_id：空字符串转换为 null（创建时自动生成，编辑时保持不变）
-      if (values.secret_id === '') {
-        values.secret_id = null;
-      }
-      
       if (editingCourse) {
-        // 编辑时，如果 secret_id 为 null，则不传递该字段（保持原值）
+        // 编辑时，如果 secret_id 为空字符串，则不传递该字段（保持原值）
         const updateData = { ...values };
-        if (updateData.secret_id === null) {
+        if (updateData.secret_id === '' || updateData.secret_id === null) {
           delete updateData.secret_id;
         }
         await adminCourseApi.updateCourse(editingCourse.course_id, updateData);
         message.success('更新成功');
       } else {
-        await adminCourseApi.createCourse(values);
+        // 创建时，如果 secret_id 为空字符串或 null，则不传递该字段（后端会自动生成）
+        const createData = { ...values };
+        if (createData.secret_id === '' || createData.secret_id === null) {
+          delete createData.secret_id;
+        }
+        await adminCourseApi.createCourse(createData);
         message.success('创建成功');
       }
       setDrawerVisible(false);
@@ -306,8 +310,12 @@ export const Courses = observer((): React.JSX.Element => {
           <Form.Item name="author_name" label="作者名">
             <Input placeholder="官方课程默认为官方" />
           </Form.Item>
-          <Form.Item name="course_url" label="游戏URL">
-            <Input placeholder="http://localhost:3002/?secretId=xxx&courseId=xxx" />
+          <Form.Item 
+            name="course_url" 
+            label="游戏URL"
+            tooltip="只需填写游戏的基础 URL，系统会在使用时自动拼接 secretId 和 courseId 参数。例如：http://localhost:3002/"
+          >
+            <Input placeholder="http://localhost:3002/" />
           </Form.Item>
           <Form.Item
             name="secret_id"
