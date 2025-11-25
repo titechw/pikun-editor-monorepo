@@ -21,42 +21,45 @@ function pathBasedEntryPlugin(): Plugin {
   return {
     name: 'path-based-entry',
     configureServer(server) {
-      return () => {
-        // 添加中间件处理路径重写（支持无后缀访问）
-        // 例如：/admin 或 /admin/xxx -> /admin.html
-        //      /test 或 /test/xxx -> /test.html
-        server.middlewares.use((req, res, next) => {
-          const url = req.url || '';
-          
-          // 跳过静态资源（JS、CSS、图片、字体、API 等）
-          const isStaticResource = 
-            (url.includes('.') && !url.endsWith('.html') && !url.endsWith('/')) ||
-            url.startsWith('/@') ||
-            url.startsWith('/node_modules') ||
-            url.startsWith('/src') ||
-            url.startsWith('/api') ||
-            url.startsWith('/favicon');
-          
-          if (isStaticResource) {
-            return next();
-          }
-          
-          // 处理 /admin 路径及其子路径 -> /admin.html
-          if (url === '/admin' || url === '/admin/' || url.startsWith('/admin/')) {
-              req.url = '/admin.html';
-          }
-          // 处理 /test 路径及其子路径 -> /test.html
-          else if (url === '/test' || url === '/test/' || url.startsWith('/test/')) {
-              req.url = '/test.html';
-          }
-          // 其他路径默认为 index.html（单页应用路由 fallback）
-          else {
-              req.url = '/index.html';
-          }
-          
-          next();
-        });
-      };
+      // 直接注册中间件，Vite 会按顺序执行
+      // 我们需要在 Vite 的 HTML 处理之前执行
+      server.middlewares.use((req, res, next) => {
+        const url = req.url || '';
+        const pathname = url.split('?')[0]; // 移除查询参数
+        const query = url.includes('?') ? url.substring(url.indexOf('?')) : '';
+        
+        // 跳过静态资源（JS、CSS、图片、字体、API、Vite 内部资源等）
+        const isStaticResource = 
+          (pathname.includes('.') && !pathname.endsWith('.html') && !pathname.endsWith('/')) ||
+          pathname.startsWith('/@') ||
+          pathname.startsWith('/node_modules') ||
+          pathname.startsWith('/src') ||
+          pathname.startsWith('/api') ||
+          pathname.startsWith('/favicon') ||
+          pathname.startsWith('/assets');
+        
+        if (isStaticResource) {
+          return next();
+        }
+        
+        // 处理 /admin 路径及其子路径 -> /admin.html
+        if (pathname === '/admin' || pathname === '/admin/' || pathname.startsWith('/admin/')) {
+          req.url = '/admin.html' + query;
+          return next();
+        }
+        // 处理 /test 路径及其子路径 -> /test.html
+        if (pathname === '/test' || pathname === '/test/' || pathname.startsWith('/test/')) {
+          req.url = '/test.html' + query;
+          return next();
+        }
+        // 如果已经是 HTML 文件，直接通过
+        if (pathname.endsWith('.html')) {
+          return next();
+        }
+        // 其他路径默认为 index.html（单页应用路由 fallback）
+        req.url = '/index.html' + query;
+        next();
+      });
     },
   };
 }
@@ -67,8 +70,8 @@ export default defineConfig(() => {
   return {
     appType: 'mpa' as const, // 启用多页应用模式
     plugins: [
+      pathBasedEntryPlugin(), // 必须在最前面，确保中间件先执行
       react(),
-      pathBasedEntryPlugin(), // 必须在 react() 之后，以便在服务器配置完成后修改中间件
     ],
   ...baseConfig,
   build: {

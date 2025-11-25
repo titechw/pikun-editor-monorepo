@@ -22,6 +22,8 @@ export class CourseService {
     keyword?: string;
     courseType?: string;
     courseSource?: string;
+    abilityItemId?: string;
+    difficultyLevel?: number;
   }): Promise<{ courses: Course[]; total: number }> {
     return await this.courseDAO.findAll(options);
   }

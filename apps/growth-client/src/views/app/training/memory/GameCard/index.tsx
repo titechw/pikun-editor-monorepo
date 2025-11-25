@@ -36,7 +36,7 @@ export const GameCard: React.FC<GameCardProps> = ({ course, onClick }) => {
         <Title level={5} className="game-name" ellipsis={{ tooltip: course.name }}>
           {course.name}
         </Title>
-        <Text className="game-description" ellipsis={{ tooltip: course.description, rows: 2 }}>
+        <Text className="game-description" ellipsis={{ tooltip: course.description }}>
           {course.description || '暂无描述'}
         </Text>
         

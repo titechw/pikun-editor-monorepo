@@ -22,13 +22,20 @@ export class CourseController {
       const pageSize = parseInt(searchParams.get('pageSize') || '20', 10);
       const keyword = searchParams.get('keyword') || undefined;
       const courseType = searchParams.get('courseType') || undefined;
+      const courseSource = searchParams.get('courseSource') || undefined;
+      const abilityItemId = searchParams.get('abilityItemId') || undefined;
+      const difficultyLevel = searchParams.get('difficultyLevel')
+        ? parseInt(searchParams.get('difficultyLevel')!, 10)
+        : undefined;
 
       const result = await this.courseService.getCourses({
         current,
         pageSize,
         keyword,
         courseType,
-        courseSource: undefined, // C端不筛选来源
+        courseSource,
+        abilityItemId,
+        difficultyLevel,
       });
 
       // 只返回已发布的课程
@@ -303,7 +310,7 @@ export class CourseController {
           correctRate: z.number().min(0).max(1),
           score: z.number().min(0),
           timeSpent: z.number().min(0),
-          userAnswer: z.any(),
+          userAnswer: z.any().optional(),
         }),
       });
 
@@ -324,7 +331,10 @@ export class CourseController {
         validatedData.secretId,
         validatedData.courseId,
         uid,
-        validatedData.resultData
+        {
+          ...validatedData.resultData,
+          userAnswer: validatedData.resultData.userAnswer ?? {},
+        }
       );
 
       return NextResponse.json({

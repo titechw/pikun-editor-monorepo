@@ -15,7 +15,7 @@ interface NumberSequenceGameProps {
 /**
  * 数字序列记忆游戏
  */
-export const NumberSequenceGame = observer(({ level }: NumberSequenceGameProps): React.JSX.Element => {
+export const NumberSequenceGame = observer(({ level }: NumberSequenceGameProps): React.JSX.Element | null => {
   const [gameState, setGameState] = useState<'ready' | 'memorizing' | 'recalling' | 'result'>('ready');
   const [gameData, setGameData] = useState<{ sequence: number[] } | null>(null);
   const [userAnswer, setUserAnswer] = useState<{ sequence: number[] } | null>(null);

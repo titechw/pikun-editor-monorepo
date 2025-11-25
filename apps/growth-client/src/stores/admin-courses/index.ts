@@ -108,7 +108,14 @@ export class CourseListStore extends BaseListStore<
   /**
    * 实现抽象方法：处理批量操作
    */
-  async handleBatchOperation(): Promise<void> {
+  async handleBatchOperation(type: never): Promise<void> {
+    // 暂不支持批量操作
+  }
+
+  /**
+   * 实现抽象方法：处理批量操作逻辑
+   */
+  protected async processBatchOperation(type: never): Promise<void> {
     // 暂不支持批量操作
   }
 
@@ -182,6 +189,7 @@ export class CourseListStore extends BaseListStore<
 }
 
 export const courseListStore = new CourseListStore();
+
 
 
 

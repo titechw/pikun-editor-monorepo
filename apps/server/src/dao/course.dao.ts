@@ -24,6 +24,8 @@ export class CourseDAO {
     keyword?: string;
     courseType?: string;
     courseSource?: string;
+    abilityItemId?: string;
+    difficultyLevel?: number;
   }): Promise<{ courses: Course[]; total: number }> {
     const current = options?.current || 1;
     const pageSize = options?.pageSize || 20;
@@ -31,6 +33,8 @@ export class CourseDAO {
     const keyword = options?.keyword?.trim();
     const courseType = options?.courseType;
     const courseSource = options?.courseSource;
+    const abilityItemId = options?.abilityItemId;
+    const difficultyLevel = options?.difficultyLevel;
 
     const conditions: string[] = ['deleted_at IS NULL'];
     const params: any[] = [];
@@ -53,6 +57,18 @@ export class CourseDAO {
     if (courseSource) {
       conditions.push(`course_source = $${paramIndex}`);
       params.push(courseSource);
+      paramIndex++;
+    }
+
+    if (abilityItemId) {
+      conditions.push(`primary_item_id = $${paramIndex}`);
+      params.push(abilityItemId);
+      paramIndex++;
+    }
+
+    if (difficultyLevel !== undefined && difficultyLevel !== null) {
+      conditions.push(`difficulty_level = $${paramIndex}`);
+      params.push(difficultyLevel);
       paramIndex++;
     }
 

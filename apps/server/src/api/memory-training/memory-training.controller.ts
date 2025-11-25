@@ -129,7 +129,7 @@ export class MemoryTrainingController {
           correctRate: z.number().min(0).max(1),
           score: z.number().min(0),
           timeSpent: z.number().min(0),
-          userAnswer: z.any(),
+          userAnswer: z.any().optional(),
         }),
       });
 
@@ -139,7 +139,10 @@ export class MemoryTrainingController {
       const result = await this.memoryTrainingService.submitResult(
         uid,
         validatedData.levelId,
-        validatedData.resultData
+        {
+          ...validatedData.resultData,
+          userAnswer: validatedData.resultData.userAnswer ?? {},
+        }
       );
 
       return NextResponse.json({
@@ -214,6 +217,7 @@ export class MemoryTrainingController {
     }
   }
 }
+
 
 
 

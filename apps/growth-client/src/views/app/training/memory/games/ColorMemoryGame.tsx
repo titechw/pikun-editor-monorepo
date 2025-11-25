@@ -24,7 +24,7 @@ const COLOR_MAP: Record<string, { name: string; bg: string; text: string }> = {
 /**
  * 颜色记忆游戏
  */
-export const ColorMemoryGame = observer(({ level }: ColorMemoryGameProps): React.JSX.Element => {
+export const ColorMemoryGame = observer(({ level }: ColorMemoryGameProps): React.JSX.Element | null => {
   const [gameState, setGameState] = useState<'ready' | 'memorizing' | 'recalling' | 'result'>('ready');
   const [gameData, setGameData] = useState<{ sequence: string[] } | null>(null);
   const [userAnswer, setUserAnswer] = useState<{ sequence: string[] } | null>(null);
@@ -42,15 +42,15 @@ export const ColorMemoryGame = observer(({ level }: ColorMemoryGameProps): React
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    if (gameState === GameState.Ready) {
+    if (gameState === 'ready') {
       const timer = setTimeout(() => {
-        memoryTrainingStore.startMemorizing();
+        setGameState('memorizing');
         setDisplayIndex(0);
       }, 1000);
       return () => clearTimeout(timer);
     }
 
-    if (gameState === GameState.Memorizing && gameData?.sequence) {
+    if (gameState === 'memorizing' && gameData?.sequence) {
       const sequence = gameData.sequence;
       if (displayIndex < sequence.length) {
         timerRef.current = setTimeout(() => {
@@ -58,11 +58,11 @@ export const ColorMemoryGame = observer(({ level }: ColorMemoryGameProps): React
             setDisplayIndex(displayIndex + 1);
           } else {
             setTimeout(() => {
-              memoryTrainingStore.startRecalling();
+              setGameState('recalling');
               setStartTime(Date.now());
             }, 500);
           }
-        }, (currentDifficulty?.displayTime || 2) * 1000 / sequence.length);
+        }, (difficultyConfig?.displayTime || 2) * 1000 / sequence.length);
       }
     }
 
@@ -71,7 +71,7 @@ export const ColorMemoryGame = observer(({ level }: ColorMemoryGameProps): React
         clearTimeout(timerRef.current);
       }
     };
-  }, [gameState, displayIndex, gameData]);
+  }, [gameState, displayIndex, gameData, difficultyConfig]);
 
   const handleColorClick = (color: string): void => {
     setSelectedColors([...selectedColors, color]);
@@ -85,25 +85,47 @@ export const ColorMemoryGame = observer(({ level }: ColorMemoryGameProps): React
 
     const answer = { sequence: selectedColors };
     const timeSpent = Date.now() - startTime;
-    memoryTrainingStore.submitAnswer(answer, timeSpent);
+    const correct = JSON.stringify(selectedColors) === JSON.stringify(gameData?.sequence || []);
+    const correctRate = correct ? 1 : 0;
+    const score = correct ? 100 : 0;
+    const expEarned = correct ? 10 : 0;
+    
+    setGameResult({
+      correct,
+      correctRate,
+      score,
+      timeSpent,
+      expEarned,
+    });
+    setGameState('result');
   };
 
   const handleNextRound = async (): Promise<void> => {
-    if (gameResult) {
-      await memoryTrainingStore.submitResult();
+    if (gameResult && level.level_id) {
+      await memoryTrainingGameStore.submitResult(level.level_id, {
+        correct: gameResult.correct,
+        correctRate: gameResult.correctRate,
+        score: gameResult.score,
+        timeSpent: gameResult.timeSpent,
+        userAnswer: { sequence: selectedColors },
+      });
     }
-    memoryTrainingStore.nextRound();
     setSelectedColors([]);
     setDisplayIndex(0);
+    setGameState('ready');
+    setGameData(null);
+    setGameResult(null);
   };
 
   const handleRestart = (): void => {
-    memoryTrainingStore.resetGame();
     setSelectedColors([]);
     setDisplayIndex(0);
+    setGameState('ready');
+    setGameData(null);
+    setGameResult(null);
   };
 
-  if (gameState === GameState.Ready) {
+  if (gameState === 'ready') {
     return (
       <Card className="game-content-card">
         <div className="game-ready">
@@ -116,7 +138,7 @@ export const ColorMemoryGame = observer(({ level }: ColorMemoryGameProps): React
     );
   }
 
-  if (gameState === GameState.Memorizing && gameData?.sequence) {
+  if (gameState === 'memorizing' && gameData?.sequence) {
     const currentColor = gameData.sequence[displayIndex];
     const colorInfo = COLOR_MAP[currentColor] || COLOR_MAP.red;
 
@@ -140,7 +162,7 @@ export const ColorMemoryGame = observer(({ level }: ColorMemoryGameProps): React
     );
   }
 
-  if (gameState === GameState.Recalling) {
+  if (gameState === 'recalling') {
     const availableColors = Object.keys(COLOR_MAP);
 
     return (
@@ -203,10 +225,10 @@ export const ColorMemoryGame = observer(({ level }: ColorMemoryGameProps): React
     );
   }
 
-  if (gameState === GameState.Result && gameResult) {
+  if (gameState === 'result' && gameResult) {
     const isCorrect = gameResult.correct;
     const expectedSequence = gameData?.sequence || [];
-    const actualSequence = memoryTrainingStore.userAnswer?.sequence || [];
+    const actualSequence = selectedColors;
 
     return (
       <Card className="game-content-card">
@@ -280,7 +302,7 @@ export const ColorMemoryGame = observer(({ level }: ColorMemoryGameProps): React
               type="primary"
               size="large"
               onClick={handleNextRound}
-              loading={memoryTrainingStore.loading}
+              loading={memoryTrainingGameStore.loading}
             >
               下一轮
             </Button>

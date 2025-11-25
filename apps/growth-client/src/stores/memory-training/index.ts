@@ -456,14 +456,7 @@ export class MemoryTrainingStore {
         {
           expType: 'memory_training',
           sourceType: 'game',
-          notes: `记忆训练 - ${MemoryGameType[this.currentGameType || MemoryGameType.NumberSequence]} - 等级${this.currentLevel}`,
-          metadata: {
-            gameType: this.currentGameType,
-            level: this.currentLevel,
-            correctRate: this.gameResult.correctRate,
-            score: this.gameResult.score,
-            timeSpent: this.gameResult.timeSpent,
-          },
+          notes: `记忆训练 - ${this.currentGameType || MemoryGameType.NumberSequence} - 等级${this.currentLevel}`,
         }
       );
 

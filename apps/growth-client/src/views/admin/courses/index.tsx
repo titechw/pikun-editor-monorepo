@@ -188,7 +188,7 @@ export const Courses = observer((): React.JSX.Element => {
       title: '操作',
       key: 'action',
       width: 150,
-      fixed: 'right',
+      fixed: 'right' as const,
       render: (_: any, record: CourseListItem) => (
         <Space size="middle">
           <Button

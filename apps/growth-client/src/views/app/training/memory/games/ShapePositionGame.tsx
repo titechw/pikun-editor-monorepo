@@ -15,7 +15,7 @@ interface ShapePositionGameProps {
 /**
  * 图形位置记忆游戏
  */
-export const ShapePositionGame = observer(({ level }: ShapePositionGameProps): React.JSX.Element => {
+export const ShapePositionGame = observer(({ level }: ShapePositionGameProps): React.JSX.Element | null => {
   const [gameState, setGameState] = useState<'ready' | 'memorizing' | 'recalling' | 'result'>('ready');
   const [gameData, setGameData] = useState<{ positions: number[]; gridSize: number } | null>(null);
   const [userAnswer, setUserAnswer] = useState<{ positions: number[] } | null>(null);
@@ -32,18 +32,18 @@ export const ShapePositionGame = observer(({ level }: ShapePositionGameProps): R
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    if (gameState === GameState.Ready) {
+    if (gameState === 'ready') {
       const timer = setTimeout(() => {
-        memoryTrainingStore.startMemorizing();
+        setGameState('memorizing');
       }, 1000);
       return () => clearTimeout(timer);
     }
 
-    if (gameState === GameState.Memorizing && gameData?.positions) {
+    if (gameState === 'memorizing' && gameData?.positions) {
       timerRef.current = setTimeout(() => {
-        memoryTrainingStore.startRecalling();
+        setGameState('recalling');
         setStartTime(Date.now());
-      }, (currentDifficulty?.displayTime || 3) * 1000);
+      }, (difficultyConfig?.displayTime || 3) * 1000);
     }
 
     return () => {
@@ -51,7 +51,7 @@ export const ShapePositionGame = observer(({ level }: ShapePositionGameProps): R
         clearTimeout(timerRef.current);
       }
     };
-  }, [gameState, gameData]);
+  }, [gameState, gameData, difficultyConfig]);
 
   const gridSize = gameData?.gridSize || 3;
   const totalCells = gridSize * gridSize;
@@ -71,25 +71,48 @@ export const ShapePositionGame = observer(({ level }: ShapePositionGameProps): R
       return;
     }
 
-    const answer = { positions: selectedPositions };
+    const expectedPositions = (gameData?.positions || []).sort((a, b) => a - b);
+    const actualPositions = [...selectedPositions].sort((a, b) => a - b);
+    const correct = JSON.stringify(expectedPositions) === JSON.stringify(actualPositions);
+    const correctRate = correct ? 1 : 0;
+    const score = correct ? 100 : 0;
+    const expEarned = correct ? 10 : 0;
     const timeSpent = Date.now() - startTime;
-    memoryTrainingStore.submitAnswer(answer, timeSpent);
+    
+    setGameResult({
+      correct,
+      correctRate,
+      score,
+      timeSpent,
+      expEarned,
+    });
+    setGameState('result');
   };
 
   const handleNextRound = async (): Promise<void> => {
-    if (gameResult) {
-      await memoryTrainingStore.submitResult();
+    if (gameResult && level.level_id) {
+      await memoryTrainingGameStore.submitResult(level.level_id, {
+        correct: gameResult.correct,
+        correctRate: gameResult.correctRate,
+        score: gameResult.score,
+        timeSpent: gameResult.timeSpent,
+        userAnswer: { positions: selectedPositions },
+      });
     }
-    memoryTrainingStore.nextRound();
     setSelectedPositions([]);
+    setGameState('ready');
+    setGameData(null);
+    setGameResult(null);
   };
 
   const handleRestart = (): void => {
-    memoryTrainingStore.resetGame();
     setSelectedPositions([]);
+    setGameState('ready');
+    setGameData(null);
+    setGameResult(null);
   };
 
-  if (gameState === GameState.Ready) {
+  if (gameState === 'ready') {
     return (
       <Card className="game-content-card">
         <div className="game-ready">
@@ -102,7 +125,7 @@ export const ShapePositionGame = observer(({ level }: ShapePositionGameProps): R
     );
   }
 
-  if (gameState === GameState.Memorizing) {
+  if (gameState === 'memorizing') {
     return (
       <Card className="game-content-card">
         <div className="game-memorizing">
@@ -132,7 +155,7 @@ export const ShapePositionGame = observer(({ level }: ShapePositionGameProps): R
     );
   }
 
-  if (gameState === GameState.Recalling) {
+  if (gameState === 'recalling') {
     return (
       <Card className="game-content-card">
         <div className="game-recalling">
@@ -177,10 +200,10 @@ export const ShapePositionGame = observer(({ level }: ShapePositionGameProps): R
     );
   }
 
-  if (gameState === GameState.Result && gameResult) {
+  if (gameState === 'result' && gameResult) {
     const isCorrect = gameResult.correct;
-    const expectedPositions = (gameData?.positions || []).sort((a, b) => a - b);
-    const actualPositions = (memoryTrainingStore.userAnswer?.positions || []).sort((a, b) => a - b);
+    const expectedPositions = (gameData?.positions || []).sort((a: number, b: number) => a - b);
+    const actualPositions = [...selectedPositions].sort((a: number, b: number) => a - b);
 
     return (
       <Card className="game-content-card">
@@ -216,7 +239,7 @@ export const ShapePositionGame = observer(({ level }: ShapePositionGameProps): R
               type="primary"
               size="large"
               onClick={handleNextRound}
-              loading={memoryTrainingStore.loading}
+              loading={memoryTrainingGameStore.loading}
             >
               下一轮
             </Button>
