@@ -15,3 +15,6 @@ CREATE INDEX IF NOT EXISTS idx_courses_primary_item_id ON pikun_db.courses(prima
 CREATE INDEX IF NOT EXISTS idx_courses_secret_id ON pikun_db.courses(secret_id);
 
 
+
+
+

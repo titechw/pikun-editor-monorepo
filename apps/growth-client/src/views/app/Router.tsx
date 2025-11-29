@@ -12,58 +12,56 @@ import { Dashboard } from '@/views/app/dashboard';
 import { Training } from '@/views/app/training';
 import { Knowledge } from '@/views/app/knowledge';
 import { MemoryTraining } from '@/views/app/training/memory';
+import { LearningWorkspace } from '@/views/app/learning/LearningWorkspace';
 
 /**
  * 受保护的路由组件
  */
-const ProtectedRoute: React.FC<{ children: React.ReactNode }> = observer(
-  ({ children }) => {
-    if (authStore.loading) {
-      return (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-          <Spin size="large" />
-        </div>
-      );
-    }
-
-    if (!authStore.isAuthenticated) {
-      return <Navigate to="/login" replace />;
-    }
-
-    return <>{children}</>;
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = observer(({ children }) => {
+  if (authStore.loading) {
+    return (
+      <div
+        style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}
+      >
+        <Spin size="large" />
+      </div>
+    );
   }
-);
+
+  if (!authStore.isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>;
+});
 
 /**
  * 公共路由组件（已登录用户重定向到仪表盘）
  */
-const PublicRoute: React.FC<{ children: React.ReactNode }> = observer(
-  ({ children }) => {
-    if (authStore.loading) {
-      return (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-          <Spin size="large" />
-        </div>
-      );
-    }
-
-    if (authStore.isAuthenticated) {
-      return <Navigate to="/dashboard" replace />;
-    }
-
-    return <>{children}</>;
+const PublicRoute: React.FC<{ children: React.ReactNode }> = observer(({ children }) => {
+  if (authStore.loading) {
+    return (
+      <div
+        style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}
+      >
+        <Spin size="large" />
+      </div>
+    );
   }
-);
 
+  if (authStore.isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <>{children}</>;
+});
 
 /**
  * 应用路由配置
  */
 export const AppRouter = observer((): React.JSX.Element => {
   const algorithm =
-    themeStore.mode === ThemeMode.Dark
-      ? theme.darkAlgorithm
-      : theme.defaultAlgorithm;
+    themeStore.mode === ThemeMode.Dark ? theme.darkAlgorithm : theme.defaultAlgorithm;
 
   return (
     <ConfigProvider
@@ -133,10 +131,19 @@ export const AppRouter = observer((): React.JSX.Element => {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/learning/:pointId"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <LearningWorkspace />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </BrowserRouter>
     </ConfigProvider>
   );
 });
-
