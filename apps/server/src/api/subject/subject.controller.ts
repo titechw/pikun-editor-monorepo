@@ -494,5 +494,110 @@ export class SubjectController {
       );
     }
   }
+
+  /**
+   * 创建学科依赖关系
+   */
+  async createDependency(req: NextRequest): Promise<NextResponse> {
+    try {
+      const body = await req.json();
+      const schema = z.object({
+        subject_id: z.string().min(1),
+        prerequisite_subject_id: z.string().min(1),
+        dependency_type: z.enum(['required', 'recommended']),
+      });
+
+      const validatedData = schema.parse(body);
+      const dependency = await this.subjectService.createDependency(validatedData);
+
+      return NextResponse.json({
+        success: true,
+        data: dependency,
+      });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: 'Validation error',
+            errors: error.errors,
+          },
+          { status: 400 }
+        );
+      }
+      return NextResponse.json(
+        {
+          success: false,
+          message: error.message || 'Failed to create dependency',
+        },
+        { status: 400 }
+      );
+    }
+  }
+
+  /**
+   * 删除学科依赖关系
+   */
+  async deleteDependency(req: NextRequest, dependencyId: string): Promise<NextResponse> {
+    try {
+      await this.subjectService.deleteDependency(dependencyId);
+      return NextResponse.json({
+        success: true,
+        message: 'Dependency deleted successfully',
+      });
+    } catch (error: any) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: error.message || 'Failed to delete dependency',
+        },
+        { status: 400 }
+      );
+    }
+  }
+
+  /**
+   * 获取学科的依赖关系
+   */
+  async getSubjectDependencies(req: NextRequest, subjectId: string): Promise<NextResponse> {
+    try {
+      const dependencies = await this.subjectService.getSubjectDependencies(subjectId);
+      return NextResponse.json({
+        success: true,
+        data: dependencies,
+      });
+    } catch (error: any) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: error.message || 'Failed to get dependencies',
+        },
+        { status: 500 }
+      );
+    }
+  }
+
+  /**
+   * 获取知识地图数据
+   */
+  async getKnowledgeMap(req: NextRequest): Promise<NextResponse> {
+    try {
+      const { searchParams } = new URL(req.url);
+      const categoryId = searchParams.get('category_id') || undefined;
+      const mapData = await this.subjectService.getKnowledgeMap(categoryId || null);
+      return NextResponse.json({
+        success: true,
+        data: mapData,
+      });
+    } catch (error: any) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: error.message || 'Failed to get knowledge map',
+        },
+        { status: 500 }
+      );
+    }
+  }
 }
 

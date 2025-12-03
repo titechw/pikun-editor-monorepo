@@ -13,6 +13,7 @@ import { Training } from '@/views/app/training';
 import { Knowledge } from '@/views/app/knowledge';
 import { MemoryTraining } from '@/views/app/training/memory';
 import { LearningWorkspace } from '@/views/app/learning/LearningWorkspace';
+import { KnowledgeGraphDemo } from '@/views/demo/knowledge-graph';
 
 /**
  * 受保护的路由组件
@@ -137,6 +138,16 @@ export const AppRouter = observer((): React.JSX.Element => {
               <ProtectedRoute>
                 <AppLayout>
                   <LearningWorkspace />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/demo/knowledge-graph"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <KnowledgeGraphDemo />
                 </AppLayout>
               </ProtectedRoute>
             }

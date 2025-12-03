@@ -12,6 +12,7 @@ import { UserAbilityLevelDAO } from '@/dao/user-ability-level.dao';
 import { UserAbilityExperienceLogDAO } from '@/dao/user-ability-experience-log.dao';
 import { SubjectCategoryDAO } from '@/dao/subject-category.dao';
 import { SubjectDAO } from '@/dao/subject.dao';
+import { SubjectDependencyDAO } from '@/dao/subject-dependency.dao';
 import { AuthService } from '@/services/auth.service';
 import { DocumentService } from '@/services/document.service';
 import { SnapshotService } from '@/services/snapshot.service';
@@ -55,6 +56,7 @@ export function initializeContainer() {
   Container.register('UserAbilityExperienceLogDAO', () => new UserAbilityExperienceLogDAO());
   Container.register('SubjectCategoryDAO', () => new SubjectCategoryDAO());
   Container.register('SubjectDAO', () => new SubjectDAO());
+  Container.register('SubjectDependencyDAO', () => new SubjectDependencyDAO());
   Container.register('MemoryTrainingGameDAO', () => new MemoryTrainingGameDAO());
   Container.register('MemoryTrainingLevelDAO', () => new MemoryTrainingLevelDAO());
   Container.register('UserMemoryLevelProgressDAO', () => new UserMemoryLevelProgressDAO());
@@ -148,7 +150,8 @@ export function initializeContainer() {
   Container.register(SubjectService, () => {
     const categoryDAO = Container.resolve<SubjectCategoryDAO>('SubjectCategoryDAO');
     const subjectDAO = Container.resolve<SubjectDAO>('SubjectDAO');
-    return new SubjectService(categoryDAO, subjectDAO);
+    const dependencyDAO = Container.resolve<SubjectDependencyDAO>('SubjectDependencyDAO');
+    return new SubjectService(categoryDAO, subjectDAO, dependencyDAO);
   });
 
   // 注册学科 Controller

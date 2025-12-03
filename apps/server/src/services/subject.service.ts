@@ -1,6 +1,7 @@
 import { injectable, inject } from 'tsyringe';
 import { SubjectCategoryDAO } from '@/dao/subject-category.dao';
 import { SubjectDAO } from '@/dao/subject.dao';
+import { SubjectDependencyDAO, type SubjectDependency } from '@/dao/subject-dependency.dao';
 import type { SubjectCategory, Subject, SubjectDetail } from '@/entities';
 
 /**
@@ -10,7 +11,8 @@ import type { SubjectCategory, Subject, SubjectDetail } from '@/entities';
 export class SubjectService {
   constructor(
     @inject('SubjectCategoryDAO') private categoryDAO: SubjectCategoryDAO,
-    @inject('SubjectDAO') private subjectDAO: SubjectDAO
+    @inject('SubjectDAO') private subjectDAO: SubjectDAO,
+    @inject('SubjectDependencyDAO') private dependencyDAO: SubjectDependencyDAO
   ) {}
 
   /**
@@ -182,6 +184,130 @@ export class SubjectService {
     metadata?: Record<string, any>;
   }): Promise<SubjectDetail> {
     return this.subjectDAO.upsertDetail(data);
+  }
+
+  /**
+   * 创建学科依赖关系
+   */
+  async createDependency(data: {
+    subject_id: string;
+    prerequisite_subject_id: string;
+    dependency_type: 'required' | 'recommended';
+  }): Promise<SubjectDependency> {
+    // 检查是否存在循环依赖
+    const hasCircular = await this.dependencyDAO.hasCircularDependency(
+      data.subject_id,
+      data.prerequisite_subject_id
+    );
+    if (hasCircular) {
+      throw new Error('不能创建循环依赖关系');
+    }
+
+    // 检查依赖关系是否已存在
+    const exists = await this.dependencyDAO.exists(
+      data.subject_id,
+      data.prerequisite_subject_id
+    );
+    if (exists) {
+      throw new Error('依赖关系已存在');
+    }
+
+    return this.dependencyDAO.create(data);
+  }
+
+  /**
+   * 删除学科依赖关系
+   */
+  async deleteDependency(dependencyId: string): Promise<void> {
+    return this.dependencyDAO.deleteById(dependencyId);
+  }
+
+  /**
+   * 获取学科的所有依赖关系
+   */
+  async getSubjectDependencies(subjectId: string): Promise<SubjectDependency[]> {
+    return this.dependencyDAO.findBySubjectId(subjectId);
+  }
+
+  /**
+   * 获取知识地图数据
+   */
+  async getKnowledgeMap(categoryId?: string | null): Promise<{
+    nodes: Array<{
+      id: string;
+      subject_id: string;
+      name: string;
+      code: string;
+      category_id: string;
+      category_name?: string;
+      level: number;
+    }>;
+    edges: Array<{
+      id: string;
+      source: string;
+      target: string;
+      dependency_type: 'required' | 'recommended';
+    }>;
+  }> {
+    // 获取所有学科
+    const subjects = categoryId
+      ? (await this.getSubjectsByCategoryId(categoryId, { current: 1, pageSize: 10000 })).subjects
+      : await this.getSubjects();
+
+    // 获取所有依赖关系
+    const allDependencies = await this.dependencyDAO.findAll();
+
+    // 构建节点映射
+    const subjectMap = new Map(subjects.map(s => [s.subject_id, s]));
+
+    // 获取分类信息
+    const categories = await this.getCategories();
+    const categoryMap = new Map(categories.map(c => [c.category_id, c]));
+
+    // 计算每个学科的层级（基于依赖关系）
+    const calculateLevel = (subjectId: string, visited: Set<string> = new Set()): number => {
+      if (visited.has(subjectId)) {
+        return 0; // 避免循环依赖
+      }
+      visited.add(subjectId);
+
+      const prerequisites = allDependencies.filter(d => d.subject_id === subjectId);
+      if (prerequisites.length === 0) {
+        return 0;
+      }
+
+      const maxPrerequisiteLevel = Math.max(
+        ...prerequisites.map(d => calculateLevel(d.prerequisite_subject_id, new Set(visited)))
+      );
+      return maxPrerequisiteLevel + 1;
+    };
+
+    // 构建节点
+    const nodes = subjects.map(subject => {
+      const category = categoryMap.get(subject.category_id);
+      return {
+        id: subject.subject_id,
+        subject_id: subject.subject_id,
+        name: subject.name,
+        code: subject.code,
+        category_id: subject.category_id,
+        category_name: category?.name,
+        level: calculateLevel(subject.subject_id),
+      };
+    });
+
+    // 构建边（只包含在节点列表中的学科）
+    const subjectIds = new Set(subjects.map(s => s.subject_id));
+    const edges = allDependencies
+      .filter(d => subjectIds.has(d.subject_id) && subjectIds.has(d.prerequisite_subject_id))
+      .map(d => ({
+        id: d.dependency_id,
+        source: d.prerequisite_subject_id,
+        target: d.subject_id,
+        dependency_type: d.dependency_type,
+      }));
+
+    return { nodes, edges };
   }
 }
 

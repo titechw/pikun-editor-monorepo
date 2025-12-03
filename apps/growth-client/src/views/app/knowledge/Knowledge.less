@@ -1,167 +1,147 @@
-.knowledge {
-  min-height: calc(100vh - 64px);
+.knowledge-page {
   padding: 24px;
-  background: transparent;
-
-  // 全局覆盖 Typography 组件颜色
-  .ant-typography {
-    color: #fff !important;
-
-    &.ant-typography-h1,
-    &.ant-typography-h2,
-    &.ant-typography-h3,
-    &.ant-typography-h4,
-    &.ant-typography-h5 {
-      color: #fff !important;
-    }
-  }
-
-  .knowledge-container {
-    max-width: 1400px;
-    margin: 0 auto;
-  }
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--ant-color-bg-layout);
 
   .knowledge-header {
-    margin-bottom: 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--ant-color-border);
 
-    .back-button {
-      color: rgba(255, 255, 255, 0.8);
-      margin-bottom: 16px;
-      padding: 0;
+    .header-left {
+      flex: 1;
 
-      &:hover {
-        color: #fff;
-        background: rgba(255, 255, 255, 0.1);
+      .ant-typography {
+        margin-bottom: 8px;
       }
     }
 
-    .header-content {
-      .page-title {
-        color: #fff !important;
-        margin-bottom: 8px !important;
-        font-weight: 600;
-      }
-
-      .page-subtitle {
-        color: rgba(255, 255, 255, 0.7);
-        font-size: 16px;
-      }
+    .header-right {
+      display: flex;
+      align-items: center;
     }
   }
 
-  .knowledge-grid {
-    margin-bottom: 24px;
+  .knowledge-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
 
-    .knowledge-card {
-      background: rgba(15, 12, 41, 0.6) !important;
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.1) !important;
-      border-radius: 16px !important;
-      transition: all 0.3s ease;
-      height: 100%;
+    .loading-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 600px;
+    }
 
-      &:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 12px 32px rgba(102, 126, 234, 0.4);
-        border-color: rgba(102, 126, 234, 0.6) !important;
+    .empty-container {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 600px;
+      background: var(--ant-color-bg-container);
+      border-radius: 8px;
+    }
+
+    .knowledge-map-wrapper {
+      flex: 1;
+      min-height: 600px;
+      height: calc(100vh - 200px);
+      background: var(--ant-color-bg-container);
+      border-radius: 8px;
+      border: 1px solid var(--ant-color-border);
+      overflow: hidden;
+      position: relative;
+    }
+  }
+
+  .node-info-panel {
+    position: fixed;
+    right: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 320px;
+    max-height: 80vh;
+    background: var(--ant-color-bg-container);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px;
+      border-bottom: 1px solid var(--ant-color-border);
+
+      .ant-typography {
+        margin: 0;
+      }
+    }
+
+    .panel-content {
+      padding: 16px;
+      overflow-y: auto;
+      flex: 1;
+
+      .info-item {
+        margin-bottom: 12px;
+
+        .ant-typography {
+          margin-left: 8px;
+        }
       }
 
-      .knowledge-card-content {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
+      .info-section {
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid var(--ant-color-border);
 
-        .knowledge-icon-wrapper {
-          display: flex;
-          justify-content: center;
-          margin-bottom: 8px;
-
-          .knowledge-icon {
-            width: 80px;
-            height: 80px;
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 48px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-          }
-        }
-
-        .knowledge-name {
-          color: #fff !important;
-          text-align: center;
-          margin: 0 !important;
-          font-weight: 600;
-
-          .ant-typography {
-            color: #fff !important;
-          }
-        }
-
-        .knowledge-description {
-          color: rgba(255, 255, 255, 0.7);
-          text-align: center;
-          line-height: 1.6;
-          min-height: 48px;
-        }
-
-        .subject-tags {
+        .dependencies-list {
+          margin-top: 8px;
           display: flex;
           flex-wrap: wrap;
-          gap: 6px;
-          justify-content: center;
-          padding: 12px;
-          background: rgba(0, 0, 0, 0.2);
-          border-radius: 8px;
-
-          .subject-tag {
-            background: rgba(255, 255, 255, 0.1) !important;
-            border: 1px solid rgba(255, 255, 255, 0.2) !important;
-            color: rgba(255, 255, 255, 0.9) !important;
-            border-radius: 6px;
-            font-size: 11px;
-            padding: 2px 8px;
-            margin: 0;
-          }
+          gap: 8px;
         }
-
-        .start-learning-button {
-          height: 40px;
-          font-weight: 600;
-          border-radius: 8px;
-          margin-top: auto;
-        }
-      }
-    }
-  }
-
-  .knowledge-tips-card {
-    background: rgba(15, 12, 41, 0.6) !important;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-radius: 16px !important;
-
-    .ant-card-body {
-      color: #fff;
-    }
-
-    .tips-title {
-      color: #fff !important;
-      margin-bottom: 16px !important;
-      font-weight: 600;
-    }
-
-    .tips-list {
-      margin: 0;
-      padding-left: 20px;
-      color: rgba(255, 255, 255, 0.8);
-      line-height: 2;
-
-      li {
-        margin-bottom: 8px;
       }
     }
   }
 }
 
+// 响应式设计
+@media (max-width: 768px) {
+  .knowledge-page {
+    padding: 16px;
+
+    .knowledge-header {
+      flex-direction: column;
+      gap: 16px;
+
+      .header-right {
+        width: 100%;
+        justify-content: flex-start;
+      }
+    }
+
+    .node-info-panel {
+      position: fixed;
+      right: 0;
+      left: 0;
+      top: auto;
+      bottom: 0;
+      transform: none;
+      width: 100%;
+      max-height: 50vh;
+      border-radius: 8px 8px 0 0;
+    }
+  }
+}

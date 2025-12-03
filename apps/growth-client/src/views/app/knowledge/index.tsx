@@ -1,178 +1,337 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
-import { Card, Row, Col, Spin, Typography, Button, Tag, Empty } from 'antd';
-import {
-  BookOutlined,
-  ExperimentOutlined,
-  ArrowLeftOutlined,
-  RocketOutlined,
-} from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
-import { authStore } from '@/stores/auth';
+import { Spin, Typography, Select, Button, Modal, Form, Radio, message, Space, Tag } from 'antd';
+import { BookOutlined, PlusOutlined, DeleteOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import { knowledgeMapStore } from '@/stores/knowledge-map';
+import { KnowledgeMap } from '@/components/KnowledgeMap';
+import type { KnowledgeMapNode, KnowledgeMapEdge } from '@/api/subject.api';
 import './Knowledge.less';
 
+// Connection类型定义（临时方案，等reactflow安装后可以删除）
+interface Connection {
+  source: string | null;
+  target: string | null;
+  sourceHandle?: string | null;
+  targetHandle?: string | null;
+}
+
 const { Title, Text } = Typography;
+const { Option } = Select;
 
 /**
  * 技能知识页面
- * 展示各种知识学习入口
+ * 展示知识地图和学习路径
  */
 export const Knowledge = observer((): React.JSX.Element => {
-  const navigate = useNavigate();
+  const [form] = Form.useForm();
+  const [addDependencyModalVisible, setAddDependencyModalVisible] = useState(false);
+  const [selectedNode, setSelectedNode] = useState<KnowledgeMapNode | null>(null);
+  const [selectedEdge, setSelectedEdge] = useState<KnowledgeMapEdge | null>(null);
+  const [categoryId, setCategoryId] = useState<string | null>(null);
 
-  // 知识分类（示例数据，后续可以从后端获取）
-  const knowledgeCategories = [
-    {
-      id: 'math',
-      name: '数学',
-      icon: '🔢',
-      description: '学习数学基础知识，提升逻辑思维和计算能力',
-      color: '#667eea',
-      subjects: ['代数', '几何', '微积分', '概率统计'],
-    },
-    {
-      id: 'music',
-      name: '音乐',
-      icon: '🎵',
-      description: '学习音乐理论，培养音乐素养和艺术感知',
-      color: '#f093fb',
-      subjects: ['乐理', '和声', '作曲', '音乐史'],
-    },
-    {
-      id: 'chemistry',
-      name: '化学',
-      icon: '⚗️',
-      description: '探索化学世界，理解物质变化和反应原理',
-      color: '#4facfe',
-      subjects: ['有机化学', '无机化学', '物理化学', '分析化学'],
-    },
-    {
-      id: 'physics',
-      name: '物理',
-      icon: '⚛️',
-      description: '学习物理规律，理解自然现象和科学原理',
-      color: '#43e97b',
-      subjects: ['力学', '电磁学', '热力学', '量子物理'],
-    },
-    {
-      id: 'biology',
-      name: '生物',
-      icon: '🧬',
-      description: '了解生命科学，探索生物多样性和生命机制',
-      color: '#fa709a',
-      subjects: ['细胞生物学', '遗传学', '生态学', '进化论'],
-    },
-    {
-      id: 'literature',
-      name: '文学',
-      icon: '📚',
-      description: '阅读经典文学，提升语言表达和人文素养',
-      color: '#fee140',
-      subjects: ['古典文学', '现代文学', '诗歌', '小说'],
-    },
-  ];
+  useEffect(() => {
+    // 加载分类列表
+    knowledgeMapStore.loadCategories();
+  }, []);
 
-  const handleStartLearning = (categoryId: string): void => {
-    // TODO: 跳转到具体的知识学习页面
-    console.log('开始学习:', categoryId);
+  useEffect(() => {
+    // 加载知识地图数据
+    knowledgeMapStore.loadKnowledgeMap(categoryId);
+    // 加载学科列表（用于添加依赖关系）
+    knowledgeMapStore.loadSubjects(categoryId);
+  }, [categoryId]);
+
+  // 处理节点点击
+  const handleNodeClick = useCallback((node: KnowledgeMapNode) => {
+    setSelectedNode(node);
+    // 可以在这里显示节点详情或跳转到学科详情页
+  }, []);
+
+  // 处理边点击
+  const handleEdgeClick = useCallback((edge: KnowledgeMapEdge) => {
+    setSelectedEdge(edge);
+  }, []);
+
+  // 处理连接（创建新的依赖关系）
+  const handleConnect = useCallback(
+    async (connection: Connection) => {
+      if (!connection.source || !connection.target) {
+        return;
+      }
+
+      // 找到对应的学科ID
+      const sourceNode = knowledgeMapStore.nodes.find(
+        (n) => (n.id || n.subject_id) === connection.source,
+      );
+      const targetNode = knowledgeMapStore.nodes.find(
+        (n) => (n.id || n.subject_id) === connection.target,
+      );
+
+      if (!sourceNode || !targetNode) {
+        message.error('无法找到对应的学科');
+        return;
+      }
+
+      // 打开添加依赖关系的弹窗
+      form.setFieldsValue({
+        subject_id: targetNode.subject_id,
+        prerequisite_subject_id: sourceNode.subject_id,
+        dependency_type: 'required',
+      });
+      setAddDependencyModalVisible(true);
+    },
+    [form],
+  );
+
+  // 提交添加依赖关系
+  const handleAddDependency = async () => {
+    try {
+      const values = await form.validateFields();
+      await knowledgeMapStore.addDependency(
+        values.subject_id,
+        values.prerequisite_subject_id,
+        values.dependency_type,
+      );
+      setAddDependencyModalVisible(false);
+      form.resetFields();
+    } catch (error) {
+      // 表单验证失败或API调用失败
+      if (error && typeof error === 'object' && 'errorFields' in error) {
+        // 表单验证错误，不需要额外处理
+        return;
+      }
+    }
+  };
+
+  // 删除依赖关系
+  const handleDeleteDependency = async () => {
+    if (!selectedEdge) {
+      return;
+    }
+
+    Modal.confirm({
+      title: '确认删除',
+      content: '确定要删除这个依赖关系吗？',
+      onOk: async () => {
+        try {
+          await knowledgeMapStore.removeDependency(selectedEdge.id);
+          setSelectedEdge(null);
+        } catch (error) {
+          // 错误已在store中处理
+        }
+      },
+    });
+  };
+
+  // 获取学科选项
+  const getSubjectOptions = () => {
+    return knowledgeMapStore.subjects.map((subject) => (
+      <Option key={subject.subject_id} value={subject.subject_id}>
+        {subject.name} ({subject.code})
+      </Option>
+    ));
   };
 
   return (
-    <div className="knowledge">
-      <div className="knowledge-container">
-        {/* 页面头部 */}
-        <div className="knowledge-header">
-          <Button
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate('/dashboard')}
-            className="back-button"
-          >
-            返回
-          </Button>
-          <div className="header-content">
-            <Title level={2} className="page-title">
-              技能知识库
-            </Title>
-            <Text className="page-subtitle">
-              学习人类知识，全面提升技能水平，每完成一个知识点都会获得经验值
+    <div className="knowledge-page">
+      <div className="knowledge-header">
+        <div className="header-left">
+          <Title level={2}>
+            <BookOutlined /> 知识地图
+          </Title>
+          <Text type="secondary">探索学科之间的学习路径和依赖关系</Text>
+        </div>
+        <div className="header-right">
+          <Space>
+            <Select
+              placeholder="选择分类筛选"
+              allowClear
+              showSearch
+              style={{ width: 200 }}
+              value={categoryId}
+              onChange={setCategoryId}
+              filterOption={(input: string, option: any) => {
+                const label =
+                  typeof option?.label === 'string' ? option.label : String(option?.label || '');
+                return label.toLowerCase().includes(input.toLowerCase());
+              }}
+            >
+              {knowledgeMapStore.categories.map((category) => (
+                <Option
+                  key={category.category_id}
+                  value={category.category_id}
+                  label={category.name}
+                >
+                  {category.name} ({category.code})
+                </Option>
+              ))}
+            </Select>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => setAddDependencyModalVisible(true)}
+            >
+              添加依赖关系
+            </Button>
+          </Space>
+        </div>
+      </div>
+
+      <div className="knowledge-content">
+        {knowledgeMapStore.loading ? (
+          <div className="loading-container">
+            <Spin size="large" />
+          </div>
+        ) : knowledgeMapStore.nodes.length === 0 ? (
+          <div className="empty-container">
+            <Text type="secondary">暂无知识地图数据</Text>
+            <br />
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              请先在管理端创建学科和依赖关系
             </Text>
           </div>
-        </div>
-
-        {/* 知识分类列表 */}
-        <Row gutter={[24, 24]} className="knowledge-grid">
-          {knowledgeCategories.map((category) => (
-            <Col xs={24} sm={12} lg={8} key={category.id}>
-              <Card className="knowledge-card" hoverable>
-                <div className="knowledge-card-content">
-                  <div className="knowledge-icon-wrapper">
-                    <div
-                      className="knowledge-icon"
-                      style={{
-                        background: `linear-gradient(135deg, ${category.color} 0%, ${category.color}dd 100%)`,
-                      }}
-                    >
-                      {category.icon}
-                    </div>
-                  </div>
-                  <Title level={4} className="knowledge-name">
-                    {category.name}
-                  </Title>
-                  <Text className="knowledge-description">{category.description}</Text>
-
-                  {/* 学科标签 */}
-                  <div className="subject-tags">
-                    {category.subjects.slice(0, 4).map((subject) => (
-                      <Tag key={subject} className="subject-tag">
-                        {subject}
-                      </Tag>
-                    ))}
-                  </div>
-
-                  {/* 开始学习按钮 */}
-                  <Button
-                    type="primary"
-                    icon={<BookOutlined />}
-                    className="start-learning-button"
-                    onClick={() => handleStartLearning(category.id)}
-                    block
-                    style={{
-                      background: `linear-gradient(135deg, ${category.color} 0%, ${category.color}dd 100%)`,
-                      border: 'none',
-                    }}
-                  >
-                    开始学习
-                  </Button>
-                </div>
-              </Card>
-            </Col>
-          ))}
-        </Row>
-
-        {/* 提示信息 */}
-        <Card className="knowledge-tips-card">
-          <Title level={5} className="tips-title">
-            💡 学习提示
-          </Title>
-          <ul className="tips-list">
-            <li>完成课程学习可以获得经验值，提升相关能力等级</li>
-            <li>建议按照课程顺序系统学习，循序渐进</li>
-            <li>完成练习和考试可以获得额外经验值奖励</li>
-            <li>学习进度会自动保存，可以随时继续学习</li>
-          </ul>
-        </Card>
+        ) : (
+          <div className="knowledge-map-wrapper">
+            <KnowledgeMap
+              nodes={knowledgeMapStore.nodes}
+              edges={knowledgeMapStore.edges}
+              onNodeClick={handleNodeClick}
+              onEdgeClick={handleEdgeClick}
+              onConnect={handleConnect}
+            />
+          </div>
+        )}
       </div>
+
+      {/* 节点信息面板 */}
+      {selectedNode && (
+        <div className="node-info-panel">
+          <div className="panel-header">
+            <Title level={4}>学科信息</Title>
+            <Button type="text" size="small" onClick={() => setSelectedNode(null)}>
+              关闭
+            </Button>
+          </div>
+          <div className="panel-content">
+            <div className="info-item">
+              <Text strong>学科名称：</Text>
+              <Text>{selectedNode.name}</Text>
+            </div>
+            <div className="info-item">
+              <Text strong>学科代码：</Text>
+              <Text>{selectedNode.code}</Text>
+            </div>
+            {selectedNode.category_name && (
+              <div className="info-item">
+                <Text strong>分类：</Text>
+                <Text>{selectedNode.category_name}</Text>
+              </div>
+            )}
+            <div className="info-section">
+              <Text strong>前置学科：</Text>
+              <div className="dependencies-list">
+                {knowledgeMapStore.getPrerequisites(selectedNode.subject_id).length === 0 ? (
+                  <Text type="secondary">无</Text>
+                ) : (
+                  knowledgeMapStore.getPrerequisites(selectedNode.subject_id).map((node) => (
+                    <Tag key={node.subject_id} color="blue">
+                      {node.name}
+                    </Tag>
+                  ))
+                )}
+              </div>
+            </div>
+            <div className="info-section">
+              <Text strong>后续学科：</Text>
+              <div className="dependencies-list">
+                {knowledgeMapStore.getDependents(selectedNode.subject_id).length === 0 ? (
+                  <Text type="secondary">无</Text>
+                ) : (
+                  knowledgeMapStore.getDependents(selectedNode.subject_id).map((node) => (
+                    <Tag key={node.subject_id} color="green">
+                      {node.name}
+                    </Tag>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 添加依赖关系弹窗 */}
+      <Modal
+        title="添加依赖关系"
+        open={addDependencyModalVisible}
+        onOk={handleAddDependency}
+        onCancel={() => {
+          setAddDependencyModalVisible(false);
+          form.resetFields();
+        }}
+        okText="确定"
+        cancelText="取消"
+      >
+        <Form form={form} layout="vertical">
+          <Form.Item
+            name="subject_id"
+            label="当前学科"
+            rules={[{ required: true, message: '请选择当前学科' }]}
+          >
+            <Select placeholder="选择学科" showSearch optionFilterProp="children">
+              {getSubjectOptions()}
+            </Select>
+          </Form.Item>
+          <Form.Item
+            name="prerequisite_subject_id"
+            label="前置学科"
+            rules={[{ required: true, message: '请选择前置学科' }]}
+          >
+            <Select placeholder="选择前置学科" showSearch optionFilterProp="children">
+              {getSubjectOptions()}
+            </Select>
+          </Form.Item>
+          <Form.Item
+            name="dependency_type"
+            label="依赖类型"
+            rules={[{ required: true, message: '请选择依赖类型' }]}
+          >
+            <Radio.Group>
+              <Radio value="required">必需依赖</Radio>
+              <Radio value="recommended">推荐依赖</Radio>
+            </Radio.Group>
+          </Form.Item>
+          <div style={{ marginTop: 16, padding: 12, background: '#f5f5f5', borderRadius: 4 }}>
+            <InfoCircleOutlined style={{ marginRight: 8 }} />
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              必需依赖：必须掌握前置学科才能学习当前学科
+              <br />
+              推荐依赖：建议先学习前置学科，但不是必须的
+            </Text>
+          </div>
+        </Form>
+      </Modal>
+
+      {/* 删除依赖关系确认 */}
+      {selectedEdge && (
+        <Modal
+          title="依赖关系信息"
+          open={!!selectedEdge}
+          onOk={handleDeleteDependency}
+          onCancel={() => setSelectedEdge(null)}
+          okText="删除"
+          cancelText="关闭"
+          okButtonProps={{ danger: true }}
+        >
+          <div>
+            <Text>
+              依赖类型：
+              <Tag color={selectedEdge.dependency_type === 'required' ? 'red' : 'blue'}>
+                {selectedEdge.dependency_type === 'required' ? '必需依赖' : '推荐依赖'}
+              </Tag>
+            </Text>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 });
-
-
-
-
-
-
-
-
-
-

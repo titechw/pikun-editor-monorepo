@@ -13,7 +13,7 @@ import {
   Switch,
   Pagination,
 } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, LinkOutlined } from '@ant-design/icons';
 import {
   subjectListStore,
   SubjectOperationType,
@@ -22,6 +22,7 @@ import {
 import { CustomTree, type TreeNodeData } from '@/components/CustomTree';
 import { SearchInput } from '@/components/SearchInput';
 import { CategoryTreeSelect } from '@/components/CategoryTreeSelect';
+import { SubjectDependencyManager } from '@/components/SubjectDependencyManager';
 import type { SubjectCategoryListItem } from '@/stores/admin-subject-categories';
 import './Subjects.less';
 
@@ -31,6 +32,9 @@ import './Subjects.less';
 export const Subjects = observer((): React.JSX.Element => {
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [editingSubject, setEditingSubject] = useState<SubjectListItem | null>(null);
+  const [dependencyManagerVisible, setDependencyManagerVisible] = useState(false);
+  const [selectedSubjectForDependency, setSelectedSubjectForDependency] =
+    useState<SubjectListItem | null>(null);
   const [form] = Form.useForm();
   const [selectedKeys, setSelectedKeys] = useState<React.Key[]>([]);
   const [searchValue, setSearchValue] = useState(''); // 学科搜索关键词
@@ -44,13 +48,19 @@ export const Subjects = observer((): React.JSX.Element => {
   }, []);
 
   // 处理树节点展开
-  const handleTreeExpand = useCallback((_expandedKeys: React.Key[], _info: { node: TreeNodeData<SubjectCategoryListItem>; expanded: boolean }): void => {
-    // CustomTree 会自动处理懒加载
-  }, []);
+  const handleTreeExpand = useCallback(
+    (
+      _expandedKeys: React.Key[],
+      _info: { node: TreeNodeData<SubjectCategoryListItem>; expanded: boolean },
+    ): void => {
+      // CustomTree 会自动处理懒加载
+    },
+    [],
+  );
 
   // 处理分类树搜索（搜索左侧分类树）
   const [categorySearchValue, setCategorySearchValue] = useState('');
-  
+
   const handleCategorySearch = useCallback((value: string): void => {
     subjectListStore.setCategorySearchKeyword(value);
   }, []);
@@ -74,12 +84,12 @@ export const Subjects = observer((): React.JSX.Element => {
   const handleEdit = async (subject: SubjectListItem): Promise<void> => {
     setEditingSubject(subject);
     form.setFieldsValue(subject);
-    
+
     // 如果有关联的分类，加载完整的分类路径以便正确显示
     if (subject.category_id) {
       await loadCategoryPath(subject.category_id);
     }
-    
+
     setDrawerVisible(true);
   };
 
@@ -127,16 +137,17 @@ export const Subjects = observer((): React.JSX.Element => {
   // 构建树形数据
   const treeData = useMemo((): TreeNodeData<SubjectCategoryListItem>[] => {
     const categories = subjectListStore.filteredCategoryTree || subjectListStore.categoryTree || [];
-    
-    const buildTreeData = (cats: SubjectCategoryListItem[]): TreeNodeData<SubjectCategoryListItem>[] => {
+
+    const buildTreeData = (
+      cats: SubjectCategoryListItem[],
+    ): TreeNodeData<SubjectCategoryListItem>[] => {
       return cats.map((cat) => {
         const hasLoadedChildren = cat.children && cat.children.length > 0;
         const hasChildrenCount = cat.children_count && cat.children_count > 0;
-        const children = hasLoadedChildren && cat.children
-          ? buildTreeData(cat.children) 
-          : undefined;
+        const children =
+          hasLoadedChildren && cat.children ? buildTreeData(cat.children) : undefined;
         const isLeaf = !hasLoadedChildren && !hasChildrenCount;
-        
+
         return {
           key: cat.category_id,
           title: (
@@ -156,7 +167,7 @@ export const Subjects = observer((): React.JSX.Element => {
         };
       });
     };
-    
+
     return buildTreeData(categories);
   }, [subjectListStore.filteredCategoryTree, subjectListStore.categoryTree]);
 
@@ -242,6 +253,17 @@ export const Subjects = observer((): React.JSX.Element => {
                         <Button
                           type="link"
                           size="small"
+                          icon={<LinkOutlined />}
+                          onClick={() => {
+                            setSelectedSubjectForDependency(subject);
+                            setDependencyManagerVisible(true);
+                          }}
+                        >
+                          依赖
+                        </Button>
+                        <Button
+                          type="link"
+                          size="small"
                           icon={<EditOutlined />}
                           onClick={() => handleEdit(subject)}
                         >
@@ -269,7 +291,9 @@ export const Subjects = observer((): React.JSX.Element => {
                         </div>
                         <div className="stat-item">
                           <span className="stat-label">状态:</span>
-                          <span className={`stat-value ${subject.is_published ? 'published' : 'draft'}`}>
+                          <span
+                            className={`stat-value ${subject.is_published ? 'published' : 'draft'}`}
+                          >
                             {subject.is_published ? '已发布' : '草稿'}
                           </span>
                         </div>
@@ -365,6 +389,19 @@ export const Subjects = observer((): React.JSX.Element => {
           </Form.Item>
         </Form>
       </Drawer>
+
+      {/* 依赖关系管理 Modal */}
+      {selectedSubjectForDependency && (
+        <SubjectDependencyManager
+          subjectId={selectedSubjectForDependency.subject_id}
+          subjectName={selectedSubjectForDependency.name}
+          visible={dependencyManagerVisible}
+          onClose={() => {
+            setDependencyManagerVisible(false);
+            setSelectedSubjectForDependency(null);
+          }}
+        />
+      )}
     </div>
   );
 });
