@@ -76,3 +76,4 @@ CROSS JOIN pikun_db.foundational_abilities a
 WHERE a.code IN ('literacy', 'basic_math', 'logical_reasoning', 'reading_comprehension')
 ON CONFLICT (domain_id, ability_id) DO NOTHING;
 
+

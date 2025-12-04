@@ -61,3 +61,4 @@ CREATE TRIGGER update_knowledge_point_dependencies_updated_at
 
 COMMENT ON TABLE pikun_db.knowledge_point_dependencies IS '知识点依赖关系表，记录知识点之间的学习依赖关系';
 
+

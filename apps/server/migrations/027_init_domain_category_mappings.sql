@@ -223,3 +223,4 @@ WHERE code = '630'
     AND deleted_at IS NULL
 ON CONFLICT (domain_id, category_id) DO UPDATE SET sort_order = EXCLUDED.sort_order;
 
+

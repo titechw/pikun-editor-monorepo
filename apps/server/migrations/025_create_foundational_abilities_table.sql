@@ -122,3 +122,4 @@ CREATE TRIGGER update_domain_foundational_ability_requirements_updated_at
 
 COMMENT ON TABLE pikun_db.domain_foundational_ability_requirements IS '学科门类对基础能力的要求表';
 
+
