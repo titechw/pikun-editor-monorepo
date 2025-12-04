@@ -12,3 +12,4 @@ export const POST = withAdminAuth(async (req: NextRequest) => {
   return controller.createDependency(req);
 });
 
+

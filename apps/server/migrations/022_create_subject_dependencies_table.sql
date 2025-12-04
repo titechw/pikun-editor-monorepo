@@ -29,3 +29,4 @@ COMMENT ON COLUMN pikun_db.subject_dependencies.subject_id IS '当前学科ID';
 COMMENT ON COLUMN pikun_db.subject_dependencies.prerequisite_subject_id IS '前置学科ID';
 COMMENT ON COLUMN pikun_db.subject_dependencies.dependency_type IS '依赖类型：required（必需依赖）或 recommended（推荐依赖）';
 
+

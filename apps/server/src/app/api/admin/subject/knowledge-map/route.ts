@@ -12,3 +12,4 @@ export const GET = withAdminAuth(async (req: NextRequest) => {
   return controller.getKnowledgeMap(req);
 });
 
+

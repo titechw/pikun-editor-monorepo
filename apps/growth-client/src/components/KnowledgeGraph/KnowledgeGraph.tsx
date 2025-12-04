@@ -355,8 +355,10 @@ export const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
         onInit={handleInit}
         nodeTypes={nodeTypes}
         defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+        minZoom={0.1}
+        maxZoom={2}
         fitView
-        fitViewOptions={{ padding: 0.2 }}
+        fitViewOptions={{ padding: 0.1, maxZoom: 1 }}
         edgesUpdatable={false}
         edgesFocusable={true}
         nodesDraggable={!readonly}

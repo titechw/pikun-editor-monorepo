@@ -14,3 +14,4 @@ export const DELETE = withAdminAuthAndParams<{ dependency_id: string }>(
   }
 );
 
+
