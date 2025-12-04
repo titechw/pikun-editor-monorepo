@@ -13,6 +13,10 @@ import { UserAbilityExperienceLogDAO } from '@/dao/user-ability-experience-log.d
 import { SubjectCategoryDAO } from '@/dao/subject-category.dao';
 import { SubjectDAO } from '@/dao/subject.dao';
 import { SubjectDependencyDAO } from '@/dao/subject-dependency.dao';
+import { FoundationalAbilityDAO } from '@/dao/foundational-ability.dao';
+import { SubjectDomainDAO } from '@/dao/subject-domain.dao';
+import { KnowledgePointDAO } from '@/dao/knowledge-point.dao';
+import { KnowledgePointDependencyDAO } from '@/dao/knowledge-point-dependency.dao';
 import { AuthService } from '@/services/auth.service';
 import { DocumentService } from '@/services/document.service';
 import { SnapshotService } from '@/services/snapshot.service';
@@ -28,6 +32,9 @@ import { AbilityModelController } from '@/api/ability/ability-model.controller';
 import { AbilityLevelConfigController } from '@/api/ability/ability-level-config.controller';
 import { SubjectService } from '@/services/subject.service';
 import { SubjectController } from '@/api/subject/subject.controller';
+import { FoundationalAbilityService } from '@/services/foundational-ability.service';
+import { SubjectDomainService } from '@/services/subject-domain.service';
+import { KnowledgePointService } from '@/services/knowledge-point.service';
 import { MemoryTrainingGameDAO } from '@/dao/memory-training-game.dao';
 import { MemoryTrainingLevelDAO } from '@/dao/memory-training-level.dao';
 import { UserMemoryLevelProgressDAO } from '@/dao/user-memory-level-progress.dao';
@@ -57,6 +64,10 @@ export function initializeContainer() {
   Container.register('SubjectCategoryDAO', () => new SubjectCategoryDAO());
   Container.register('SubjectDAO', () => new SubjectDAO());
   Container.register('SubjectDependencyDAO', () => new SubjectDependencyDAO());
+  Container.register('FoundationalAbilityDAO', () => new FoundationalAbilityDAO());
+  Container.register('SubjectDomainDAO', () => new SubjectDomainDAO());
+  Container.register('KnowledgePointDAO', () => new KnowledgePointDAO());
+  Container.register('KnowledgePointDependencyDAO', () => new KnowledgePointDependencyDAO());
   Container.register('MemoryTrainingGameDAO', () => new MemoryTrainingGameDAO());
   Container.register('MemoryTrainingLevelDAO', () => new MemoryTrainingLevelDAO());
   Container.register('UserMemoryLevelProgressDAO', () => new UserMemoryLevelProgressDAO());
@@ -154,10 +165,34 @@ export function initializeContainer() {
     return new SubjectService(categoryDAO, subjectDAO, dependencyDAO);
   });
 
+  Container.register(FoundationalAbilityService, () => {
+    const abilityDAO = Container.resolve<FoundationalAbilityDAO>('FoundationalAbilityDAO');
+    return new FoundationalAbilityService(abilityDAO);
+  });
+
+  Container.register(SubjectDomainService, () => {
+    const domainDAO = Container.resolve<SubjectDomainDAO>('SubjectDomainDAO');
+    return new SubjectDomainService(domainDAO);
+  });
+
+  Container.register(KnowledgePointService, () => {
+    const pointDAO = Container.resolve<KnowledgePointDAO>('KnowledgePointDAO');
+    const dependencyDAO = Container.resolve<KnowledgePointDependencyDAO>('KnowledgePointDependencyDAO');
+    return new KnowledgePointService(pointDAO, dependencyDAO);
+  });
+
   // 注册学科 Controller
   Container.register(SubjectController, () => {
     const subjectService = Container.resolve<SubjectService>(SubjectService);
-    return new SubjectController(subjectService);
+    const knowledgePointService = Container.resolve<KnowledgePointService>(KnowledgePointService);
+    const foundationalAbilityService = Container.resolve<FoundationalAbilityService>(FoundationalAbilityService);
+    const subjectDomainService = Container.resolve<SubjectDomainService>(SubjectDomainService);
+    return new SubjectController(
+      subjectService,
+      knowledgePointService,
+      foundationalAbilityService,
+      subjectDomainService
+    );
   });
 
   // 注册记忆训练相关 Service

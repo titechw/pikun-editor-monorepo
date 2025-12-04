@@ -14,6 +14,7 @@ import { Knowledge } from '@/views/app/knowledge';
 import { MemoryTraining } from '@/views/app/training/memory';
 import { LearningWorkspace } from '@/views/app/learning/LearningWorkspace';
 import { KnowledgeGraphDemo } from '@/views/demo/knowledge-graph';
+import { HierarchicalKnowledgeGraphDemo } from '@/views/demo/hierarchical-knowledge-graph';
 
 /**
  * 受保护的路由组件
@@ -148,6 +149,16 @@ export const AppRouter = observer((): React.JSX.Element => {
               <ProtectedRoute>
                 <AppLayout>
                   <KnowledgeGraphDemo />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/demo/hierarchical-knowledge-graph"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <HierarchicalKnowledgeGraphDemo />
                 </AppLayout>
               </ProtectedRoute>
             }

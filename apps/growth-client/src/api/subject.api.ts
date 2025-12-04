@@ -84,6 +84,29 @@ export interface KnowledgeMapData {
 }
 
 /**
+ * 分层知识地图数据（C端）
+ */
+export interface HierarchicalKnowledgeMapData {
+  nodes: Array<{
+    id: string;
+    name: string;
+    code?: string;
+    level: 0 | 1 | 2 | 3;
+    parentId?: string;
+    category?: string;
+    description?: string;
+    difficulty?: 'easy' | 'medium' | 'hard';
+    estimatedTime?: number;
+  }>;
+  edges: Array<{
+    id: string;
+    source: string;
+    target: string;
+    type?: 'required' | 'recommended';
+  }>;
+}
+
+/**
  * C端学科 API（使用 apiClient，自动携带用户 token）
  */
 export const subjectApi = {
@@ -179,6 +202,33 @@ export const knowledgeMapApi = {
       params.category_id = categoryId;
     }
     const response = await apiClient.get<KnowledgeMapData>('/subject/knowledge-map', params);
+    return response.data || { nodes: [], edges: [] };
+  },
+
+  /**
+   * 获取分层知识地图数据（C端，按层级返回）
+   * @param categoryId 分类ID（可选）
+   * @param parentId 父节点ID（可选）
+   * @param level 层级（0=顶级分类, 1=学科, 2=知识点, 3=子知识点）
+   */
+  async getHierarchicalKnowledgeMap(
+    categoryId?: string | null,
+    parentId?: string | null,
+    level: number = 0
+  ): Promise<HierarchicalKnowledgeMapData> {
+    const params: Record<string, string> = {
+      level: level.toString(),
+    };
+    if (categoryId) {
+      params.category_id = categoryId;
+    }
+    if (parentId) {
+      params.parent_id = parentId;
+    }
+    const response = await apiClient.get<KnowledgeMapData>(
+      '/subject/hierarchical-knowledge-map',
+      params
+    );
     return response.data || { nodes: [], edges: [] };
   },
 };

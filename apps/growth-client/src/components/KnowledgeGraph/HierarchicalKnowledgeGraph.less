@@ -1,0 +1,338 @@
+.hierarchical-knowledge-graph-container {
+  width: 100%;
+  height: 100%;
+  min-height: 600px;
+  position: relative;
+  background: transparent;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+
+  // 工具栏样式
+  .graph-toolbar {
+    padding: 12px 16px;
+    background: rgba(15, 12, 41, 0.6);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    z-index: 10;
+
+    .ant-breadcrumb {
+      color: rgba(255, 255, 255, 0.8);
+
+      .ant-breadcrumb-link {
+        color: rgba(255, 255, 255, 0.8);
+
+        &:hover {
+          color: #fff;
+        }
+      }
+    }
+  }
+
+  // 图谱区域
+  .graph-area {
+    flex: 1;
+    width: 100%;
+    min-height: 600px;
+    height: 100%;
+    position: relative;
+    background: transparent;
+    overflow: hidden;
+  }
+
+  .react-flow {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 600px;
+  }
+
+  .react-flow__renderer {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 600px;
+  }
+
+  .react-flow__viewport {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  // ReactFlow 背景点样式（适配深色主题）
+  .react-flow__background {
+    background-color: transparent;
+  }
+
+  // ReactFlow 控制按钮样式（适配深色主题）
+  .react-flow__controls {
+    button {
+      background: rgba(15, 12, 41, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.8);
+
+      &:hover {
+        background: rgba(102, 126, 234, 0.3);
+        color: #fff;
+      }
+    }
+  }
+
+  // ReactFlow MiniMap 样式（适配深色主题）
+  .react-flow__minimap {
+    background: rgba(15, 12, 41, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  // ReactFlow 边样式
+  .react-flow__edge {
+    z-index: 0;
+
+    path {
+      stroke-width: 3 !important;
+      stroke-opacity: 0.9 !important;
+    }
+
+    &.react-flow__edge-selected {
+      z-index: 10;
+      path {
+        stroke-width: 5 !important;
+        stroke-opacity: 1 !important;
+      }
+    }
+  }
+
+  // ReactFlow 边路径样式
+  .react-flow__edge-path {
+    stroke-width: 3 !important;
+    stroke-opacity: 0.9 !important;
+  }
+
+  // 确保节点在边的上方
+  .react-flow__node {
+    z-index: 2;
+  }
+
+  // ReactFlow 边文本样式
+  .react-flow__edge-text {
+    fill: #fff !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+  }
+
+  // ReactFlow 边文本背景样式
+  .react-flow__edge-textbg {
+    fill: rgba(15, 12, 41, 0.9) !important;
+    fill-opacity: 0.9 !important;
+  }
+
+  // ReactFlow Handle 样式（连接点）
+  .react-flow__handle {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(102, 126, 234, 0.8);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: rgba(102, 126, 234, 1);
+      border-color: rgba(255, 255, 255, 0.6);
+      transform: scale(1.2);
+    }
+
+    &.react-flow__handle-left {
+      left: -5px;
+    }
+
+    &.react-flow__handle-right {
+      right: -5px;
+    }
+  }
+
+  // 多层级节点样式
+  .hierarchical-knowledge-node {
+    padding: 12px 16px;
+    background: rgba(15, 12, 41, 0.8);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s ease;
+    cursor: pointer;
+    position: relative;
+    z-index: 1;
+
+    &:hover {
+      border-color: rgba(102, 126, 234, 0.5);
+      box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+      transform: translateY(-2px);
+      background: rgba(48, 43, 99, 0.9);
+    }
+
+    &.highlighted {
+      border-color: rgba(102, 126, 234, 0.8);
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.5);
+    }
+
+    // 不同层级的节点尺寸
+    &.node-level-0 {
+      min-width: 280px;
+      max-width: 320px;
+      width: 320px;
+      padding: 16px 20px;
+
+      .node-name {
+        font-size: 18px;
+        font-weight: 700;
+      }
+    }
+
+    &.node-level-1 {
+      min-width: 240px;
+      max-width: 280px;
+      width: 280px;
+      padding: 14px 18px;
+
+      .node-name {
+        font-size: 16px;
+        font-weight: 600;
+      }
+    }
+
+    &.node-level-2 {
+      min-width: 240px;
+      max-width: 260px;
+      width: 260px;
+      padding: 14px 16px;
+
+      .node-name {
+        font-size: 15px;
+        font-weight: 600;
+      }
+    }
+
+    &.node-level-3 {
+      min-width: 200px;
+      max-width: 240px;
+      width: 240px;
+      padding: 12px 16px;
+
+      .node-name {
+        font-size: 14px;
+        font-weight: 600;
+      }
+    }
+
+    .node-content {
+      width: 100%;
+    }
+
+    .node-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      gap: 8px;
+
+      .node-code {
+        font-size: 10px;
+        color: rgba(255, 255, 255, 0.6);
+        font-weight: 500;
+        font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+        flex-shrink: 0;
+      }
+
+      .ant-badge {
+        flex-shrink: 0;
+
+        .ant-badge-status-text {
+          font-size: 10px;
+          color: rgba(255, 255, 255, 0.8);
+        }
+      }
+    }
+
+    .node-name {
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 8px;
+      word-break: break-word;
+      line-height: 1.4;
+    }
+
+    .node-category {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.6);
+      margin-top: 6px;
+      padding-top: 6px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .node-progress {
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      .ant-progress {
+        flex: 1;
+      }
+
+      .progress-text {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.8);
+        font-weight: 500;
+        min-width: 35px;
+      }
+    }
+
+    .node-mastery {
+      margin-top: 6px;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.8);
+      padding: 4px 8px;
+      background: rgba(82, 196, 26, 0.2);
+      border-radius: 4px;
+      border: 1px solid rgba(82, 196, 26, 0.3);
+    }
+
+    .node-difficulty {
+      margin-top: 6px;
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      display: inline-block;
+      font-weight: 500;
+
+      &.difficulty-easy {
+        background: rgba(82, 196, 26, 0.2);
+        color: #52c41a;
+        border: 1px solid rgba(82, 196, 26, 0.3);
+      }
+
+      &.difficulty-medium {
+        background: rgba(250, 173, 20, 0.2);
+        color: #faad14;
+        border: 1px solid rgba(250, 173, 20, 0.3);
+      }
+
+      &.difficulty-hard {
+        background: rgba(255, 77, 79, 0.2);
+        color: #ff4d4f;
+        border: 1px solid rgba(255, 77, 79, 0.3);
+      }
+    }
+
+    .node-action-buttons {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+  }
+}
+

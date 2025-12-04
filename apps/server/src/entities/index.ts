@@ -525,6 +525,37 @@ export interface SubjectDetail {
 }
 
 /**
+ * 知识点实体
+ */
+export interface KnowledgePoint {
+  point_id: string;
+  subject_id: string;
+  parent_point_id: string | null;
+  code: string;
+  name: string;
+  description: string | null;
+  difficulty: 'easy' | 'medium' | 'hard';
+  estimated_time: number | null;
+  sort_order: number;
+  metadata: Record<string, unknown>;
+  created_at: Date;
+  updated_at: Date;
+  deleted_at: Date | null;
+}
+
+/**
+ * 知识点依赖关系实体
+ */
+export interface KnowledgePointDependency {
+  dependency_id: string;
+  point_id: string;
+  prerequisite_point_id: string;
+  dependency_type: 'required' | 'recommended';
+  created_at: Date;
+  updated_at: Date;
+}
+
+/**
  * 记忆训练游戏实体
  */
 export interface MemoryTrainingGame {
