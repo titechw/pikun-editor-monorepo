@@ -201,9 +201,13 @@ export class KnowledgeController {
       }
 
       // 获取子节点
+      // 返回所有直接子节点（parent_id = nodeId），包括subject和subject_category
       let children = await this.knowledgeNodeService.getChildren(nodeId, {
         node_type: nodeType || undefined,
       });
+
+      // 确保children只包含直接子节点（parent_id = nodeId）
+      children = children.filter((c) => c.parent_id === nodeId);
 
       // 如果父节点是分类，且没有指定 node_type，需要获取该分类下的所有学科（包括子分类下的学科）
       if (parentNode.node_type === 'subject_category' && !nodeType) {
@@ -223,48 +227,149 @@ export class KnowledgeController {
         );
         
         // 合并直接子节点和所有学科
-        children = [...children.filter((c) => c.node_type !== 'subject'), ...subjectsResult.rows];
+        // 注意：这里返回所有子节点，但连线会通过下面的逻辑控制，只连接同一层级
+        children = [
+          ...children.filter((c) => c.node_type !== 'subject' && c.parent_id === nodeId),
+          ...subjectsResult.rows.filter((s) => s.parent_id === nodeId || categoryIds.includes(s.parent_id || '')),
+        ];
       }
 
-      // 获取依赖关系（从父节点到子节点的层级关系）
+      // 获取依赖关系
+      // 通用逻辑：只要子节点的parent_id指向当前父节点，就创建层级边
+      // 这样可以处理所有层级的连接：领域→分类→学科→分类→知识点等
       const edges: Array<{
         id: string;
         source: string;
         target: string;
         type: 'required' | 'recommended';
-      }> = children.map((child) => ({
-        id: `edge_${nodeId}_${child.node_id}`,
-        source: nodeId,
-        target: child.node_id,
-        type: 'required' as const, // 层级关系是必需的
-      }));
+      }> = [];
+      
+      // 为所有直接子节点创建层级边（基于parent_id关系）
+      // 重要：只连接直接父子关系，不跨层
+      for (const child of children) {
+        // 验证子节点的parent_id确实指向当前父节点（确保是直接子节点）
+        if (child.parent_id === nodeId) {
+          edges.push({
+            id: `edge_${nodeId}_${child.node_id}`,
+            source: nodeId,
+            target: child.node_id,
+            type: 'required' as const, // 层级关系是必需的
+          });
+        }
+      }
 
       // 获取子节点之间的学习顺序依赖关系
+      // 重要：只显示同一层级（同一parent_id）的节点之间的依赖关系
+      // 不能跨多层连接，每一层只和它的直接上一层连接
       const childIds = children.map((c) => c.node_id);
+      let knowledgePointNodes: KnowledgeNode[] = [];
+      
       if (childIds.length > 0) {
-        // 创建两套占位符，索引从 1 开始和从 childIds.length + 1 开始
-        const sourcePlaceholders = childIds.map((_, i) => `$${i + 1}`).join(',');
-        const targetPlaceholders = childIds.map((_, i) => `$${childIds.length + i + 1}`).join(',');
-        const depResult = await this.knowledgeNodeService.db.query<{
-          dependency_id: string;
-          source_node_id: string;
-          target_node_id: string;
-          dependency_type: 'required' | 'recommended';
-        }>(
-          `SELECT dependency_id, source_node_id, target_node_id, dependency_type
-           FROM pikun_db.knowledge_dependencies
-           WHERE source_node_id IN (${sourcePlaceholders})
-             AND target_node_id IN (${targetPlaceholders})`,
-          [...childIds, ...childIds]
-        );
-
-        for (const dep of depResult.rows) {
-          edges.push({
-            id: dep.dependency_id,
-            source: dep.source_node_id,
-            target: dep.target_node_id,
-            type: dep.dependency_type,
-          });
+        // 如果父节点是分类，还需要获取基础知识点（knowledge_point）
+        if (parentNode.node_type === 'subject_category') {
+          // 查找该分类下的 subject，然后获取这些 subject 下的 knowledge_point
+          const subjectIds = children.filter((c) => c.node_type === 'subject').map((c) => c.node_id);
+          if (subjectIds.length > 0) {
+            const subjectPlaceholders = subjectIds.map((_, i) => `$${i + 1}`).join(',');
+            const knowledgePointsResult = await this.knowledgeNodeService.db.query<KnowledgeNode>(
+              `SELECT * FROM pikun_db.knowledge_nodes
+               WHERE parent_id IN (${subjectPlaceholders})
+                 AND node_type = 'knowledge_point'
+                 AND deleted_at IS NULL
+               ORDER BY sort_order ASC, name ASC`,
+              subjectIds
+            );
+            knowledgePointNodes = knowledgePointsResult.rows;
+          }
+        }
+        
+        // 只查询同一层级（同一parent_id）的节点之间的依赖关系
+        // 重要：只查询直接子节点（parent_id = nodeId）之间的依赖关系，不能跨层
+        // 只处理直接子节点，过滤掉其他层级的节点
+        const directChildren = children.filter((c) => c.parent_id === nodeId);
+        const directChildIds = directChildren.map((c) => c.node_id);
+        
+        if (directChildIds.length > 0) {
+          // 查询直接子节点之间的依赖关系
+          let paramIndex = 1;
+          const sourcePlaceholders = directChildIds.map(() => `$${paramIndex++}`).join(',');
+          const targetPlaceholders = directChildIds.map(() => `$${paramIndex++}`).join(',');
+          
+          const depResult = await this.knowledgeNodeService.db.query<{
+            dependency_id: string;
+            source_node_id: string;
+            target_node_id: string;
+            dependency_type: 'required' | 'recommended';
+          }>(
+            `SELECT dependency_id, source_node_id, target_node_id, dependency_type
+             FROM pikun_db.knowledge_dependencies
+             WHERE source_node_id IN (${sourcePlaceholders})
+               AND target_node_id IN (${targetPlaceholders})`,
+            [...directChildIds, ...directChildIds]
+          );
+          
+          for (const dep of depResult.rows) {
+            // 双重验证：确保source和target都是直接子节点（parent_id = nodeId）
+            const sourceNode = directChildren.find((c) => c.node_id === dep.source_node_id);
+            const targetNode = directChildren.find((c) => c.node_id === dep.target_node_id);
+            
+            if (sourceNode && targetNode) {
+              edges.push({
+                id: dep.dependency_id,
+                source: dep.source_node_id,
+                target: dep.target_node_id,
+                type: dep.dependency_type,
+              });
+            }
+          }
+        }
+        
+        // 处理知识点之间的依赖关系（如果有点知识点节点）
+        if (knowledgePointNodes.length > 0) {
+          const knowledgePointIds = knowledgePointNodes.map((kp) => kp.node_id);
+          
+          // 按parent_id分组知识点
+          const kpByParentId = new Map<string, KnowledgeNode[]>();
+          for (const kp of knowledgePointNodes) {
+            const parentId = kp.parent_id || '';
+            if (!kpByParentId.has(parentId)) {
+              kpByParentId.set(parentId, []);
+            }
+            kpByParentId.get(parentId)!.push(kp);
+          }
+          
+          // 对于每个parent_id组，查询该组内知识点之间的依赖关系
+          for (const [groupParentId, groupKps] of kpByParentId) {
+            if (groupKps.length === 0) continue;
+            
+            const groupKpIds = groupKps.map((kp) => kp.node_id);
+            
+            let paramIndex = 1;
+            const sourceKpPlaceholders = groupKpIds.map(() => `$${paramIndex++}`).join(',');
+            const targetKpPlaceholders = groupKpIds.map(() => `$${paramIndex++}`).join(',');
+            
+            const kpDepResult = await this.knowledgeNodeService.db.query<{
+              dependency_id: string;
+              source_node_id: string;
+              target_node_id: string;
+              dependency_type: 'required' | 'recommended';
+            }>(
+              `SELECT dependency_id, source_node_id, target_node_id, dependency_type
+               FROM pikun_db.knowledge_dependencies
+               WHERE source_node_id IN (${sourceKpPlaceholders})
+                 AND target_node_id IN (${targetKpPlaceholders})`,
+              [...groupKpIds, ...groupKpIds]
+            );
+            
+            for (const dep of kpDepResult.rows) {
+              edges.push({
+                id: dep.dependency_id,
+                source: dep.source_node_id,
+                target: dep.target_node_id,
+                type: dep.dependency_type,
+              });
+            }
+          }
         }
       }
 
@@ -272,7 +377,7 @@ export class KnowledgeController {
         success: true,
         data: {
           parent: parentNode,
-          nodes: [parentNode, ...children],
+          nodes: [parentNode, ...children, ...knowledgePointNodes],
           edges,
         },
       });
