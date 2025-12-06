@@ -16,8 +16,8 @@ import ReactFlow, {
 // @ts-ignore
 import 'reactflow/dist/style.css';
 import dagre from 'dagre';
-import { Button, Breadcrumb, Space, Badge, Progress } from 'antd';
-import { ArrowLeftOutlined, ZoomInOutlined } from '@ant-design/icons';
+import { Button, Badge, Progress, Space } from 'antd';
+import { ZoomInOutlined } from '@ant-design/icons';
 import type {
   HierarchicalKnowledgeNode,
   KnowledgeGraphEdge,
@@ -119,8 +119,8 @@ const CustomHierarchicalNode = React.memo(
 
     return (
       <div className={`hierarchical-knowledge-node ${nodeSizeClass}`}>
-        {/* 输入 Handle */}
-        <Handle type="target" position={Position.Left} style={{ background: statusColor }} />
+        {/* 输入 Handle - 在节点顶部 */}
+        <Handle type="target" position={Position.Top} style={{ background: statusColor }} />
 
         {/* 节点内容 */}
         <div className="node-content" style={{ borderColor: statusColor }}>
@@ -188,8 +188,8 @@ const CustomHierarchicalNode = React.memo(
           </div>
         </div>
 
-        {/* 输出 Handle */}
-        <Handle type="source" position={Position.Right} style={{ background: statusColor }} />
+        {/* 输出 Handle - 在节点底部 */}
+        <Handle type="source" position={Position.Bottom} style={{ background: statusColor }} />
       </div>
     );
   },
@@ -221,15 +221,48 @@ export const HierarchicalKnowledgeGraph: React.FC<HierarchicalKnowledgeGraphProp
   const [loadedEdges, setLoadedEdges] = useState<KnowledgeGraphEdge[]>(edges);
   const [loadingChildren, setLoadingChildren] = useState<boolean>(false);
 
-  // 当外部 nodes 或 edges 变化时，更新内部状态
+  // 当外部 nodes 或 edges 变化时，合并到内部状态（而不是替换）
   useEffect(() => {
     console.log('HierarchicalKnowledgeGraph: nodes/edges updated', {
       nodesCount: nodes.length,
       edgesCount: edges.length,
       nodes: nodes.slice(0, 3), // 只打印前3个节点
     });
-    setLoadedNodes(nodes);
-    setLoadedEdges(edges);
+    
+    // 使用函数式更新，避免依赖 loadedNodes 和 loadedEdges
+    setLoadedNodes((prevNodes) => {
+      // 合并节点：保留已有的节点，添加新的节点
+      const nodeMap = new Map(prevNodes.map((n) => [n.id, n]));
+      nodes.forEach((node) => {
+        nodeMap.set(node.id, node);
+      });
+      const mergedNodes = Array.from(nodeMap.values());
+      
+      console.log('Merged nodes:', {
+        beforeNodes: prevNodes.length,
+        afterNodes: mergedNodes.length,
+        newNodes: nodes.length,
+      });
+      
+      return mergedNodes;
+    });
+    
+    setLoadedEdges((prevEdges) => {
+      // 合并边：保留已有的边，添加新的边
+      const edgeMap = new Map(prevEdges.map((e) => [e.id, e]));
+      edges.forEach((edge) => {
+        edgeMap.set(edge.id, edge);
+      });
+      const mergedEdges = Array.from(edgeMap.values());
+      
+      console.log('Merged edges:', {
+        beforeEdges: prevEdges.length,
+        afterEdges: mergedEdges.length,
+        newEdges: edges.length,
+      });
+      
+      return mergedEdges;
+    });
   }, [nodes, edges]);
 
   // 构建节点树结构（用于钻取）
@@ -264,12 +297,24 @@ export const HierarchicalKnowledgeGraph: React.FC<HierarchicalKnowledgeGraphProp
         setLoadingChildren(true);
         try {
           const childrenData = await onLoadChildren(nodeId);
+          console.log('Loaded children data:', {
+            parentId: nodeId,
+            childrenCount: childrenData.nodes.length,
+            edgesCount: childrenData.edges.length,
+            children: childrenData.nodes.slice(0, 3),
+          });
+
           // 更新节点树，添加新加载的子节点
           const updatedNodes = [...loadedNodes];
           childrenData.nodes.forEach((childNode) => {
             if (!updatedNodes.find((n) => n.id === childNode.id)) {
               updatedNodes.push(childNode);
             }
+          });
+          console.log('Updating loadedNodes:', {
+            before: loadedNodes.length,
+            after: updatedNodes.length,
+            newNodes: childrenData.nodes.map((n) => ({ id: n.id, name: n.name, parentId: n.parentId })),
           });
           setLoadedNodes(updatedNodes);
 
@@ -282,7 +327,7 @@ export const HierarchicalKnowledgeGraph: React.FC<HierarchicalKnowledgeGraphProp
           });
           setLoadedEdges(updatedEdges);
 
-          // 重新构建节点树
+          // 重新构建节点树来检查是否有子节点
           const newTree = new Map<string, HierarchicalKnowledgeNode>();
           updatedNodes.forEach((node) => {
             newTree.set(node.id, { ...node, children: [] });
@@ -300,22 +345,70 @@ export const HierarchicalKnowledgeGraph: React.FC<HierarchicalKnowledgeGraphProp
           // 检查现在是否有子节点
           const updatedNodeInTree = newTree.get(nodeId);
           if (!updatedNodeInTree?.children || updatedNodeInTree.children.length === 0) {
+            console.warn('No children found after loading:', nodeId);
             setLoadingChildren(false);
             return; // 仍然没有子节点，不进行钻取
           }
+
+          // 有子节点，继续执行钻取逻辑（使用新构建的树）
+          console.log('Children found, proceeding with drill down:', {
+            nodeId,
+            childrenCount: updatedNodeInTree.children.length,
+          });
+
+          // 直接使用新构建的树来更新钻取上下文
+          const newPath = drillDownContext
+            ? [
+                ...drillDownContext.path,
+                { id: targetNode.id, name: targetNode.name, level: targetNode.level },
+              ]
+            : [{ id: targetNode.id, name: targetNode.name, level: targetNode.level }];
+
+          console.log('Setting drillDownContext:', {
+            nodeId: targetNode.id,
+            nodeName: targetNode.name,
+            level: targetNode.level,
+            path: newPath,
+            childrenCount: updatedNodeInTree.children.length,
+          });
+
+          setDrillDownContext({
+            nodeId: targetNode.id,
+            nodeName: targetNode.name,
+            level: targetNode.level,
+            path: newPath,
+          });
+
+          setViewMode('drill-down');
+          setLoadingChildren(false);
+          return; // 已经完成钻取，直接返回
         } catch (error) {
           console.error('Failed to load children:', error);
           setLoadingChildren(false);
           return;
-        } finally {
-          setLoadingChildren(false);
         }
       }
 
-      // 重新获取节点树（可能已更新）
-      const finalNodeInTree = nodeTree.get(nodeId);
-      const finalHasChildren = finalNodeInTree?.children && finalNodeInTree.children.length > 0;
-      if (!finalHasChildren || targetNode.level >= 3) return; // 知识点（level 3）不能再钻取
+      // 如果已经有子节点，直接进行钻取
+      const currentNodeInTree = nodeTree.get(nodeId);
+      const currentHasChildren = currentNodeInTree?.children && currentNodeInTree.children.length > 0;
+      
+      if (!currentHasChildren) {
+        console.warn('No children found for node:', {
+          nodeId,
+          level: targetNode.level,
+          nodeName: targetNode.name,
+        });
+        return;
+      }
+
+      if (targetNode.level >= 3) {
+        console.warn('Cannot drill down: level >= 3', {
+          nodeId,
+          level: targetNode.level,
+        });
+        return; // 知识点（level 3）不能再钻取
+      }
 
       // 更新钻取上下文
       const newPath = drillDownContext
@@ -376,16 +469,44 @@ export const HierarchicalKnowledgeGraph: React.FC<HierarchicalKnowledgeGraphProp
     }
 
     // 钻取模式：只显示选中节点及其直接子节点（不递归）
-    const targetNode = nodeTree.get(drillDownContext.nodeId);
-    if (!targetNode) return [];
+    // 首先从 loadedNodes 中找到目标节点
+    const targetNodeFromList = loadedNodes.find((n) => n.id === drillDownContext.nodeId);
+    if (!targetNodeFromList) {
+      console.warn('Target node not found in loadedNodes:', drillDownContext.nodeId);
+      return [];
+    }
 
-    const result: HierarchicalKnowledgeNode[] = [targetNode];
-    // 只添加直接子节点，不递归
-    if (targetNode.children) {
-      targetNode.children.forEach((child) => {
-        result.push(child);
+    // 从 nodeTree 中获取子节点（如果 nodeTree 已更新）
+    const targetNodeInTree = nodeTree.get(drillDownContext.nodeId);
+    const children = targetNodeInTree?.children || [];
+
+    // 如果 nodeTree 中没有子节点，尝试从 loadedNodes 中查找（可能 nodeTree 还没更新）
+    let childrenFromList: HierarchicalKnowledgeNode[] = [];
+    if (children.length === 0) {
+      childrenFromList = loadedNodes.filter(
+        (node) => node.parentId === drillDownContext.nodeId
+      );
+      console.log('Children from loadedNodes (nodeTree not updated yet):', {
+        parentId: drillDownContext.nodeId,
+        childrenCount: childrenFromList.length,
+        children: childrenFromList.map((c) => ({ id: c.id, name: c.name })),
       });
     }
+
+    const result: HierarchicalKnowledgeNode[] = [targetNodeFromList];
+    // 优先使用 nodeTree 中的子节点，如果没有则使用从 loadedNodes 中查找的
+    const finalChildren = children.length > 0 ? children : childrenFromList;
+    finalChildren.forEach((child) => {
+      result.push(child);
+    });
+
+    console.log('Filtered nodes (drill-down):', {
+      targetNode: targetNodeFromList.name,
+      childrenCount: finalChildren.length,
+      totalNodes: result.length,
+      children: finalChildren.map((c) => ({ id: c.id, name: c.name })),
+    });
+
     return result;
   }, [loadedNodes, drillDownContext, nodeTree]);
 
@@ -418,10 +539,12 @@ export const HierarchicalKnowledgeGraph: React.FC<HierarchicalKnowledgeGraphProp
       };
 
       dagreGraph.setGraph({
-        rankdir: direction,
-        nodesep: 80,
-        ranksep: 150,
+        rankdir: direction, // 'TB' = 从上到下（同一层级横向排列），'LR' = 从左到右（同一层级纵向排列）
+        nodesep: 150, // 同一层级节点之间的间距（TB布局时是水平间距）
+        ranksep: 200, // 不同层级之间的间距（TB布局时是垂直间距）
         edgesep: 20,
+        align: 'UL', // 对齐方式：上左对齐
+        acyclicer: 'greedy', // 处理循环的算法
       });
 
       filteredNodes.forEach((node) => {
@@ -435,15 +558,67 @@ export const HierarchicalKnowledgeGraph: React.FC<HierarchicalKnowledgeGraphProp
 
       dagre.layout(dagreGraph);
 
+      // 计算所有节点的边界，用于居中根节点
+      let minX = Infinity;
+      let maxX = -Infinity;
+      let minY = Infinity;
+      let maxY = -Infinity;
+
+      filteredNodes.forEach((node) => {
+        const nodeWithPosition = dagreGraph.node(node.id);
+        if (nodeWithPosition) {
+          const { width, height } = getNodeSize(node.level);
+          const nodeX = nodeWithPosition.x;
+          const nodeY = nodeWithPosition.y;
+          minX = Math.min(minX, nodeX - width / 2);
+          maxX = Math.max(maxX, nodeX + width / 2);
+          minY = Math.min(minY, nodeY - height / 2);
+          maxY = Math.max(maxY, nodeY + height / 2);
+        }
+      });
+
+      const graphWidth = maxX - minX;
+      const graphHeight = maxY - minY;
+
       return filteredNodes.map((node) => {
         const { width, height } = getNodeSize(node.level);
         const nodeWithPosition = dagreGraph.node(node.id);
+        
+        // 如果是根节点（知识世界），计算居中位置
+        let x = nodeWithPosition.x - width / 2;
+        let y = nodeWithPosition.y - height / 2;
+        
+        // 检查是否是根节点（通常是第一个节点，或者通过 metadata 判断）
+        if (node.metadata?.is_virtual || node.id === 'knowledge-world-root') {
+          // 计算根节点应该居中的 x 坐标
+          // 找到所有子节点的中心 x 坐标
+          const childNodes = filteredNodes.filter((n) => {
+            return filteredEdges.some((e) => e.source === node.id && e.target === n.id);
+          });
+          
+          if (childNodes.length > 0) {
+            let childMinX = Infinity;
+            let childMaxX = -Infinity;
+            childNodes.forEach((child) => {
+              const childPos = dagreGraph.node(child.id);
+              if (childPos) {
+                const { width: childWidth } = getNodeSize(child.level);
+                childMinX = Math.min(childMinX, childPos.x - childWidth / 2);
+                childMaxX = Math.max(childMaxX, childPos.x + childWidth / 2);
+              }
+            });
+            // 根节点的 x 坐标应该是子节点中心的 x 坐标
+            const childCenterX = (childMinX + childMaxX) / 2;
+            x = childCenterX - width / 2;
+          }
+        }
+        
         return {
           id: node.id,
           type: 'hierarchical' as const,
           position: {
-            x: nodeWithPosition.x - width / 2,
-            y: nodeWithPosition.y - height / 2,
+            x,
+            y,
           },
           data: {
             ...node,
@@ -469,7 +644,7 @@ export const HierarchicalKnowledgeGraph: React.FC<HierarchicalKnowledgeGraphProp
     }
 
     if (layout === 'hierarchical') {
-      const layouted = getLayoutedElements('LR');
+      const layouted = getLayoutedElements('TB'); // 'TB' = 从上到下，同一层级横向排列
       console.log('Layouted nodes:', layouted.length);
       return layouted;
     }
@@ -639,57 +814,51 @@ export const HierarchicalKnowledgeGraph: React.FC<HierarchicalKnowledgeGraphProp
   return (
     <div
       className="hierarchical-knowledge-graph-container"
-      style={{ width: '100%', height: '100%', minHeight: '600px' }}
+      style={{ width: '100%', height: '100%' }}
     >
       {/* 工具栏 */}
       <div className="graph-toolbar">
-        <Space>
-          {/* 面包屑导航 */}
-          {drillDownContext && (
-            <Breadcrumb>
-              <Breadcrumb.Item>
-                <Button type="link" onClick={handleReset} size="small">
-                  全部
-                </Button>
-              </Breadcrumb.Item>
-              {drillDownContext.path.map((item, index) => (
-                <Breadcrumb.Item key={item.id}>
-                  {index === drillDownContext.path.length - 1 ? (
-                    <span>{item.name}</span>
-                  ) : (
-                    <Button
-                      type="link"
-                      size="small"
-                      onClick={() => {
-                        const newPath = drillDownContext.path.slice(0, index + 1);
-                        const target = newPath[newPath.length - 1];
-                        setDrillDownContext({
-                          nodeId: target.id,
-                          nodeName: target.name,
-                          level: target.level,
-                          path: newPath,
-                        });
-                      }}
-                    >
-                      {item.name}
-                    </Button>
-                  )}
-                </Breadcrumb.Item>
-              ))}
-            </Breadcrumb>
-          )}
-
-          {/* 返回按钮 */}
-          {drillDownContext && (
-            <Button icon={<ArrowLeftOutlined />} onClick={handleBack} size="small">
-              返回
-            </Button>
-          )}
-        </Space>
+        {/* 面包屑导航 */}
+        {drillDownContext && (
+          <div className="breadcrumb-container">
+            <div
+              className="breadcrumb-item breadcrumb-item-clickable"
+              onClick={handleReset}
+            >
+              全部
+            </div>
+            {drillDownContext.path.map((item, index) => (
+              <React.Fragment key={item.id}>
+                <span className="breadcrumb-separator">/</span>
+                {index === drillDownContext.path.length - 1 ? (
+                  <div className="breadcrumb-item breadcrumb-item-current">
+                    {item.name}
+                  </div>
+                ) : (
+                  <div
+                    className="breadcrumb-item breadcrumb-item-clickable"
+                    onClick={() => {
+                      const newPath = drillDownContext.path.slice(0, index + 1);
+                      const target = newPath[newPath.length - 1];
+                      setDrillDownContext({
+                        nodeId: target.id,
+                        nodeName: target.name,
+                        level: target.level,
+                        path: newPath,
+                      });
+                    }}
+                  >
+                    {item.name}
+                  </div>
+                )}
+              </React.Fragment>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* 图谱区域 */}
-      <div className="graph-area" style={{ width: '100%', height: '100%', minHeight: '600px' }}>
+      <div className="graph-area" style={{ width: '100%', height: '100%' }}>
         <ReactFlow
           nodes={reactFlowNodesState}
           edges={reactFlowEdgesState}

@@ -1,9 +1,4 @@
-export { KnowledgeGraph } from './KnowledgeGraph';
-export type {
-  KnowledgeGraphNode,
-  KnowledgeGraphEdge,
-  KnowledgeGraphProps,
-} from './KnowledgeGraph';
+
 export {
   mockKnowledgeGraphData,
   generateKnowledgeGraphData,

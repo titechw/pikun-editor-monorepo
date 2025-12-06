@@ -1,6 +1,7 @@
 .hierarchical-knowledge-graph-container {
   width: 100%;
   height: 100%;
+  flex: 1;
   min-height: 600px;
   position: relative;
   background: transparent;
@@ -11,51 +12,85 @@
 
   // 工具栏样式
   .graph-toolbar {
-    padding: 12px 16px;
-    background: rgba(15, 12, 41, 0.6);
+    padding: 16px 20px;
+    background: rgba(15, 12, 41, 0.8);
     backdrop-filter: blur(10px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 12px;
+    justify-content: flex-start;
     z-index: 10;
+    min-height: 56px; // 确保工具栏有足够高度
 
-    .ant-breadcrumb {
-      color: rgba(255, 255, 255, 0.8);
+    // 自定义面包屑样式
+    .breadcrumb-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
 
-      .ant-breadcrumb-link {
-        color: rgba(255, 255, 255, 0.8);
+      .breadcrumb-item {
+        font-size: 14px;
+        font-weight: 500;
+        padding: 6px 12px;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+        white-space: nowrap;
 
-        &:hover {
-          color: #fff;
+        &.breadcrumb-item-clickable {
+          color: rgba(255, 255, 255, 0.8);
+          cursor: pointer;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+
+          &:hover {
+            color: #fff;
+            background: rgba(102, 126, 234, 0.2);
+            border-color: rgba(102, 126, 234, 0.4);
+            transform: translateY(-1px);
+          }
+
+          &:active {
+            transform: translateY(0);
+          }
         }
+
+        &.breadcrumb-item-current {
+          color: #fff;
+          background: rgba(102, 126, 234, 0.3);
+          border: 1px solid rgba(102, 126, 234, 0.5);
+          font-weight: 600;
+        }
+      }
+
+      .breadcrumb-separator {
+        color: rgba(255, 255, 255, 0.4);
+        font-size: 14px;
+        margin: 0 4px;
+        user-select: none;
       }
     }
   }
 
-  // 图谱区域
+  // 图谱区域 - 使用 flex: 1 铺满剩余空间
   .graph-area {
     flex: 1;
     width: 100%;
-    min-height: 600px;
-    height: 100%;
+    min-height: 0; // 允许 flex 子元素缩小，由父容器的最小高度保证
     position: relative;
     background: transparent;
     overflow: hidden;
   }
 
+  // ReactFlow 容器 - 铺满父容器
   .react-flow {
     width: 100% !important;
     height: 100% !important;
-    min-height: 600px;
   }
 
   .react-flow__renderer {
     width: 100% !important;
     height: 100% !important;
-    min-height: 600px;
   }
 
   .react-flow__viewport {
@@ -68,16 +103,34 @@
     background-color: transparent;
   }
 
-  // ReactFlow 控制按钮样式（适配深色主题）
+  // ReactFlow 控制按钮样式（适配深色主题，提高可见性）
   .react-flow__controls {
+    background: rgba(15, 12, 41, 0.95) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+
     button {
-      background: rgba(15, 12, 41, 0.8);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: rgba(255, 255, 255, 0.8);
+      background: rgba(102, 126, 234, 0.8) !important;
+      border: 1px solid rgba(255, 255, 255, 0.3) !important;
+      color: #fff !important;
+      width: 32px !important;
+      height: 32px !important;
+      transition: all 0.2s ease !important;
 
       &:hover {
-        background: rgba(102, 126, 234, 0.3);
-        color: #fff;
+        background: rgba(102, 126, 234, 1) !important;
+        border-color: rgba(255, 255, 255, 0.5) !important;
+        transform: scale(1.1);
+      }
+
+      &:active {
+        background: rgba(102, 126, 234, 0.9) !important;
+      }
+
+      svg {
+        fill: #fff !important;
+        stroke: #fff !important;
       }
     }
   }

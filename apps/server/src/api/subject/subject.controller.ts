@@ -727,23 +727,51 @@ export class SubjectController {
 
         // 如果 parent_id 是学科门类，返回该门类下的一级学科分类
         const actualDomainId = parentId.replace('domain_', '');
+        
+        // 获取父节点（学科门类）信息
+        const parentDomain = await this.subjectDomainService.getDomainById(actualDomainId);
+        if (!parentDomain) {
+          return NextResponse.json({
+            success: true,
+            data: { nodes: [], edges: [] },
+          });
+        }
+
+        // 获取该门类下的一级学科分类
         const categories = await this.subjectDomainService.getCategoriesByDomainId(actualDomainId);
 
-        const nodes = categories.map((category) => ({
-          id: `category_${category.category_id}`,
-          name: category.name,
-          code: category.code,
-          level: 1 as const,
-          parentId: parentId,
-        }));
+        // 构建节点：包含父节点和子节点
+        const nodes = [
+          // 父节点（学科门类）
+          {
+            id: parentId,
+            name: parentDomain.name,
+            code: parentDomain.code,
+            level: 0 as const,
+            description: parentDomain.description || undefined,
+          },
+          // 子节点（一级学科分类）
+          ...categories.map((category) => ({
+            id: `category_${category.category_id}`,
+            name: category.name,
+            code: category.code,
+            level: 1 as const,
+            parentId: parentId,
+          })),
+        ];
 
-        // 一级分类之间可能有依赖关系（通过学科依赖关系推断）
+        // 创建从父节点到各个子节点的边
         const edges: Array<{
           id: string;
           source: string;
           target: string;
           type: 'required' | 'recommended';
-        }> = [];
+        }> = categories.map((category) => ({
+          id: `edge_domain_${actualDomainId}_category_${category.category_id}`,
+          source: parentId,
+          target: `category_${category.category_id}`,
+          type: 'required' as const, // 学科门类到分类的关系是必需的
+        }));
 
         return NextResponse.json({
           success: true,
@@ -754,9 +782,21 @@ export class SubjectController {
       // Level 2: 返回学科（属于某个一级分类）
       if (level === 2) {
         let subjects;
+        let parentCategory = null;
+        
         if (parentId && parentId.startsWith('category_')) {
           // 如果 parent_id 是分类，返回该分类下的学科
           const actualCategoryId = parentId.replace('category_', '');
+          
+          // 获取父节点（分类）信息
+          parentCategory = await this.subjectService.getCategoryById(actualCategoryId);
+          if (!parentCategory) {
+            return NextResponse.json({
+              success: true,
+              data: { nodes: [], edges: [] },
+            });
+          }
+          
           const result = await this.subjectService.getSubjectsByCategoryId(actualCategoryId, {
             current: 1,
             pageSize: 10000,
@@ -770,24 +810,65 @@ export class SubjectController {
           });
           subjects = result.subjects;
         } else {
-          // 返回所有学科
+          // 返回所有学科（无父节点）
           subjects = await this.subjectService.getSubjects();
         }
 
+        // 构建节点：如果有父节点，包含父节点和子节点；否则只包含子节点
+        const nodes = parentCategory && parentId
+          ? [
+              // 父节点（分类）
+              {
+                id: parentId,
+                name: parentCategory.name,
+                code: parentCategory.code,
+                level: 1 as const,
+                description: parentCategory.description || undefined,
+              },
+              // 子节点（学科）
+              ...subjects.map((subject) => ({
+                id: subject.subject_id,
+                name: subject.name,
+                code: subject.code,
+                level: 2 as const,
+                parentId: parentId,
+              })),
+            ]
+          : subjects.map((subject) => ({
+              id: subject.subject_id,
+              name: subject.name,
+              code: subject.code,
+              level: 2 as const,
+              parentId: parentId || undefined,
+            }));
+
         // 获取学科之间的依赖关系
-        const mapData = await this.subjectService.getKnowledgeMap(categoryId || null);
+        const mapData = await this.subjectService.getKnowledgeMap(
+          parentCategory ? parentCategory.category_id : categoryId || null
+        );
         const subjectIdSet = new Set(subjects.map((s) => s.subject_id));
-        const edges = mapData.edges.filter(
+        const dependencyEdges = mapData.edges.filter(
           (edge) => subjectIdSet.has(edge.source) && subjectIdSet.has(edge.target)
         );
 
-        const nodes = subjects.map((subject) => ({
-          id: subject.subject_id,
-          name: subject.name,
-          code: subject.code,
-          level: 2 as const,
-          parentId: parentId || undefined,
-        }));
+        // 创建从父节点到各个子节点的边（如果有父节点）
+        const parentChildEdges: Array<{
+          id: string;
+          source: string;
+          target: string;
+          type: 'required' | 'recommended';
+        }> =
+          parentCategory && parentId
+            ? subjects.map((subject) => ({
+                id: `edge_category_${parentCategory!.category_id}_subject_${subject.subject_id}`,
+                source: parentId,
+                target: subject.subject_id,
+                type: 'required' as const, // 分类到学科的关系是必需的
+              }))
+            : [];
+
+        // 合并边：父节点到子节点的边 + 学科之间的依赖边
+        const edges = [...parentChildEdges, ...dependencyEdges];
 
         return NextResponse.json({
           success: true,
@@ -804,16 +885,47 @@ export class SubjectController {
           });
         }
 
-        // parent_id 应该是学科ID
+        // parent_id 应该是学科ID，获取父节点（学科）信息
+        const parentSubject = await this.subjectService.getSubjectById(parentId);
+        if (!parentSubject) {
+          return NextResponse.json({
+            success: true,
+            data: { nodes: [], edges: [] },
+          });
+        }
+
+        // 获取该学科下的顶级知识点
         const result = await this.knowledgePointService.getPointsBySubjectId(parentId, null, {
           current: 1,
           pageSize: 10000,
         });
 
+        // 构建节点：包含父节点和子节点
+        const nodes = [
+          // 父节点（学科）
+          {
+            id: parentId,
+            name: parentSubject.name,
+            code: parentSubject.code,
+            level: 2 as const,
+          },
+          // 子节点（知识点）
+          ...result.points.map((point) => ({
+            id: point.point_id,
+            name: point.name,
+            code: point.code,
+            level: 3 as const,
+            parentId: parentId,
+            description: point.description || undefined,
+            difficulty: point.difficulty,
+            estimatedTime: point.estimated_time || undefined,
+          })),
+        ];
+
         // 获取知识点之间的依赖关系
         const allDependencies = await this.knowledgePointService.getAllDependencies();
         const pointIdSet = new Set(result.points.map((p) => p.point_id));
-        const edges = allDependencies
+        const dependencyEdges = allDependencies
           .filter((d) => pointIdSet.has(d.point_id) && pointIdSet.has(d.prerequisite_point_id))
           .map((d) => ({
             id: d.dependency_id,
@@ -822,16 +934,21 @@ export class SubjectController {
             type: d.dependency_type,
           }));
 
-        const nodes = result.points.map((point) => ({
-          id: point.point_id,
-          name: point.name,
-          code: point.code,
-          level: 4 as const,
-          parentId: parentId,
-          description: point.description || undefined,
-          difficulty: point.difficulty,
-          estimatedTime: point.estimated_time || undefined,
+        // 创建从父节点到各个子节点的边
+        const parentChildEdges: Array<{
+          id: string;
+          source: string;
+          target: string;
+          type: 'required' | 'recommended';
+        }> = result.points.map((point) => ({
+          id: `edge_subject_${parentId}_point_${point.point_id}`,
+          source: parentId,
+          target: point.point_id,
+          type: 'required' as const, // 学科到知识点的关系是必需的
         }));
+
+        // 合并边：父节点到子节点的边 + 知识点之间的依赖边
+        const edges = [...parentChildEdges, ...dependencyEdges];
 
         return NextResponse.json({
           success: true,
@@ -848,7 +965,7 @@ export class SubjectController {
           });
         }
 
-        // 先找到 parent_id 对应的知识点，获取其 subject_id
+        // 先找到 parent_id 对应的知识点（父节点），获取其 subject_id
         const parentPoint = await this.knowledgePointService.getPointById(parentId);
         if (!parentPoint) {
           return NextResponse.json({
@@ -867,10 +984,35 @@ export class SubjectController {
           }
         );
 
+        // 构建节点：包含父节点和子节点
+        const nodes = [
+          // 父节点（知识点）
+          {
+            id: parentId,
+            name: parentPoint.name,
+            code: parentPoint.code,
+            level: 3 as const,
+            description: parentPoint.description || undefined,
+            difficulty: parentPoint.difficulty,
+            estimatedTime: parentPoint.estimated_time || undefined,
+          },
+          // 子节点（子知识点）
+          ...result.points.map((point) => ({
+            id: point.point_id,
+            name: point.name,
+            code: point.code,
+            level: 4 as const,
+            parentId: parentId,
+            description: point.description || undefined,
+            difficulty: point.difficulty,
+            estimatedTime: point.estimated_time || undefined,
+          })),
+        ];
+
         // 获取知识点之间的依赖关系
         const allDependencies = await this.knowledgePointService.getAllDependencies();
         const pointIdSet = new Set(result.points.map((p) => p.point_id));
-        const edges = allDependencies
+        const dependencyEdges = allDependencies
           .filter((d) => pointIdSet.has(d.point_id) && pointIdSet.has(d.prerequisite_point_id))
           .map((d) => ({
             id: d.dependency_id,
@@ -879,16 +1021,21 @@ export class SubjectController {
             type: d.dependency_type,
           }));
 
-        const nodes = result.points.map((point) => ({
-          id: point.point_id,
-          name: point.name,
-          code: point.code,
-          level: 4 as const,
-          parentId: parentId,
-          description: point.description || undefined,
-          difficulty: point.difficulty,
-          estimatedTime: point.estimated_time || undefined,
+        // 创建从父节点到各个子节点的边
+        const parentChildEdges: Array<{
+          id: string;
+          source: string;
+          target: string;
+          type: 'required' | 'recommended';
+        }> = result.points.map((point) => ({
+          id: `edge_point_${parentId}_point_${point.point_id}`,
+          source: parentId,
+          target: point.point_id,
+          type: 'required' as const, // 知识点到子知识点的关系是必需的
         }));
+
+        // 合并边：父节点到子节点的边 + 知识点之间的依赖边
+        const edges = [...parentChildEdges, ...dependencyEdges];
 
         return NextResponse.json({
           success: true,

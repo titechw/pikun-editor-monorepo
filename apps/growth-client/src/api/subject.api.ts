@@ -225,7 +225,7 @@ export const knowledgeMapApi = {
     if (parentId) {
       params.parent_id = parentId;
     }
-    const response = await apiClient.get<KnowledgeMapData>(
+    const response = await apiClient.get<HierarchicalKnowledgeMapData>(
       '/subject/hierarchical-knowledge-map',
       params
     );

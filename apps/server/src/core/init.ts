@@ -35,7 +35,10 @@ import { SubjectController } from '@/api/subject/subject.controller';
 import { FoundationalAbilityService } from '@/services/foundational-ability.service';
 import { SubjectDomainService } from '@/services/subject-domain.service';
 import { KnowledgePointService } from '@/services/knowledge-point.service';
+import { KnowledgeNodeService } from '@/services/knowledge-node.service';
+import { KnowledgeController } from '@/api/knowledge/knowledge.controller';
 import { MemoryTrainingGameDAO } from '@/dao/memory-training-game.dao';
+import { Database } from '@/core/database';
 import { MemoryTrainingLevelDAO } from '@/dao/memory-training-level.dao';
 import { UserMemoryLevelProgressDAO } from '@/dao/user-memory-level-progress.dao';
 import { CourseDAO } from '@/dao/course.dao';
@@ -181,6 +184,12 @@ export function initializeContainer() {
     return new KnowledgePointService(pointDAO, dependencyDAO);
   });
 
+  // 注册统一的知识节点服务
+  Container.register(KnowledgeNodeService, () => {
+    const db = Database.getInstance();
+    return new KnowledgeNodeService(db);
+  });
+
   // 注册学科 Controller
   Container.register(SubjectController, () => {
     const subjectService = Container.resolve<SubjectService>(SubjectService);
@@ -193,6 +202,12 @@ export function initializeContainer() {
       foundationalAbilityService,
       subjectDomainService
     );
+  });
+
+  // 注册统一的知识节点 Controller
+  Container.register(KnowledgeController, () => {
+    const knowledgeNodeService = Container.resolve<KnowledgeNodeService>(KnowledgeNodeService);
+    return new KnowledgeController(knowledgeNodeService);
   });
 
   // 注册记忆训练相关 Service

@@ -7,7 +7,7 @@ import type {
   HierarchicalKnowledgeNode,
   KnowledgeGraphEdge,
 } from '@/components/KnowledgeGraph/types';
-import { knowledgeMapApi } from '@/api/subject.api';
+import { knowledgeApi, type KnowledgeNode } from '@/api/knowledge.api';
 import './Knowledge.less';
 
 const { Title, Text } = Typography;
@@ -24,51 +24,86 @@ export const Knowledge = observer((): React.JSX.Element => {
     nodes: HierarchicalKnowledgeNode[];
     edges: KnowledgeGraphEdge[];
   }>({ nodes: [], edges: [] });
-  const [currentLevel, setCurrentLevel] = useState<number>(0);
   const [currentParentId, setCurrentParentId] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
 
-  // 加载分层知识地图数据（直接从数据库查询第一层）
+  // 将 KnowledgeNode 转换为 HierarchicalKnowledgeNode
+  const convertToHierarchicalNode = (node: KnowledgeNode): HierarchicalKnowledgeNode => {
+    // 根据 node_type 推断 level（用于兼容现有组件）
+    let level: 0 | 1 | 2 | 3 = 0;
+    if (node.node_type === 'foundational_ability') {
+      level = 0;
+    } else if (node.node_type === 'subject_domain') {
+      level = 0;
+    } else if (node.node_type === 'subject_category') {
+      level = 1;
+    } else if (node.node_type === 'subject') {
+      level = 2;
+    } else if (node.node_type === 'knowledge_point') {
+      level = 3;
+    }
+
+    return {
+      id: node.node_id,
+      name: node.name,
+      code: node.code,
+      level,
+      parentId: node.parent_id || undefined,
+      description: node.description || undefined,
+      difficulty: node.metadata?.difficulty,
+      estimatedTime: node.metadata?.estimated_time,
+      metadata: node.metadata,
+    };
+  };
+
+  // 加载分层知识地图数据（查询顶级节点：学科门类）
   useEffect(() => {
     const loadHierarchicalData = async () => {
       setLoading(true);
       try {
         console.log('Loading hierarchical data:', {
-          level: currentLevel,
           parentId: currentParentId,
         });
-        const data = await knowledgeMapApi.getHierarchicalKnowledgeMap(
-          null,
-          currentParentId || undefined,
-          currentLevel,
-        );
-        // 转换数据格式以匹配 HierarchicalKnowledgeNode
-        const nodes: HierarchicalKnowledgeNode[] = data.nodes.map((node) => ({
-          id: node.id,
-          name: node.name,
-          code: node.code,
-          level: node.level,
-          parentId: node.parentId,
-          category: node.category,
-          description: node.description,
-          difficulty: node.difficulty,
-          estimatedTime: node.estimatedTime,
-        }));
-        const edges: KnowledgeGraphEdge[] = data.edges.map((edge) => ({
-          id: edge.id,
-          source: edge.source,
-          target: edge.target,
-          type: edge.type,
-        }));
+        
+        // 如果 currentParentId 为 null，使用虚拟根节点"知识世界"
+        // 否则查询指定节点的子节点
+        let nodes: KnowledgeNode[] = [];
+        let edges: KnowledgeGraphEdge[] = [];
+
+        if (currentParentId === null) {
+          // 使用虚拟根节点"知识世界"作为起点
+          const rootNodeId = 'knowledge-world-root';
+          const response = await knowledgeApi.getNodeChildren(rootNodeId);
+          nodes = response.nodes;
+          edges = response.edges.map((edge) => ({
+            id: edge.id,
+            source: edge.source,
+            target: edge.target,
+            type: edge.type,
+          }));
+        } else {
+          // 查询指定节点的子节点
+          const response = await knowledgeApi.getNodeChildren(currentParentId);
+          nodes = response.nodes;
+          edges = response.edges.map((edge) => ({
+            id: edge.id,
+            source: edge.source,
+            target: edge.target,
+            type: edge.type,
+          }));
+        }
+
+        // 转换数据格式
+        const hierarchicalNodes: HierarchicalKnowledgeNode[] = nodes.map(convertToHierarchicalNode);
+        
         console.log('Loaded hierarchical data:', {
-          nodes,
+          nodes: hierarchicalNodes,
           edges,
-          nodeCount: nodes.length,
-          level: currentLevel,
+          nodeCount: hierarchicalNodes.length,
           parentId: currentParentId,
-          sampleNodes: nodes.slice(0, 3),
+          sampleNodes: hierarchicalNodes.slice(0, 3),
         });
-        setHierarchicalData({ nodes, edges });
+        setHierarchicalData({ nodes: hierarchicalNodes, edges });
       } catch (error) {
         console.error('Failed to load hierarchical knowledge map:', error);
         setHierarchicalData({ nodes: [], edges: [] });
@@ -77,7 +112,7 @@ export const Knowledge = observer((): React.JSX.Element => {
       }
     };
     loadHierarchicalData();
-  }, [currentLevel, currentParentId]);
+  }, [currentParentId]);
 
   // 处理节点点击（显示详情）
   const handleNodeClick = useCallback((node: HierarchicalKnowledgeNode) => {
@@ -89,7 +124,7 @@ export const Knowledge = observer((): React.JSX.Element => {
     setSelectedEdge(edge);
   }, []);
 
-  // 动态加载子节点数据
+  // 动态加载子节点数据（不再需要 level 判断）
   const handleLoadChildren = useCallback(
     async (
       parentId: string,
@@ -97,40 +132,28 @@ export const Knowledge = observer((): React.JSX.Element => {
       nodes: HierarchicalKnowledgeNode[];
       edges: KnowledgeGraphEdge[];
     }> => {
-      // 判断当前层级，确定下一层级
-      const nextLevel = currentLevel + 1;
-      console.log('handleLoadChildren called:', { parentId, currentLevel, nextLevel });
-      // 调用 API 获取子节点数据
-      const data = await knowledgeMapApi.getHierarchicalKnowledgeMap(null, parentId, nextLevel);
+      console.log('handleLoadChildren called:', { parentId });
+      
+      // 调用新的统一 API 获取子节点数据
+      const response = await knowledgeApi.getNodeChildren(parentId);
       console.log('handleLoadChildren API response:', {
-        nodeCount: data.nodes.length,
-        edgeCount: data.edges.length,
-        sampleNodes: data.nodes.slice(0, 3),
+        nodeCount: response.nodes.length,
+        edgeCount: response.edges.length,
+        sampleNodes: response.nodes.slice(0, 3),
       });
+      
       // 转换数据格式
-      const nodes: HierarchicalKnowledgeNode[] = data.nodes.map((node) => ({
-        id: node.id,
-        name: node.name,
-        code: node.code,
-        level: node.level,
-        parentId: node.parentId,
-        category: node.category,
-        description: node.description,
-        difficulty: node.difficulty,
-        estimatedTime: node.estimatedTime,
-      }));
-      const edges: KnowledgeGraphEdge[] = data.edges.map((edge) => ({
+      const nodes: HierarchicalKnowledgeNode[] = response.nodes.map(convertToHierarchicalNode);
+      const edges: KnowledgeGraphEdge[] = response.edges.map((edge) => ({
         id: edge.id,
         source: edge.source,
         target: edge.target,
         type: edge.type,
       }));
-      // 更新状态（这会触发 useEffect 重新加载数据）
-      setCurrentLevel(nextLevel);
-      setCurrentParentId(parentId);
+      
       return { nodes, edges };
     },
-    [currentLevel],
+    [],
   );
 
   return (

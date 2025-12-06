@@ -143,16 +143,7 @@ export const AppRouter = observer((): React.JSX.Element => {
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/demo/knowledge-graph"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <KnowledgeGraphDemo />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
+        
           <Route
             path="/demo/hierarchical-knowledge-graph"
             element={
