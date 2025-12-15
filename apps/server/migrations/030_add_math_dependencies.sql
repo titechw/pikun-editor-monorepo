@@ -380,3 +380,5 @@ WHERE kn1.parent_id = '46e71877-9bf9-4aeb-9d13-293f41b10ba2'
   AND kn1.node_type = 'knowledge_point'
   AND kn2.node_type = 'knowledge_point';
 
+
+

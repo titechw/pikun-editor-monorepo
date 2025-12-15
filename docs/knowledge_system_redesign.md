@@ -193,3 +193,5 @@ GET /api/knowledge/learning-path?node_id={node_id}
 4. **查询简单**：通过 `parent_id` 统一查询子节点
 5. **依赖关系清晰**：所有依赖关系在一个表中，易于查询和管理
 
+
+

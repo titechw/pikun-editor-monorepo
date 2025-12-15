@@ -131,3 +131,5 @@ CREATE TRIGGER prevent_knowledge_dependency_cycle
 
 COMMENT ON FUNCTION pikun_db.check_knowledge_dependency_cycle() IS '检查知识节点依赖关系是否存在循环依赖';
 
+
+
